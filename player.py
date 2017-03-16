@@ -98,7 +98,7 @@ class Player(pg.sprite.Sprite):
             self.last_shot = now
             dir = vec(1, 0).rotate(-self.rot)
             pos = self.pos + BARREL_OFFSET.rotate(-self.rot)
-            #self.vel = vec(-WEAPONS[self.weapon]['kickback'], 0).rotate(-self.rot)
+            self.vel = vec(-WEAPONS[self.weapon]['kickback'], 0).rotate(-self.rot)
             for bullet in range(WEAPONS[self.weapon]['bullet_count']):
                 spread = uniform(-WEAPONS[self.weapon]['spread'], WEAPONS[self.weapon]['spread'])
                 Bullet(self.game, pos, dir.rotate(spread), WEAPONS[self.weapon]['damage'])
