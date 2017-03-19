@@ -1,10 +1,11 @@
 '''
-Created on Mar 16, 2017
-
-@author: Austin
+@author: Ned Austin Datiles
 '''
 
-class Mob(object):
+import pygame as pg
+from settings import *
+
+class Mob(pg.sprite.Sprite):
     '''
     classdocs
     '''
@@ -12,5 +13,7 @@ class Mob(object):
         '''
         Constructor
         '''
+        self._layer = MOB_LAYER
+        self.groups = game.all_sprites, game.mobs
         self.game = game
-        
+        pg.sprite.Sprite.__init__(self, self.groups)

@@ -1,15 +1,15 @@
 '''
-Created on Mar 15, 2017
-
-@author: Austin
+@author: Ned Austin Datiles
 '''
 import pygame as pg
-from os import path, listdir
+import re
+from os import listdir
 from os.path import isfile, join
 
 
 def collide_hit_rect(first, second):
     return first.hit_rect.colliderect(second.rect)
+
 
 def collide_with_obstacles(sprite, group, direction):
     if direction == 'x':
@@ -42,7 +42,7 @@ def collide_with_obstacles(sprite, group, direction):
             sprite.vel.y = 0
             sprite.hit_rect.centery = sprite.pos.y
 
-def get_image_names(directory):
-    return [file for file in listdir(directory) if isfile(join(directory, file))]
-    
-    
+
+def get_image_names(path):
+    files = [file for file in listdir(path) if isfile(join(path, file))]
+    return [path + file for file in sorted(files, key=lambda x: int(re.split(r'[_.]', x)[2]))]

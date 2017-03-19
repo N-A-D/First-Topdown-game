@@ -1,7 +1,7 @@
 '''
 Created on Mar 15, 2017
 
-@author: Austin
+@author: Ned Austin Datiles
 '''
 import pygame as pg 
 from settings import TILESIZE, WIDTH, HEIGHT
@@ -33,7 +33,7 @@ class Camera:
     def apply_rect(self, rect):
         # Applies the camera offset to 
         # a rectangle
-        return rect.move(self.camera.topleft())
+        return rect.move(self.camera.topleft)
     
     def update(self, target):
         # Get how much the target moved in the x & y 
