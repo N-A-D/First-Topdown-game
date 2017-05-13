@@ -1,1 +1,1 @@
-# Topdown maze survival
+# Topdown zombie survival
