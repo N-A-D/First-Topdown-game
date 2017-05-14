@@ -255,7 +255,7 @@ class Game:
         self.draw_player_stats()
         self.draw_text(str(len(self.mobs)) + " zombies remain", self.hud_font, 30, WHITE, WIDTH // 2, 10)
         if self.player.weapon != 'knife':
-            self.draw_current_clip(self.screen, 10, 70, self.player.fire_arms[self.player.weapon]['clip'], 3, 15)
+            self.draw_current_clip(self.screen, 10, 70, self.player.arsenal[self.player.weapon]['clip'], 3, 15)
 
     def draw_player_stats(self):
         """
@@ -292,7 +292,7 @@ class Game:
                 temp += 2 * bullet_length
 
             self.screen.blit(self.mag_img, (temp + 16, y - 5))
-            self.draw_text('x' + str(self.player.fire_arms[self.player.weapon]['reloads']), self.hud_font, 20, WHITE,
+            self.draw_text('x' + str(self.player.arsenal[self.player.weapon]['reloads']), self.hud_font, 20, WHITE,
                            temp + 48, y - 5)
             temp = x
 
@@ -307,10 +307,10 @@ class Game:
     def draw_player_health(self, surface, x, y, pct):
         """
         Draws the player's health bar
-        :param surface: 
-        :param x: 
-        :param y: 
-        :param pct: 
+        :param surface: The surface on which to draw the health bar
+        :param x: x location
+        :param y: y location
+        :param pct: How much health is left in %
         :return: 
         """
         if pct < 0:
@@ -330,10 +330,10 @@ class Game:
     def draw_player_stamina(self, surface, x, y, pct):
         """
         Draws the player's stamina bar
-        :param surface: 
-        :param x: 
-        :param y: 
-        :param pct: 
+        :param surface: The surface to draw on
+        :param x: x location
+        :param y: y location
+        :param pct: How much stamina is left in %
         :return: 
         """
         if pct < 0:
@@ -350,6 +350,17 @@ class Game:
         pg.draw.rect(surface, WHITE, outline_rect, 2)
 
     def draw_text(self, text, font_name, size, color, x, y, align='nw'):
+        """
+        
+        :param text: 
+        :param font_name: 
+        :param size: 
+        :param color: 
+        :param x: 
+        :param y: 
+        :param align: 
+        :return: 
+        """
         font = pg.font.Font(font_name, size)
         text_surface = font.render(text, True, color)
         text_rect = text_surface.get_rect()

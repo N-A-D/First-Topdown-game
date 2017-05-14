@@ -43,10 +43,11 @@ class Player(pg.sprite.Sprite):
         self.weapon = self.game.default_player_weapon
         self.action = self.game.default_player_action
 
-        # The player's projectile weapon characteristic
-        self.fire_arms = {'handgun': {'clip': 12, 'reloads': inf, 'hasWeapon': True},
-                          'rifle': {'clip': 30, 'reloads': 4, 'hasWeapon': True},
-                          'shotgun': {'clip': 8, 'reloads': 3, 'hasWeapon': True}
+        # Houses the player's arsenal characteristics
+        self.arsenal = {'handgun': {'clip': 12, 'reloads': inf, 'hasWeapon': True},
+                          'rifle': {'clip': 30, 'reloads': 4, 'hasWeapon': False},
+                          'shotgun': {'clip': 8, 'reloads': 3, 'hasWeapon': True},
+                          'knife': {'hasWeapon': True}
                           }
 
         # Current player animation & frame
@@ -133,15 +134,15 @@ class Player(pg.sprite.Sprite):
                 snd.play()
 
             MuzzleFlash(self.game, pos)
-            self.fire_arms[self.weapon]['clip'] -= 1
+            self.arsenal[self.weapon]['clip'] -= 1
 
     def reload(self):
         """
         Reload's the player's weapon magazine
         :return: 
         """
-        self.fire_arms[self.weapon]['reloads'] -= 1
-        self.fire_arms[self.weapon]['clip'] = WEAPONS[self.weapon]['clip size']
+        self.arsenal[self.weapon]['reloads'] -= 1
+        self.arsenal[self.weapon]['clip'] = WEAPONS[self.weapon]['clip size']
         self.action = 'reload'
         self.canned_action = self.action
         self.current_frame = 0
@@ -161,7 +162,7 @@ class Player(pg.sprite.Sprite):
 
         # Handle combat controls
         if keys[pg.K_r] and self.weapon != 'knife' and self.action != 'reload':
-            if self.fire_arms[self.weapon]['reloads'] > 0:
+            if self.arsenal[self.weapon]['reloads'] > 0:
                 if not self.play_static_animation:
                     self.reload()
 
@@ -228,11 +229,11 @@ class Player(pg.sprite.Sprite):
             # Handle mouse clicks
             lc, _, rc = pg.mouse.get_pressed()
             if lc and not self.weapon == 'knife':
-                if self.fire_arms[self.weapon]['clip'] != 0:
+                if self.arsenal[self.weapon]['clip'] != 0:
                     self.action = 'shoot'
                     self.shoot()
                 else:
-                    if self.fire_arms[self.weapon]['reloads'] > 0:
+                    if self.arsenal[self.weapon]['reloads'] > 0:
                         if not self.play_static_animation:
                             self.reload()
 
@@ -318,7 +319,7 @@ class Player(pg.sprite.Sprite):
         :return: 
         """
         if self.weapon != 'knife':
-            self.fire_arms[self.weapon]['reloads'] += 1
+            self.arsenal[self.weapon]['reloads'] += 1
 
     def update_rotation(self):
         """
