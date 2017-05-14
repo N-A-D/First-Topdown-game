@@ -63,7 +63,7 @@ MUZZLE_FLASHES = ['smokeparticleassets\\PNG\\Flash\\flash00.png',
                   'smokeparticleassets\\PNG\\Flash\\flash07.png',
                   'smokeparticleassets\\PNG\\Flash\\flash08.png',
                   ]
-FLASH_DURATION = 45
+FLASH_DURATION = 60
 
 # Player settings
 DEFAULT_WEAPON = 'knife'
@@ -74,11 +74,9 @@ WEAPON_ANIMATION_TIMES = {'handgun': {'idle': 100, 'melee': 35, 'move': 100, 're
 PLAYER_SPEED = 150
 PLAYER_HIT_RECT = pg.Rect(0, 0, 50, 50)
 PLAYER_MELEE_RECT = pg.Rect(0, 0, 64, 64)
-BARREL_OFFSETS = {'handgun': vec(60, 20), 'rifle': vec(72, 20), 'shotgun': vec(60, 20)}
 PLAYER_HEALTH = 100
 PLAYER_STAMINA = 100
 PLAYER_MELEE_STUMBLE = 100
-
 
 # Enemy settings
 ENEMY_DAMAGE = 1
@@ -92,25 +90,23 @@ SEEK_FORCE = [0.1, 0.05, .2]
 WANDER_RING_DISTANCE = 50
 WANDER_RING_RADIUS = 20
 
-
 # Enemy Animations
 ENEMY_IMGS = [
-                'img\\Enemies\\citizenzombie1.png',
-                'img\\Enemies\\citizenzombie2.png',
-                'img\\Enemies\\citizenzombie3.png',
-                'img\\Enemies\\citizenzombie4.png',
-                'img\\Enemies\\citizenzombie5.png',
-                'img\\Enemies\\citizenzombie6.png',
-                'img\\Enemies\\citizenzombie7.png',
-                'img\\Enemies\\citizenzombie8.png',
-                'img\\Enemies\\citizenzombie9.png',
-                'img\\Enemies\\citizenzombie10.png',
-              ]
+    'img\\Enemies\\citizenzombie1.png',
+    'img\\Enemies\\citizenzombie2.png',
+    'img\\Enemies\\citizenzombie3.png',
+    'img\\Enemies\\citizenzombie4.png',
+    'img\\Enemies\\citizenzombie5.png',
+    'img\\Enemies\\citizenzombie6.png',
+    'img\\Enemies\\citizenzombie7.png',
+    'img\\Enemies\\citizenzombie8.png',
+    'img\\Enemies\\citizenzombie9.png',
+    'img\\Enemies\\citizenzombie10.png',
+]
 
 # Weapon settings
 WEAPONS = {}
-
-WEAPONS['handgun'] = {'bullet_speed': 2000,
+WEAPONS['handgun'] = {'bullet_speed': 4000,
                       'bullet_lifetime': 1000,
                       'rate': 300,
                       'kickback': 50,
@@ -119,9 +115,12 @@ WEAPONS['handgun'] = {'bullet_speed': 2000,
                       'bullet_size': 'med',
                       'clip size': 12,
                       'weight': 3,
+                      'wobble': {'sprint': 10, 'walk': 4, 'idle': 1},
+                      'muzzle flash range': [25, 35],
+                      'barrel offset': vec(50, 20),
                       'bullet_count': 1}
 
-WEAPONS['rifle'] = {'bullet_speed': 2000,
+WEAPONS['rifle'] = {'bullet_speed': 4000,
                     'bullet_lifetime': 10000,
                     'rate': 110,
                     'kickback': 100,
@@ -130,8 +129,11 @@ WEAPONS['rifle'] = {'bullet_speed': 2000,
                     'bullet_size': 'lg',
                     'clip size': 30,
                     'weight': 6,
+                    'wobble': {'sprint': 14, 'walk': 7, 'idle': 2},
+                    'muzzle flash range': [35, 60],
+                    'barrel offset': vec(72, 20),
                     'bullet_count': 1}
-WEAPONS['shotgun'] = {'bullet_speed': 2000,
+WEAPONS['shotgun'] = {'bullet_speed': 4000,
                       'bullet_lifetime': 1000,
                       'rate': 500,
                       'kickback': 660,
@@ -140,11 +142,15 @@ WEAPONS['shotgun'] = {'bullet_speed': 2000,
                       'bullet_size': 'sm',
                       'clip size': 8,
                       'weight': 7,
+                      'wobble': {'sprint': 15, 'walk': 8, 'idle': 2},
+                      'muzzle flash range': [50, 70],
+                      'barrel offset': vec(75, 20),
                       'bullet_count': 11}
 WEAPONS['knife'] = {
-                      'damage': 50,
-                      'weight': 1
-                      }
+    'damage': 50,
+    'weight': 1,
+    'wobble': {'sprint': 0, 'walk': 0, 'idle': 0}
+}
 # Sounds
 WEAPON_SOUNDS = {'handgun': ['pistol.wav'],
                  'shotgun': ['shotgun.wav'],
@@ -178,5 +184,3 @@ SHOTGUN_ANIMATIONS['melee'] = get_image_names("img\\Player animations\\shotgun\\
 SHOTGUN_ANIMATIONS['move'] = get_image_names("img\\Player animations\\shotgun\\move\\")
 SHOTGUN_ANIMATIONS['reload'] = get_image_names('img\\Player animations\\shotgun\\reload\\')
 SHOTGUN_ANIMATIONS['shoot'] = get_image_names('img\\Player animations\\shotgun\\shoot\\')
-
-
