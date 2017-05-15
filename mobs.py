@@ -49,7 +49,6 @@ class Mob(pg.sprite.Sprite):
         self.rot = 0
 
         self.speed = choice(ENEMY_SPEEDS)
-        self.target = game.player
         self.health = choice(ENEMY_HEALTH)
         self.is_damaged = False
         self.damage = choice(ENEMY_DAMAGE)
@@ -58,6 +57,9 @@ class Mob(pg.sprite.Sprite):
         # the player
         self.seek_force = choice(SEEK_FORCE)
         self.desired = vec(0, 0)
+        self.target = game.player
+        # How often this mob will change targets while wondering
+        self.last_target_time = 0
 
     def avoid_mobs(self):
         """
@@ -85,40 +87,49 @@ class Mob(pg.sprite.Sprite):
         :param target: 
         :return: 
         """
-        self.desired = (target - self.pos).normalize() * self.speed
+        self.desired = (target - self.pos)
+        dist = self.desired.length()
+        self.desired.normalize_ip()
+        if dist < APPROACH_RADIUS:
+            self.desired *= dist / APPROACH_RADIUS * self.speed
+        else:
+            self.desired *= self.speed
         steer = (self.desired - self.vel)
         if steer.length() > self.seek_force:
             steer.scale_to_length(self.seek_force)
         return steer
 
     def wander(self):
-        pass
+        circle_pos = self.pos + self.vel.normalize() * WANDER_RING_DISTANCE
+        target = circle_pos + vec(WANDER_RING_RADIUS, 0).rotate(uniform(0, 360))
+        return self.seek(target)
+
 
     def update(self):
         """
         Update his mob's internal state
         :return: 
         """
-        seek_force = self.seek(self.target.pos)
+        if self.health <= 0:
+            self.kill()
         target_dist = self.target.pos - self.pos
         if target_dist.length_squared() < DETECT_RADIUS ** 2:
-            self.rot = target_dist.angle_to(vec(1, 0))
-            self.image = pg.transform.rotate(self.original_image, self.rot - 90)
-            self.rect.center = self.pos
+            seek_force = self.seek(self.target.pos)
             self.acc = vec(1, 0).rotate(-self.rot)
             self.avoid_mobs()
             self.acc.scale_to_length(self.speed)
             self.acc += self.vel * -1
             self.vel += self.acc * self.game.dt
-            self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
             self.vel += seek_force
+            self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
             self.hit_rect.centerx = self.pos.x
             collide_with_obstacles(self, self.game.walls, 'x')
             self.hit_rect.centery = self.pos.y
             collide_with_obstacles(self, self.game.walls, 'y')
             self.rect.center = self.hit_rect.center
-        if self.health <= 0:
-            self.kill()
+            self.rot = target_dist.angle_to(vec(1, 0))
+            self.image = pg.transform.rotate(self.original_image, self.rot - 90)
+            self.rect.center = self.pos
 
     def update_direction(self):
         pass
