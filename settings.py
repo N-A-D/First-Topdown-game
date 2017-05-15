@@ -79,14 +79,15 @@ PLAYER_STAMINA = 100
 PLAYER_MELEE_STUMBLE = 100
 
 # Enemy settings
-ENEMY_DAMAGE = 1
+ENEMY_DAMAGE = [10]
 ENEMY_KNOCKBACK = 10
-ENEMY_HIT_RECT = pg.Rect(0, 0, 50, 50)
+ENEMY_HIT_RECT = pg.Rect(0, 0, TILESIZE, TILESIZE)
 ENEMY_SPEEDS = [150, 90, 300, 95, 85, 33, 94, 55, 200, 110, 45, 360, 86, 77, 109, 62, 56]
 ENEMY_HEALTH = [400]
 DETECT_RADIUS = 400
-AVOID_RADIUS = 100
-SEEK_FORCE = [0.1, 0.05, .2]
+APPROACH_RADIUS = 150
+AVOID_RADIUS = 50
+SEEK_FORCE = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 WANDER_RING_DISTANCE = 50
 WANDER_RING_RADIUS = 20
 
@@ -151,11 +152,15 @@ WEAPONS['knife'] = {
     'weight': 1,
     'wobble': {'sprint': 0, 'walk': 0, 'idle': 0}
 }
+
 # Sounds
 WEAPON_SOUNDS = {'handgun': ['pistol.wav'],
                  'shotgun': ['shotgun.wav'],
                  'rifle': ['Futuristic Assault Rifle Single Shot 02.wav']
                  }
+
+# Item images
+ITEM_IMAGES = {}
 
 # Player Animations
 HANDGUN_ANIMATIONS = {}
