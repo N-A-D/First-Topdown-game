@@ -346,7 +346,7 @@ class Player(pg.sprite.Sprite):
         mouse_vec.x -= self.game.camera.camera.x
         mouse_vec.y -= self.game.camera.camera.y
         target_dist = mouse_vec - self.pos
-        self.rot = target_dist.angle_to(vec(1, 0)) + 1
+        self.rot = target_dist.angle_to(vec(1, 0)) + 2
         self.update_direction()
 
     def update_direction(self):

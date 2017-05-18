@@ -51,7 +51,7 @@ class Game:
         # Crosshairs
         self.crosshairs = [
             pg.transform.smoothscale(pg.image.load(path.join(self.crosshair_folder, crosshair)),
-                                     (32, 32)).convert_alpha()
+                                     (48, 48)).convert_alpha()
             for crosshair in CROSSHAIRS]
         # todo - have a menu decide the player's crosshair
         self.crosshair = choice(
@@ -167,7 +167,7 @@ class Game:
                 if tile == 'E':
                     Mob(self, col, row)
                 if tile == 'I':
-                    Item(self, vec(col * TILESIZE, row * TILESIZE), 'handgun', 'weapon')
+                    Item(self, vec(col * TILESIZE, row * TILESIZE), 'rifle', 'weapon')
         self.camera = Camera(self.map.width, self.map.height)
         g.run()
 
@@ -236,8 +236,6 @@ class Game:
                     self.playing = False
                 self.running = False
             if event.type == pg.KEYDOWN:
-                if event.key == pg.K_COMMA:
-                    self.player.pick_up_ammo()
                 if event.key == pg.K_b:
                     self.debug = not self.debug
 
