@@ -11,6 +11,7 @@ from tilemap import Map, Camera
 from sprites import Obstacle, Item
 from core_functions import collide_hit_rect
 
+vec = pg.math.Vector2
 
 class Game:
     def __init__(self):
@@ -45,7 +46,7 @@ class Game:
 
         # HUD Elements
         self.mag_img = pg.transform.smoothscale(pg.image.load(path.join(self.img_folder, CLIP_IMG)),
-                                                (48, 48)).convert_alpha()
+                                                (40, 40)).convert_alpha()
 
         # Crosshairs
         self.crosshairs = [
@@ -58,11 +59,16 @@ class Game:
 
         # Item pickups
         self.pickup_items = {}
-        for item in ITEM_IMAGES:
-            self.pickup_items[item] = []
-            self.pickup_items[item] = pg.transform.smoothscale(
-                pg.image.load(path.join(self.item_folder, ITEM_IMAGES[item])),
-                (32, 32)).convert_alpha()
+        # for item in ITEM_IMAGES:
+        #     self.pickup_items[item] = []
+        #     self.pickup_items[item] = pg.transform.smoothscale(
+        #         pg.image.load(path.join(self.item_folder, ITEM_IMAGES[item])),
+        #         (103, 32)).convert_alpha()
+
+        self.pickup_items['rifle'] = pg.transform.smoothscale(pg.image.load('img\\Items\\rifle.png').convert_alpha(), (103, 31))
+        self.pickup_items['handgun'] = pg.transform.smoothscale(pg.image.load('img\\Items\\glock.png').convert_alpha(), (32, 22))
+        self.pickup_items['knife'] = pg.transform.smoothscale(pg.image.load('img\\Items\\knife.png').convert_alpha(), (32, 22))
+        self.pickup_items['shotgun'] = pg.transform.smoothscale(pg.image.load('img\\Items\\shotgun.png').convert_alpha(), (103, 31))
         # Fonts
         self.hud_font = path.join(self.img_folder, 'Impacted2.0.ttf')
 
@@ -161,7 +167,7 @@ class Game:
                 if tile == 'E':
                     Mob(self, col, row)
                 if tile == 'I':
-                    Item(self, (col * TILESIZE, row * TILESIZE), 'rifle')
+                    Item(self, vec(col * TILESIZE, row * TILESIZE), 'handgun', 'weapon')
         self.camera = Camera(self.map.width, self.map.height)
         g.run()
 
@@ -211,6 +217,13 @@ class Game:
             for bullet in hits[mob]:
                 mob.health -= bullet.damage
             mob.vel = vec(WEAPONS[self.player.weapon]['damage'], 0).rotate(-self.player.rot)
+
+        # Item collisions
+        hits = pg.sprite.spritecollide(self.player, self.items, True, collide_hit_rect)
+        for hit in hits:
+            if hit.item_type == 'weapon':
+                self.player.pickup_item(hit)
+
 
     def events(self):
         """
@@ -306,11 +319,11 @@ class Game:
                 pg.draw.rect(surface, LIGHTGREY, bullet_outline)
                 temp += 2 * bullet_length
 
-            self.screen.blit(self.mag_img, (temp + 16, y - 5))
+            self.screen.blit(self.mag_img, (temp, y - 10))
             self.draw_text('x', self.hud_font, 15, WHITE,
-                           temp + 48, y)
+                           temp + 32, y)
             self.draw_text(str(self.player.arsenal[self.player.weapon]['reloads']), self.hud_font, 20, WHITE,
-                           temp + 56, y - 5)
+                           temp + 40, y - 5)
             temp = x
 
             # Draws the bullets the actually remain in the clip as gold figures.
@@ -332,7 +345,6 @@ class Game:
         """
         if pct < 0:
             pct = 0
-
         fill = pct * BAR_LENGTH
         static = BAR_LENGTH
 

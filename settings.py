@@ -131,6 +131,7 @@ WEAPONS['handgun'] = {'bullet_speed': 4000,
                       'wobble': {'sprint': 10, 'walk': 4, 'idle': 1},
                       'muzzle flash range': [25, 35],
                       'barrel offset': vec(50, 20),
+                      'default ammo': 5,
                       'bullet_count': 1}
 
 WEAPONS['rifle'] = {'bullet_speed': 4000,
@@ -145,6 +146,7 @@ WEAPONS['rifle'] = {'bullet_speed': 4000,
                     'wobble': {'sprint': 14, 'walk': 7, 'idle': 2},
                     'muzzle flash range': [35, 60],
                     'barrel offset': vec(72, 20),
+                    'default ammo': 4,
                     'bullet_count': 1}
 WEAPONS['shotgun'] = {'bullet_speed': 4000,
                       'bullet_lifetime': 1000,
@@ -158,6 +160,7 @@ WEAPONS['shotgun'] = {'bullet_speed': 4000,
                       'wobble': {'sprint': 15, 'walk': 8, 'idle': 2},
                       'muzzle flash range': [50, 70],
                       'barrel offset': vec(75, 20),
+                      'default ammo': 3,
                       'bullet_count': 11}
 WEAPONS['knife'] = {
     'damage': 50,

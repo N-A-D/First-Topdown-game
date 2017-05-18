@@ -162,13 +162,15 @@ class MeleeHitBox(pg.sprite.Sprite):
 
 
 class Item(pg.sprite.Sprite):
-    def __init__(self, game, pos, type):
+    def __init__(self, game, pos, *type):
         self.layer = ITEMS_LAYER
         self.groups = game.all_sprites, game.items
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
-        self.image = game.pickup_items[type]
+        self.image = game.pickup_items[type[0]]
         self.rect = self.image.get_rect()
         self.pos = pos
         self.rect.center = pos
+        self.variety = type[0]
+        self.item_type = type[1]
         self.hit_rect = pg.Rect(self.rect.x, self.rect.y, self.rect.width, self.rect.height)

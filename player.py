@@ -84,6 +84,7 @@ class Player(pg.sprite.Sprite):
         # The direction the player is facing
         self.direction = 'E'
 
+
     def decrease_stamina(self, decrease_rate):
         """
         Decreases the player's stamina
@@ -312,13 +313,25 @@ class Player(pg.sprite.Sprite):
                     self.canned_action = ''
                     self.current_frame = 0
 
-    def pick_up_ammo(self):
+    def pickup_item(self, item):
         """
-        Increase the amount of total ammunition the player has
+        Adds the item to the player's belongings
+        :param item: the item to add
         :return: 
         """
-        if self.weapon != 'knife':
-            self.arsenal[self.weapon]['reloads'] += 1
+        if item.item_type == 'weapon':
+            if item.variety == 'rifle':
+                self.arsenal['rifle']['hasWeapon'] = True
+                self.arsenal['rifle']['clip'] = WEAPONS['rifle']['clip size']
+                self.arsenal['rifle']['reloads'] = WEAPONS['rifle']['default ammo'] - 1
+            elif item.variety== 'shotgun':
+                self.arsenal['shotgun']['hasWeapon'] = True
+                self.arsenal['shotgun']['clip'] = WEAPONS['shotgun']['clip size']
+                self.arsenal['shotgun']['reloads'] = WEAPONS['shotgun']['default ammo'] - 1
+            elif item.variety == 'handgun':
+                self.arsenal['handgun']['hasWeapon'] = True
+                self.arsenal['handgun']['clip'] = WEAPONS['handgun']['clip size']
+                self.arsenal['handgun']['reloads'] = WEAPONS['handgun']['default ammo'] - 1
 
     def update_rotation(self):
         """
