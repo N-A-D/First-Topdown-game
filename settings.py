@@ -37,6 +37,18 @@ BAR_HEIGHT = 20
 
 # HUD element images
 CROSSHAIR = 'crosshair.png'
+CROSSHAIRS = ['simple_ch_1.png',
+              'simple_ch_2.png',
+              'simple_ch_2.png',
+              'simple_ch_4.png',
+              'simple_ch_5.png',
+              'simple_ch_6.png',
+              'simple_ch_7.png',
+              'simple_ch_8.png',
+              'simple_ch_9.png',
+              'simple_ch_10.png',
+              'simple_ch_11.png'
+              ]
 CLIP_IMG = 'clip_0001.png'
 
 # Bullet images
@@ -160,7 +172,11 @@ WEAPON_SOUNDS = {'handgun': ['pistol.wav'],
                  }
 
 # Item images
-ITEM_IMAGES = {}
+ITEM_IMAGES = {'rifle': 'rifle.png',
+               'handgun': 'glock.png',
+               'knife': 'knife.png',
+               'shotgun': 'shotgun.png'
+               }
 
 # Player Animations
 HANDGUN_ANIMATIONS = {}

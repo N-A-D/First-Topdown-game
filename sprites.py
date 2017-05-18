@@ -167,10 +167,8 @@ class Item(pg.sprite.Sprite):
         self.groups = game.all_sprites, game.items
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
-        self.image = game.item_images[type]
+        self.image = game.pickup_items[type]
         self.rect = self.image.get_rect()
         self.pos = pos
         self.rect.center = pos
-
-    def update(self):
-        pass
+        self.hit_rect = pg.Rect(self.rect.x, self.rect.y, self.rect.width, self.rect.height)
