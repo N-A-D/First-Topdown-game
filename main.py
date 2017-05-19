@@ -54,21 +54,14 @@ class Game:
                                      (48, 48)).convert_alpha()
             for crosshair in CROSSHAIRS]
         # todo - have a menu decide the player's crosshair
-        self.crosshair = choice(
-            self.crosshairs)  # pg.image.load(path.join(self.img_folder, 'crosshair.png')).convert_alpha()
+        self.crosshair = choice(self.crosshairs)
 
         # Item pickups
         self.pickup_items = {}
-        # for item in ITEM_IMAGES:
-        #     self.pickup_items[item] = []
-        #     self.pickup_items[item] = pg.transform.smoothscale(
-        #         pg.image.load(path.join(self.item_folder, ITEM_IMAGES[item])),
-        #         (103, 32)).convert_alpha()
+        for item in ITEM_IMAGES:
+            self.pickup_items[item] = []
+            self.pickup_items[item] = pg.image.load(path.join(self.item_folder, ITEM_IMAGES[item])).convert_alpha()
 
-        self.pickup_items['rifle'] = pg.transform.smoothscale(pg.image.load('img\\Items\\rifle.png').convert_alpha(), (103, 31))
-        self.pickup_items['handgun'] = pg.transform.smoothscale(pg.image.load('img\\Items\\glock.png').convert_alpha(), (32, 22))
-        self.pickup_items['knife'] = pg.transform.smoothscale(pg.image.load('img\\Items\\knife.png').convert_alpha(), (32, 22))
-        self.pickup_items['shotgun'] = pg.transform.smoothscale(pg.image.load('img\\Items\\shotgun.png').convert_alpha(), (103, 31))
         # Fonts
         self.hud_font = path.join(self.img_folder, 'Impacted2.0.ttf')
 
