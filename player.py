@@ -128,7 +128,7 @@ class Player(pg.sprite.Sprite):
                 spread = uniform(-WEAPONS[self.weapon]['spread'] - self.aim_wobble,
                                  WEAPONS[self.weapon]['spread'] + self.aim_wobble)
                 Bullet(self.game, pos, direction.rotate(spread), WEAPONS[self.weapon]['damage'])
-                snd = choice(self.game.weapon_sounds[self.weapon])
+                snd = self.game.weapon_sounds[self.weapon]['attack']
                 if snd.get_num_channels() > 2:
                     snd.stop()
                 snd.play()
@@ -222,9 +222,12 @@ class Player(pg.sprite.Sprite):
             elif keys[pg.K_3] and self.arsenal['handgun']['hasWeapon']:
                 self.current_frame = 0
                 self.weapon = 'handgun'
-            elif keys[pg.K_4]: # Player always has a knife
+            # Player always has a knife
+            elif keys[pg.K_4]:
                 self.current_frame = 0
                 self.weapon = 'knife'
+                snd = WEAPON_SOUNDS[self.weapon]['draw']
+                snd.play()
 
             # Handle mouse clicks
             lc, _, rc = pg.mouse.get_pressed()
@@ -320,6 +323,7 @@ class Player(pg.sprite.Sprite):
         """
         if item.item_type == 'weapon':
             if item.variety == 'rifle':
+                self.game.weapon_sounds['rifle']['pickup'].play()
                 self.arsenal['rifle']['hasWeapon'] = True
                 self.arsenal['rifle']['clip'] = WEAPONS['rifle']['clip size']
                 self.arsenal['rifle']['reloads'] = WEAPONS['rifle']['default ammo'] - 1

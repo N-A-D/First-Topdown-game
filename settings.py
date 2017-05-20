@@ -169,9 +169,10 @@ WEAPONS['knife'] = {
 }
 
 # Sounds
-WEAPON_SOUNDS = {'handgun': ['pistol.wav'],
-                 'shotgun': ['shotgun.wav'],
-                 'rifle': ['Futuristic SMG Single Shot.wav']#['Futuristic Assault Rifle Single Shot 02.wav']
+WEAPON_SOUNDS = {'handgun': {'attack': 'pistol.wav', 'pickup': 'gun_pickup.wav'},
+                 'shotgun': {'attack': 'shotgun.wav', 'pickup': 'gun_pickup.wav'},
+                 'rifle': {'attack': 'Futuristic SMG Single Shot.wav', 'pickup': 'gun_pickup.wav'},
+                 #'knife': {'draw': 'knifedraw.wav'}
                  }
 
 # Item images

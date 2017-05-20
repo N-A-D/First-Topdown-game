@@ -68,12 +68,13 @@ class Game:
         # Sound loading
         self.weapon_sounds = {}
         for weapon in WEAPON_SOUNDS:
-            self.weapon_sounds[weapon] = []
+            self.weapon_sounds[weapon] = {}
+            sound_list = {}
             for snd in WEAPON_SOUNDS[weapon]:
-                noise = pg.mixer.Sound(path.join(self.snd_folder, snd))
-                if weapon == 'rifle':
-                    noise.set_volume(2)
-                self.weapon_sounds[weapon].append(noise)
+                noise = pg.mixer.Sound(path.join(self.snd_folder, WEAPON_SOUNDS[weapon][snd]))
+                noise.set_volume(2)
+                sound_list[snd] = noise
+            self.weapon_sounds[weapon] = sound_list
 
         # Bullets
         self.bullet_images = {}

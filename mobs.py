@@ -32,7 +32,7 @@ class Mob(pg.sprite.Sprite):
         # image would be replicated onto the other enemies
         # even if they haven't been damaged
         self.original_image = choice(game.enemy_imgs).copy()
-        self.image = self.original_image
+        self.image = self.original_image.copy()
         self.rect = self.image.get_rect()
         self.rect.center = vec(x, y) * TILESIZE
 
