@@ -70,7 +70,7 @@ class Bullet(pg.sprite.Sprite):
     def update(self):
         """
         Update this bullet's internal state
-        :return: 
+        :return: None
         """
         self.pos += self.vel * self.game.dt
         self.hit_rect.center = self.pos
@@ -108,6 +108,10 @@ class MuzzleFlash(pg.sprite.Sprite):
         self.spawn_time = pg.time.get_ticks()
 
     def update(self):
+        """
+        Update this sprite's internal state
+        :return: None
+        """
         if pg.time.get_ticks() - self.spawn_time > FLASH_DURATION:
             self.kill()
 
@@ -155,6 +159,10 @@ class MeleeHitBox(pg.sprite.Sprite):
         self.spawn_time = pg.time.get_ticks()
 
     def update(self):
+        """
+        Update this sprite's internal state
+        :return: None
+        """
         now = pg.time.get_ticks()
         # Removes this hit box when the player concludes their melee animation
         if now - self.spawn_time > WEAPON_ANIMATION_TIMES[self.game.player.weapon]['melee'] / 10:
@@ -163,6 +171,12 @@ class MeleeHitBox(pg.sprite.Sprite):
 
 class Item(pg.sprite.Sprite):
     def __init__(self, game, pos, *type):
+        """
+        Initiliazes this Item object
+        :param game: the game 
+        :param pos: where on the level this item is located
+        :param type: A weapon, powerup, etc
+        """
         self.layer = ITEMS_LAYER
         self.groups = game.all_sprites, game.items
         pg.sprite.Sprite.__init__(self, self.groups)

@@ -22,25 +22,45 @@ class Map:
 
 class Camera:
     def __init__(self, width, height):
+        """
+        Creates a camera object 
+        :param width: The width of the cameras view
+        :param height: The height of the cameras view
+        """
         self.camera = pg.Rect(0, 0, width, height)
         self.width = width
         self.height = height
 
     def apply(self, entity):
+        """
+        Applies the camera's focus on the target entity
+        :param entity: The focus of the camera
+        :return: None
+        """
         # Applies the camera offset, i.e, 
         # moves this entity the camera's 
         # topleft corner
         return entity.rect.move(self.camera.topleft)
 
     def apply_rect(self, rect):
+        """
+        Applies the camera's focus on the target rectangle
+        :param rect: The focus of the camera
+        :return: None
+        """
         # Applies the camera offset to 
         # a rectangle
         return rect.move(self.camera.topleft)
 
     def update(self, target):
+        """
+        Updates the location of the camera relative to the target
+        :param target: The focus of the camera
+        :return: None
+        """
         # Get how much the target moved in the x & y 
-        # (WIDTH // 2) & (HEIGHT // 2) since the target
-        # is dead center in camera view
+        # Objects the pass by the target move in the opposite
+        # direction of the target
         x = -target.rect.centerx + (WIDTH // 2)
         y = -target.rect.centery + (HEIGHT // 2)
 

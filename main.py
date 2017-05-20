@@ -39,7 +39,7 @@ class Game:
     def load_data(self):
         """
         Loads the necessary assets for the game. 
-        :return: 
+        :return: None
         """
         # Game map
         self.map = Map(path.join(self.game_folder, 'map.txt'))
@@ -143,7 +143,7 @@ class Game:
     def new(self):
         """
         Creates a new game
-        :return: 
+        :return: None
         """
         self.all_sprites = pg.sprite.LayeredUpdates()
         self.walls = pg.sprite.Group()
@@ -168,7 +168,7 @@ class Game:
     def run(self):
         """
         Runs the game
-        :return: 
+        :return: None
         """
         self.playing = True
         while self.playing:
@@ -181,7 +181,7 @@ class Game:
     def update(self):
         """
         Updates game state
-        :return: 
+        :return: None
         """
         self.all_sprites.update()
         self.camera.update(self.player)
@@ -222,7 +222,7 @@ class Game:
     def events(self):
         """
         Game loop event handling
-        :return: 
+        :return: None
         """
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -236,7 +236,7 @@ class Game:
     def draw_grid(self):
         """
         Used for debugging
-        :return: 
+        :return: None
         """
         for x in range(0, WIDTH, TILESIZE):
             pg.draw.line(self.screen, LIGHTGREY, (x, 0), (x, HEIGHT))
@@ -246,7 +246,7 @@ class Game:
     def draw(self):
         """
         Draws the updated game state onto the screen
-        :return: 
+        :return: None
         """
         self.screen.fill(DARKGREY)
         x, y = pg.mouse.get_pos()
@@ -270,7 +270,7 @@ class Game:
     def update_hud(self):
         """
         Updates the HUD information for the player to see
-        :return: 
+        :return: None
         """
         self.draw_player_stats()
         self.draw_text(str(len(self.mobs)) + " zombies remain", self.hud_font, 30, WHITE, WIDTH // 2, 10)
@@ -280,7 +280,7 @@ class Game:
     def draw_player_stats(self):
         """
         Gives the player visual indication of their health & stamina
-        :return: 
+        :return: None
         """
         self.draw_player_health(self.screen, 10, 10, self.player.health / PLAYER_HEALTH)
         self.draw_text(str(self.player.health) + "%", self.hud_font, 15, (119, 136, 153),
@@ -299,7 +299,7 @@ class Game:
         :param bullets: How many bullets to draw
         :param bullet_length: How wide the bullet figure will be
         :param bullet_height: How tall the bullet figure will be
-        :return: 
+        :return: None
         """
         if self.player.weapon != 'knife':
             temp = x
@@ -333,7 +333,7 @@ class Game:
         :param x: x location
         :param y: y location
         :param pct: How much health is left in %
-        :return: 
+        :return: None
         """
         if pct < 0:
             pct = 0
@@ -355,7 +355,7 @@ class Game:
         :param x: x location
         :param y: y location
         :param pct: How much stamina is left in %
-        :return: 
+        :return: None
         """
         if pct < 0:
             pct = 0
@@ -372,15 +372,15 @@ class Game:
 
     def draw_text(self, text, font_name, size, color, x, y, align='nw'):
         """
-        
-        :param text: 
-        :param font_name: 
-        :param size: 
-        :param color: 
-        :param x: 
-        :param y: 
-        :param align: 
-        :return: 
+        Draws informative text.
+        :param text: The text to draw.
+        :param font_name: The font to use.
+        :param size: The size of the font.
+        :param color: The colour of the font.
+        :param x: The x-coordinate of the location
+        :param y: The y-coordinate of the location 
+        :param align: Compass location
+        :return: None
         """
         font = pg.font.Font(font_name, size)
         text_surface = font.render(text, True, color)

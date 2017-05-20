@@ -22,4 +22,4 @@ def resize(name, base_width=128):
     image = image.resize((base_width, h_size), PIL.Image.ANTIALIAS)
     image.save(name)
 
-resize('shotgun.png', 96)
+resize('health.png', 48)

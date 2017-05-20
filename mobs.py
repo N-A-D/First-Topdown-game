@@ -66,7 +66,7 @@ class Mob(pg.sprite.Sprite):
         Each mob will try to move away from each other
         so as to eliminate the issue where mob sprites
         would bunch up into one location
-        :return: 
+        :return: None
         """
         for mob in self.game.mobs:
             if mob != self:
@@ -77,15 +77,15 @@ class Mob(pg.sprite.Sprite):
     def hit(self):
         """
         Indicate that this mob has been hit
-        :return: 
+        :return: None
         """
         self.is_damaged = True
 
     def seek(self, target):
         """
-        Allows a mob to seek its target
+        Gives a mob the ability to seek its target
         :param target: 
-        :return: 
+        :return: None
         """
         self.desired = (target - self.pos)
         dist = self.desired.length()
@@ -100,6 +100,10 @@ class Mob(pg.sprite.Sprite):
         return steer
 
     def wander(self):
+        """
+        Gives a mob the ability to wander its environment
+        :return: None
+        """
         circle_pos = self.pos + self.vel.normalize() * WANDER_RING_DISTANCE
         target = circle_pos + vec(WANDER_RING_RADIUS, 0).rotate(uniform(0, 360))
         return self.seek(target)
@@ -108,7 +112,7 @@ class Mob(pg.sprite.Sprite):
     def update(self):
         """
         Update his mob's internal state
-        :return: 
+        :return: None
         """
         if self.health <= 0:
             self.kill()
@@ -131,17 +135,13 @@ class Mob(pg.sprite.Sprite):
             self.image = pg.transform.rotate(self.original_image, self.rot - 90)
             self.rect.center = self.pos
 
-    def update_direction(self):
-        pass
-
     def draw_health(self):
         """
         Each mob will have their health bars superimposed
         onto their sprite images so as to give the player
         visual indication that they've damaged this sprite
-        :return: 
+        :return: None
         """
-        color = None
         if self.health > 60:
             color = GREEN
         elif self.health > 30:

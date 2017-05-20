@@ -8,10 +8,30 @@ from os.path import isfile, join
 
 
 def collide_hit_rect(first, second):
+    """
+    Call back function which checks if two rectangles have collided with each other
+    :param first: the first rectangle
+    :param second: the second rectangle
+    :return: True if first collided with second. False otherwise
+    """
     return first.hit_rect.colliderect(second.rect)
 
 
 def collide_with_obstacles(sprite, group, direction):
+    """
+    Checks where the sprite has collided with an obstacle
+    
+    direction is needed to allow a sprite that collides 
+    horizontally to continue moving vertically if its movement
+    was in a diagonal. Same goes for blocked vertical movement
+    and continued horizontal movement.
+    :param sprite: The sprite to check
+    :param group: The group of obstacles to check
+    :param direction: For vertical or horizontal movement
+    :return: True if there is a collision. False otherwise
+    """
+
+
     collided = False
     if direction == 'x':
         collided = True

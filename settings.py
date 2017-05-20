@@ -172,14 +172,16 @@ WEAPONS['knife'] = {
 WEAPON_SOUNDS = {'handgun': {'attack': 'pistol.wav', 'pickup': 'gun_pickup.wav'},
                  'shotgun': {'attack': 'shotgun.wav', 'pickup': 'gun_pickup.wav'},
                  'rifle': {'attack': 'Futuristic SMG Single Shot.wav', 'pickup': 'gun_pickup.wav'},
-                 #'knife': {'draw': 'knifedraw.wav'}
+                 'knife': {'draw': 'knifedraw.wav'}
                  }
 
 # Item images
 ITEM_IMAGES = {'rifle': 'rifle.png',
                'handgun': 'glock.png',
                'knife': 'knife.png',
-               'shotgun': 'shotgun.png'
+               'shotgun': 'shotgun.png',
+               'ammo': 'Ammo.png',
+               'health': 'health.png'
                }
 
 # Player Animations

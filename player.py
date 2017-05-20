@@ -89,7 +89,7 @@ class Player(pg.sprite.Sprite):
         """
         Decreases the player's stamina
         :param decrease_rate: The amount to decrease the player's stamina by
-        :return: 
+        :return: None
         """
         now = pg.time.get_ticks()
         if now - self.stamina_decrease_time > 75:
@@ -102,7 +102,7 @@ class Player(pg.sprite.Sprite):
         """
         Increases the player's stamina
         :param increase_rate: The amount to increase the player's stamina by
-        :return: 
+        :return: None
         """
         if self.stamina < 100:
             now = pg.time.get_ticks()
@@ -115,7 +115,7 @@ class Player(pg.sprite.Sprite):
     def shoot(self):
         """
         Fires a bullet from the muzzle of the player's weapon
-        :return: 
+        :return: None
         """
         now = pg.time.get_ticks()
         if now - self.last_shot > WEAPONS[self.weapon]['rate']:
@@ -151,7 +151,7 @@ class Player(pg.sprite.Sprite):
     def handle_input(self):
         """
         Interprets player input into character actions
-        :return: 
+        :return: None
         """
         self.rot = 0
         self.vel = vec(0, 0)
@@ -213,21 +213,20 @@ class Player(pg.sprite.Sprite):
 
         if not self.play_static_animation:
             # Handle weapon selection
-            if keys[pg.K_1] and self.arsenal['rifle']['hasWeapon']:
+            if keys[pg.K_1] and self.arsenal['rifle']['hasWeapon'] and not self.weapon == 'rifle':
                 self.current_frame = 0
                 self.weapon = 'rifle'
-            elif keys[pg.K_2] and self.arsenal['shotgun']['hasWeapon']:
+            elif keys[pg.K_2] and self.arsenal['shotgun']['hasWeapon']and not self.weapon == 'shotgun':
                 self.current_frame = 0
                 self.weapon = 'shotgun'
-            elif keys[pg.K_3] and self.arsenal['handgun']['hasWeapon']:
+            elif keys[pg.K_3] and self.arsenal['handgun']['hasWeapon']and not self.weapon == 'handgun':
                 self.current_frame = 0
                 self.weapon = 'handgun'
             # Player always has a knife
-            elif keys[pg.K_4]:
+            elif keys[pg.K_4] and not self.weapon == 'knife':
                 self.current_frame = 0
                 self.weapon = 'knife'
-                snd = WEAPON_SOUNDS[self.weapon]['draw']
-                snd.play()
+                self.game.weapon_sounds[self.weapon]['draw'].play()
 
             # Handle mouse clicks
             lc, _, rc = pg.mouse.get_pressed()
@@ -287,7 +286,7 @@ class Player(pg.sprite.Sprite):
     def animate(self):
         """
         Switches the player's current animation frame to the next
-        :return: 
+        :return: None
         """
         now = pg.time.get_ticks()
         # if the player is not swinging their weapon or reloading
@@ -319,7 +318,7 @@ class Player(pg.sprite.Sprite):
         """
         Adds the item to the player's belongings
         :param item: the item to add
-        :return: 
+        :return: None
         """
         if item.item_type == 'weapon':
             if item.variety == 'rifle':
@@ -342,7 +341,7 @@ class Player(pg.sprite.Sprite):
         """
         Finds the angle to rotate the player sprite by
         according to the mouse's location
-        :return: 
+        :return: None
         """
         mouse_vec = vec(pg.mouse.get_pos())
         # Mouse location is relative to the top left 
@@ -368,8 +367,7 @@ class Player(pg.sprite.Sprite):
          SW: (-157.5, -112.5)
          S: (-112.5, -67.5)
          SE: (-67.5, -22.5)
-         
-        :return: 
+        :return: None
         """
         if -22.5 < self.rot <= 22.5:
             self.direction = 'E'
@@ -391,7 +389,7 @@ class Player(pg.sprite.Sprite):
     def update(self):
         """
         Updates the player's internal state
-        :return: 
+        :return: None
         """
         self.handle_input()
         self.animate()
