@@ -49,17 +49,14 @@ class Mob(pg.sprite.Sprite):
         self.rot = 0
 
         self.speed = choice(ENEMY_SPEEDS)
+        self.target = game.player
         self.health = choice(ENEMY_HEALTH)
-        self.is_damaged = False
-        self.damage = choice(ENEMY_DAMAGE)
+        self.damaged = False
 
         # How fast this mob is able to track
         # the player
         self.seek_force = choice(SEEK_FORCE)
         self.desired = vec(0, 0)
-        self.target = game.player
-        # How often this mob will change targets while wondering
-        self.last_target_time = 0
 
     def avoid_mobs(self):
         """
@@ -71,7 +68,7 @@ class Mob(pg.sprite.Sprite):
         for mob in self.game.mobs:
             if mob != self:
                 dist = self.pos - mob.pos
-                if 0 < dist.length() < AVOID_RADIUS:
+                if 0 < dist.length_squared() < AVOID_RADIUS ** 2:
                     self.acc += dist.normalize()
 
     def hit(self):
@@ -79,21 +76,17 @@ class Mob(pg.sprite.Sprite):
         Indicate that this mob has been hit
         :return: 
         """
-        self.is_damaged = True
+        self.damaged = True
 
     def seek(self, target):
-        """
-        Allows a mob to seek its target
-        :param target: 
-        :return: 
-        """
-        self.desired = (target - self.pos)
-        dist = self.desired.length()
+        self.desired = target - self.pos
+        # dist = self.desired.length()
         self.desired.normalize_ip()
-        if dist < APPROACH_RADIUS:
-            self.desired *= dist / APPROACH_RADIUS * self.speed
-        else:
-            self.desired *= self.speed
+        # if dist < DETECT_RADIUS:
+        #     self.desired *= dist / DETECT_RADIUS * self.speed
+        # else:
+        #     self.desired *= self.speed
+        self.desired *= self.speed
         steer = (self.desired - self.vel)
         if steer.length() > self.seek_force:
             steer.scale_to_length(self.seek_force)
@@ -104,32 +97,32 @@ class Mob(pg.sprite.Sprite):
         target = circle_pos + vec(WANDER_RING_RADIUS, 0).rotate(uniform(0, 360))
         return self.seek(target)
 
-
     def update(self):
         """
         Update his mob's internal state
         :return: 
         """
+        target_dist = self.target.pos - self.pos
+        # if (target_dist.length_squared() < DETECT_RADIUS ** 2 or self.damaged) and target_dist.length_squared() > 0:
+        self.rot = (target_dist).angle_to(vec(1, 0))
+        self.acc = vec(1, 0).rotate(-self.rot)
+        self.avoid_mobs()
+        try:
+            self.acc.scale_to_length(self.speed)
+        except:
+            pass
+        self.acc += self.vel * -1
+        self.vel += self.acc * self.game.dt
+        self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
+        self.hit_rect.centerx = self.pos.x
+        collide_with_obstacles(self, self.game.walls, 'x')
+        self.hit_rect.centery = self.pos.y
+        collide_with_obstacles(self, self.game.walls, 'y')
+        self.rect.center = self.hit_rect.center
+        self.image = pg.transform.rotozoom(self.original_image, self.rot - 90, 1)
+        self.rect.center = self.pos
         if self.health <= 0:
             self.kill()
-        target_dist = self.target.pos - self.pos
-        if target_dist.length_squared() < DETECT_RADIUS ** 2:
-            seek_force = self.seek(self.target.pos)
-            self.acc = vec(1, 0).rotate(-self.rot)
-            self.avoid_mobs()
-            self.acc.scale_to_length(self.speed)
-            self.acc += self.vel * -1
-            self.vel += self.acc * self.game.dt
-            self.vel += seek_force
-            self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
-            self.hit_rect.centerx = self.pos.x
-            collide_with_obstacles(self, self.game.walls, 'x')
-            self.hit_rect.centery = self.pos.y
-            collide_with_obstacles(self, self.game.walls, 'y')
-            self.rect.center = self.hit_rect.center
-            self.rot = target_dist.angle_to(vec(1, 0))
-            self.image = pg.transform.rotate(self.original_image, self.rot - 90)
-            self.rect.center = self.pos
 
     def update_direction(self):
         pass

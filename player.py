@@ -2,6 +2,7 @@
 @author: Ned Austin Datiles
 '''
 import pygame as pg
+from math import inf
 from core_functions import collide_with_obstacles
 from settings import *
 from random import uniform, choice
@@ -43,11 +44,11 @@ class Player(pg.sprite.Sprite):
         self.action = self.game.default_player_action
 
         # Houses the player's arsenal characteristics
-        self.arsenal = {'handgun': {'clip': 0, 'reloads': 0, 'hasWeapon': False},
-                        'rifle': {'clip': 0, 'reloads': 0, 'hasWeapon': False},
-                        'shotgun': {'clip': 0, 'reloads': 0, 'hasWeapon': False},
-                        'knife': {'hasWeapon': True}
-                        }
+        self.arsenal = {'handgun': {'clip': 12, 'reloads': inf, 'hasWeapon': True},
+                          'rifle': {'clip': 30, 'reloads': 4, 'hasWeapon': False},
+                          'shotgun': {'clip': 8, 'reloads': 3, 'hasWeapon': True},
+                          'knife': {'hasWeapon': True}
+                          }
 
         # Current player animation & frame
         self.animations = self.game.player_animations[self.weapon][self.action]
@@ -83,7 +84,6 @@ class Player(pg.sprite.Sprite):
 
         # The direction the player is facing
         self.direction = 'E'
-
 
     def decrease_stamina(self, decrease_rate):
         """
@@ -121,7 +121,7 @@ class Player(pg.sprite.Sprite):
         if now - self.last_shot > WEAPONS[self.weapon]['rate']:
             self.last_shot = now
             direction = vec(1, 0).rotate(-self.rot)
-            pos = self.pos + WEAPONS[self.weapon]['barrel offset'].rotate(-self.rot)
+            pos = self.pos + BARREL_OFFSETS[self.weapon].rotate(-self.rot)
             self.vel = vec(-WEAPONS[self.weapon]['kickback'], 0).rotate(-self.rot)
 
             for _ in range(WEAPONS[self.weapon]['bullet_count']):
@@ -148,7 +148,7 @@ class Player(pg.sprite.Sprite):
         self.current_frame = 0
         self.play_static_animation = True
 
-    def handle_input(self):
+    def handle_controls(self):
         """
         Interprets player input into character actions
         :return: 
@@ -172,57 +172,57 @@ class Player(pg.sprite.Sprite):
             if keys[pg.K_a]:
                 self.vel.x = -PLAYER_SPEED * 2
                 self.action = 'move'
-                self.aim_wobble = WEAPONS[self.weapon]['wobble']['sprint']
-                self.decrease_stamina(WEAPONS[self.weapon]['weight'] / 2)
+                self.aim_wobble = 15
+                self.decrease_stamina(WEAPONS[self.weapon]['weight'] * .65)
             if keys[pg.K_d]:
                 self.vel.x = PLAYER_SPEED * 2
                 self.action = 'move'
-                self.aim_wobble = WEAPONS[self.weapon]['wobble']['sprint']
-                self.decrease_stamina(WEAPONS[self.weapon]['weight'] / 2)
+                self.aim_wobble = 15
+                self.decrease_stamina(WEAPONS[self.weapon]['weight'] * .65)
             if keys[pg.K_w]:
                 self.vel.y = -PLAYER_SPEED * 2
                 self.action = 'move'
-                self.aim_wobble = WEAPONS[self.weapon]['wobble']['sprint']
-                self.decrease_stamina(WEAPONS[self.weapon]['weight'] / 2)
+                self.aim_wobble = 15
+                self.decrease_stamina(WEAPONS[self.weapon]['weight'] * .65)
             if keys[pg.K_s]:
                 self.vel.y = PLAYER_SPEED * 2
                 self.action = 'move'
-                self.aim_wobble = WEAPONS[self.weapon]['wobble']['sprint']
-                self.decrease_stamina(WEAPONS[self.weapon]['weight'] / 2)
+                self.aim_wobble = 15
+                self.decrease_stamina(WEAPONS[self.weapon]['weight'] * .65)
         else:
             if keys[pg.K_a]:
                 self.vel.x = -PLAYER_SPEED * 1
                 self.action = 'move'
-                self.aim_wobble = WEAPONS[self.weapon]['wobble']['walk']
-                self.increase_stamina(1 / WEAPONS[self.weapon]['weight'])
+                self.aim_wobble = 5
+                self.increase_stamina(WEAPONS[self.weapon]['weight'] * .05)
             if keys[pg.K_d]:
                 self.vel.x = PLAYER_SPEED * 1
                 self.action = 'move'
-                self.aim_wobble = WEAPONS[self.weapon]['wobble']['walk']
-                self.increase_stamina(1 / WEAPONS[self.weapon]['weight'])
+                self.aim_wobble = 5
+                self.increase_stamina(WEAPONS[self.weapon]['weight'] * .05)
             if keys[pg.K_w]:
                 self.vel.y = -PLAYER_SPEED * 1
                 self.action = 'move'
-                self.aim_wobble = WEAPONS[self.weapon]['wobble']['walk']
-                self.increase_stamina(1 / WEAPONS[self.weapon]['weight'])
+                self.aim_wobble = 5
+                self.increase_stamina(WEAPONS[self.weapon]['weight'] * .05)
             if keys[pg.K_s]:
                 self.vel.y = PLAYER_SPEED * 1
                 self.action = 'move'
-                self.aim_wobble = WEAPONS[self.weapon]['wobble']['walk']
-                self.increase_stamina(1 / WEAPONS[self.weapon]['weight'])
+                self.aim_wobble = 5
+                self.increase_stamina(WEAPONS[self.weapon]['weight'] * .05)
 
         if not self.play_static_animation:
             # Handle weapon selection
-            if keys[pg.K_1] and self.arsenal['rifle']['hasWeapon']:
+            if keys[pg.K_1]:
                 self.current_frame = 0
                 self.weapon = 'rifle'
-            elif keys[pg.K_2] and self.arsenal['shotgun']['hasWeapon']:
+            elif keys[pg.K_2]:
                 self.current_frame = 0
                 self.weapon = 'shotgun'
-            elif keys[pg.K_3] and self.arsenal['handgun']['hasWeapon']:
+            elif keys[pg.K_3]:
                 self.current_frame = 0
                 self.weapon = 'handgun'
-            elif keys[pg.K_4]: # Player always has a knife
+            elif keys[pg.K_4]:
                 self.current_frame = 0
                 self.weapon = 'knife'
 
@@ -279,8 +279,8 @@ class Player(pg.sprite.Sprite):
             self.vel *= 0.7071
 
         if self.action == 'idle':
-            self.aim_wobble = WEAPONS[self.weapon]['wobble']['idle']
-            self.increase_stamina(1 / WEAPONS[self.weapon]['weight'])
+            self.aim_wobble = 0
+            self.increase_stamina(.1 * WEAPONS[self.weapon]['weight'])
 
     def animate(self):
         """
@@ -313,27 +313,13 @@ class Player(pg.sprite.Sprite):
                     self.canned_action = ''
                     self.current_frame = 0
 
-    def pickup_item(self, item):
+    def pick_up_ammo(self):
         """
-        Adds the item to the player's belongings
-        :param item: the item to add
+        Increase the amount of total ammunition the player has
         :return: 
         """
-        if item.item_type == 'weapon':
-            if item.variety == 'rifle':
-                self.arsenal['rifle']['hasWeapon'] = True
-                self.arsenal['rifle']['clip'] = WEAPONS['rifle']['clip size']
-                self.arsenal['rifle']['reloads'] = WEAPONS['rifle']['default ammo'] - 1
-            elif item.variety== 'shotgun':
-                self.arsenal['shotgun']['hasWeapon'] = True
-                self.arsenal['shotgun']['clip'] = WEAPONS['shotgun']['clip size']
-                self.arsenal['shotgun']['reloads'] = WEAPONS['shotgun']['default ammo'] - 1
-            elif item.variety == 'handgun':
-                self.arsenal['handgun']['hasWeapon'] = True
-                self.arsenal['handgun']['clip'] = WEAPONS['handgun']['clip size']
-                self.arsenal['handgun']['reloads'] = WEAPONS['handgun']['default ammo'] - 1
-        else:
-            pass
+        if self.weapon != 'knife':
+            self.arsenal[self.weapon]['reloads'] += 1
 
     def update_rotation(self):
         """
@@ -343,19 +329,19 @@ class Player(pg.sprite.Sprite):
         """
         mouse_vec = vec(pg.mouse.get_pos())
         # Mouse location is relative to the top left 
-        # corner of the window. This method modifies
-        # the mouse's location so that its relative
-        # to the top-left of the camera
+        # corner of the window. Updates it so that'll
+        # its relative to the top-left of the camera
         mouse_vec.x -= self.game.camera.camera.x
         mouse_vec.y -= self.game.camera.camera.y
         target_dist = mouse_vec - self.pos
-        self.rot = target_dist.angle_to(vec(1, 0)) + 2
+        self.rot = target_dist.angle_to(vec(1, 0)) + 3
         self.update_direction()
 
     def update_direction(self):
         """
          Finds the compass direction from the player's
          current rotation. 
+         
          Directions are given as a range
          E: (-22.5, 22.5)
          NE: (22.5, 67.5)
@@ -390,7 +376,7 @@ class Player(pg.sprite.Sprite):
         Updates the player's internal state
         :return: 
         """
-        self.handle_input()
+        self.handle_controls()
         self.animate()
         self.rect.center = self.pos
         self.pos += self.vel * self.game.dt

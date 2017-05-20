@@ -12,9 +12,7 @@ def collide_hit_rect(first, second):
 
 
 def collide_with_obstacles(sprite, group, direction):
-    collided = False
     if direction == 'x':
-        collided = True
         hits = pg.sprite.spritecollide(sprite, group, False, collide_hit_rect)
         if hits:
             # If the sprite is moving right, stop it and
@@ -30,7 +28,6 @@ def collide_with_obstacles(sprite, group, direction):
             # Update the sprite's center to the new position
             sprite.hit_rect.centerx = sprite.pos.x
     if direction == 'y':
-        collided = True
         hits = pg.sprite.spritecollide(sprite, group, False, collide_hit_rect)
         if hits:
             # If the sprite is moving upwards, then
@@ -44,7 +41,6 @@ def collide_with_obstacles(sprite, group, direction):
             # Completely stop the sprite
             sprite.vel.y = 0
             sprite.hit_rect.centery = sprite.pos.y
-    return collided
 
 
 def get_image_names(path):

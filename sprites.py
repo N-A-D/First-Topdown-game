@@ -12,7 +12,6 @@ class Obstacle(pg.sprite.Sprite):
     """
     This class represents obstacles in the game
     """
-
     def __init__(self, game, x, y, width, height):
         """
         Obstacle initialization
@@ -39,7 +38,6 @@ class Bullet(pg.sprite.Sprite):
     """
     This class represents bullets in the game
     """
-
     def __init__(self, game, pos, dir, damage):
         """
         Bullet initialization
@@ -87,7 +85,6 @@ class MuzzleFlash(pg.sprite.Sprite):
     This class represents muzzle flashes that come from
     Shooting guns in the game
     """
-
     def __init__(self, game, pos):
         """
         Muzzle flash initialization
@@ -98,8 +95,7 @@ class MuzzleFlash(pg.sprite.Sprite):
         self.groups = game.all_sprites
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
-        size = randint(WEAPONS[game.player.weapon]['muzzle flash range'][0],
-                       WEAPONS[game.player.weapon]['muzzle flash range'][1])
+        size = randint(20, 50)
         self.image = pg.transform.scale(choice(game.gun_flashes), (size, size))
         self.rect = self.image.get_rect()
         self.pos = pos
@@ -120,7 +116,6 @@ class MeleeHitBox(pg.sprite.Sprite):
     that the player is facing. When mobs collide with this rectangle, they
     will get pushed back. 
     """
-
     def __init__(self, game, pos, direction, action):
         """
         MeleeHitBox initialization
@@ -159,18 +154,3 @@ class MeleeHitBox(pg.sprite.Sprite):
         # Removes this hit box when the player concludes their melee animation
         if now - self.spawn_time > WEAPON_ANIMATION_TIMES[self.game.player.weapon][self.action] // 4:
             self.kill()
-
-
-class Item(pg.sprite.Sprite):
-    def __init__(self, game, pos, *type):
-        self.layer = ITEMS_LAYER
-        self.groups = game.all_sprites, game.items
-        pg.sprite.Sprite.__init__(self, self.groups)
-        self.game = game
-        self.image = game.pickup_items[type[0]]
-        self.rect = self.image.get_rect()
-        self.pos = pos
-        self.rect.center = pos
-        self.variety = type[0]
-        self.item_type = type[1]
-        self.hit_rect = pg.Rect(self.rect.x, self.rect.y, self.rect.width, self.rect.height)

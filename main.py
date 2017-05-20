@@ -8,10 +8,9 @@ from random import random, choice
 from player import Player
 from mobs import Mob
 from tilemap import Map, Camera
-from sprites import Obstacle, Item
+from sprites import Obstacle
 from core_functions import collide_hit_rect
 
-vec = pg.math.Vector2
 
 class Game:
     def __init__(self):
@@ -27,8 +26,6 @@ class Game:
         self.game_folder = path.dirname(__file__)
         self.img_folder = path.join(self.game_folder, 'img')
         self.snd_folder = path.join(self.game_folder, 'snd')
-        self.crosshair_folder = path.join(self.img_folder, 'Crosshairs')
-        self.item_folder = path.join(self.img_folder, 'Items')
 
         self.load_data()
         self.running = True
@@ -46,21 +43,10 @@ class Game:
 
         # HUD Elements
         self.mag_img = pg.transform.smoothscale(pg.image.load(path.join(self.img_folder, CLIP_IMG)),
-                                                (40, 40)).convert_alpha()
+                                                (32, 32)).convert_alpha()
 
-        # Crosshairs
-        self.crosshairs = [
-            pg.transform.smoothscale(pg.image.load(path.join(self.crosshair_folder, crosshair)),
-                                     (48, 48)).convert_alpha()
-            for crosshair in CROSSHAIRS]
-        # todo - have a menu decide the player's crosshair
-        self.crosshair = choice(self.crosshairs)
-
-        # Item pickups
-        self.pickup_items = {}
-        for item in ITEM_IMAGES:
-            self.pickup_items[item] = []
-            self.pickup_items[item] = pg.image.load(path.join(self.item_folder, ITEM_IMAGES[item])).convert_alpha()
+        # Crosshair
+        self.crosshair = pg.image.load(path.join(self.img_folder, 'crosshair.png')).convert_alpha()
 
         # Fonts
         self.hud_font = path.join(self.img_folder, 'Impacted2.0.ttf')
@@ -149,7 +135,6 @@ class Game:
         self.bullets = pg.sprite.Group()
         self.mobs = pg.sprite.Group()
         self.melee_box = pg.sprite.GroupSingle()
-        self.items = pg.sprite.Group()
 
         for row, tiles in enumerate(self.map.data):
             for col, tile in enumerate(tiles):
@@ -159,8 +144,6 @@ class Game:
                     self.player = Player(self, col, row)
                 if tile == 'E':
                     Mob(self, col, row)
-                if tile == 'I':
-                    Item(self, vec(col * TILESIZE, row * TILESIZE), 'rifle', 'weapon')
         self.camera = Camera(self.map.width, self.map.height)
         g.run()
 
@@ -189,13 +172,16 @@ class Game:
         # Enemy hits player
         hits = pg.sprite.spritecollide(self.player, self.mobs, False, collide_hit_rect)
         for hit in hits:
-            # butt stroking cancels out any attack by an enemy
+            # if random() < 0.7:
+            #     choice(self.player_hit_sounds).play()
+            # Barrel stuffing cancels out any attack by an enemy
+
             hit_melee_box = pg.sprite.spritecollide(hit, self.melee_box, True)
             if hit_melee_box:
                 hit.vel = vec(2 * PLAYER_MELEE_STUMBLE, 0).rotate(-self.player.rot)
                 hit.health -= WEAPONS[self.player.weapon]['damage']
             else:
-                self.player.health -= hit.damage
+                # self.player.health -= ENEMY_DAMAGE
                 hit.vel = vec(0, 0)
                 if self.player.health <= 0:
                     self.playing = False
@@ -209,14 +195,7 @@ class Game:
             mob.hit()
             for bullet in hits[mob]:
                 mob.health -= bullet.damage
-            mob.vel = vec(WEAPONS[self.player.weapon]['damage'], 0).rotate(-self.player.rot)
-
-        # Item collisions
-        hits = pg.sprite.spritecollide(self.player, self.items, True, collide_hit_rect)
-        for hit in hits:
-            if hit.item_type == 'weapon':
-                self.player.pickup_item(hit)
-
+            mob.vel = vec(0, 0)
 
     def events(self):
         """
@@ -229,6 +208,8 @@ class Game:
                     self.playing = False
                 self.running = False
             if event.type == pg.KEYDOWN:
+                if event.key == pg.K_COMMA:
+                    self.player.pick_up_ammo()
                 if event.key == pg.K_b:
                     self.debug = not self.debug
 
@@ -310,11 +291,9 @@ class Game:
                 pg.draw.rect(surface, LIGHTGREY, bullet_outline)
                 temp += 2 * bullet_length
 
-            self.screen.blit(self.mag_img, (temp, y - 10))
-            self.draw_text('x', self.hud_font, 15, WHITE,
-                           temp + 32, y)
-            self.draw_text(str(self.player.arsenal[self.player.weapon]['reloads']), self.hud_font, 20, WHITE,
-                           temp + 40, y - 5)
+            self.screen.blit(self.mag_img, (temp + 16, y - 5))
+            self.draw_text('x' + str(self.player.arsenal[self.player.weapon]['reloads']), self.hud_font, 20, WHITE,
+                           temp + 48, y - 5)
             temp = x
 
             # Draws the bullets the actually remain in the clip as gold figures.
@@ -336,6 +315,7 @@ class Game:
         """
         if pct < 0:
             pct = 0
+
         fill = pct * BAR_LENGTH
         static = BAR_LENGTH
 
