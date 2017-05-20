@@ -148,7 +148,7 @@ class Player(pg.sprite.Sprite):
         self.current_frame = 0
         self.play_static_animation = True
 
-    def handle_controls(self):
+    def handle_input(self):
         """
         Interprets player input into character actions
         :return: 
@@ -332,6 +332,8 @@ class Player(pg.sprite.Sprite):
                 self.arsenal['handgun']['hasWeapon'] = True
                 self.arsenal['handgun']['clip'] = WEAPONS['handgun']['clip size']
                 self.arsenal['handgun']['reloads'] = WEAPONS['handgun']['default ammo'] - 1
+        else:
+            pass
 
     def update_rotation(self):
         """
@@ -341,8 +343,9 @@ class Player(pg.sprite.Sprite):
         """
         mouse_vec = vec(pg.mouse.get_pos())
         # Mouse location is relative to the top left 
-        # corner of the window. Updates it so that'll
-        # its relative to the top-left of the camera
+        # corner of the window. This method modifies
+        # the mouse's location so that its relative
+        # to the top-left of the camera
         mouse_vec.x -= self.game.camera.camera.x
         mouse_vec.y -= self.game.camera.camera.y
         target_dist = mouse_vec - self.pos
@@ -353,7 +356,6 @@ class Player(pg.sprite.Sprite):
         """
          Finds the compass direction from the player's
          current rotation. 
-         
          Directions are given as a range
          E: (-22.5, 22.5)
          NE: (22.5, 67.5)
@@ -388,7 +390,7 @@ class Player(pg.sprite.Sprite):
         Updates the player's internal state
         :return: 
         """
-        self.handle_controls()
+        self.handle_input()
         self.animate()
         self.rect.center = self.pos
         self.pos += self.vel * self.game.dt
