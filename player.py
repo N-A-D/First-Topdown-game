@@ -326,7 +326,7 @@ class Player(pg.sprite.Sprite):
                 self.arsenal['rifle']['hasWeapon'] = True
                 self.arsenal['rifle']['clip'] = WEAPONS['rifle']['clip size']
                 self.arsenal['rifle']['reloads'] = WEAPONS['rifle']['default ammo'] - 1
-            elif item.variety== 'shotgun':
+            elif item.variety == 'shotgun':
                 self.arsenal['shotgun']['hasWeapon'] = True
                 self.arsenal['shotgun']['clip'] = WEAPONS['shotgun']['clip size']
                 self.arsenal['shotgun']['reloads'] = WEAPONS['shotgun']['default ammo'] - 1
