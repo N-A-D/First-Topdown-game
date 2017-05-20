@@ -51,7 +51,7 @@ class Game:
         # Crosshairs
         self.crosshairs = [
             pg.transform.smoothscale(pg.image.load(path.join(self.crosshair_folder, crosshair)),
-                                     (48, 48)).convert_alpha()
+                                     (32, 32)).convert_alpha()
             for crosshair in CROSSHAIRS]
         # todo - have a menu decide the player's crosshair
         self.crosshair = choice(self.crosshairs)
@@ -72,7 +72,7 @@ class Game:
             for snd in WEAPON_SOUNDS[weapon]:
                 noise = pg.mixer.Sound(path.join(self.snd_folder, snd))
                 if weapon == 'rifle':
-                    noise.set_volume(1.5)
+                    noise.set_volume(2)
                 self.weapon_sounds[weapon].append(noise)
 
         # Bullets
