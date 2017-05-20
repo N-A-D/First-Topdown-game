@@ -247,32 +247,31 @@ class Player(pg.sprite.Sprite):
                 # Find the area where the player is
                 # swinging their weapon and create
                 # a hit box to collide with any
-                # enemy in the vicinity of the just
-                # created hit box.
+                # enemy in the vicinity
                 if self.direction == 'E':
                     self.game.melee_box.add(
-                        MeleeHitBox(self.game, self.hit_rect.midright, self.direction, self.canned_action))
+                        MeleeHitBox(self.game, self.hit_rect.center, self.direction, self.canned_action))
                 elif self.direction == 'NE':
                     self.game.melee_box.add(
-                        MeleeHitBox(self.game, self.hit_rect.topright, self.direction, self.canned_action))
+                        MeleeHitBox(self.game, self.hit_rect.center, self.direction, self.canned_action))
                 elif self.direction == 'N':
                     self.game.melee_box.add(
-                        MeleeHitBox(self.game, self.hit_rect.midtop, self.direction, self.canned_action))
+                        MeleeHitBox(self.game, self.hit_rect.center, self.direction, self.canned_action))
                 elif self.direction == 'NW':
                     self.game.melee_box.add(
-                        MeleeHitBox(self.game, self.hit_rect.topleft, self.direction, self.canned_action))
+                        MeleeHitBox(self.game, self.hit_rect.center, self.direction, self.canned_action))
                 elif self.direction == 'W':
                     self.game.melee_box.add(
-                        MeleeHitBox(self.game, self.hit_rect.midleft, self.direction, self.canned_action))
+                        MeleeHitBox(self.game, self.hit_rect.center, self.direction, self.canned_action))
                 elif self.direction == 'SW':
                     self.game.melee_box.add(
-                        MeleeHitBox(self.game, self.hit_rect.bottomleft, self.direction, self.canned_action))
+                        MeleeHitBox(self.game, self.hit_rect.center, self.direction, self.canned_action))
                 elif self.direction == 'S':
                     self.game.melee_box.add(
-                        MeleeHitBox(self.game, self.hit_rect.midbottom, self.direction, self.canned_action))
+                        MeleeHitBox(self.game, self.hit_rect.center, self.direction, self.canned_action))
                 elif self.direction == 'SE':
                     self.game.melee_box.add(
-                        MeleeHitBox(self.game, self.hit_rect.bottomright, self.direction, self.canned_action))
+                        MeleeHitBox(self.game, self.hit_rect.center, self.direction, self.canned_action))
 
         # Accommodates for diagonal movement being slightly faster than pure horizontal or vertical movement
         if self.vel.x != 0 and self.vel.y != 0:

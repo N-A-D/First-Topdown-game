@@ -28,7 +28,7 @@ class Obstacle(pg.sprite.Sprite):
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
         self.image = pg.Surface((width, height))
-        self.image.fill(SANDYBROWN)
+        self.image.fill(LIGHTGREY)
         self.rect = self.image.get_rect()
         self.rect.x = x * width
         self.rect.y = y * height
@@ -157,7 +157,7 @@ class MeleeHitBox(pg.sprite.Sprite):
     def update(self):
         now = pg.time.get_ticks()
         # Removes this hit box when the player concludes their melee animation
-        if now - self.spawn_time > WEAPON_ANIMATION_TIMES[self.game.player.weapon][self.action] // 4:
+        if now - self.spawn_time > WEAPON_ANIMATION_TIMES[self.game.player.weapon]['melee'] / 10:
             self.kill()
 
 

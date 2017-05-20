@@ -136,9 +136,9 @@ WEAPONS['handgun'] = {'bullet_speed': 4000,
 
 WEAPONS['rifle'] = {'bullet_speed': 4000,
                     'bullet_lifetime': 10000,
-                    'rate': 110,
+                    'rate': 100,
                     'kickback': 100,
-                    'spread': .5,
+                    'spread': 5,
                     'damage': 90,
                     'bullet_size': 'lg',
                     'clip size': 30,
@@ -152,7 +152,7 @@ WEAPONS['shotgun'] = {'bullet_speed': 4000,
                       'bullet_lifetime': 1000,
                       'rate': 500,
                       'kickback': 660,
-                      'spread': 10,
+                      'spread': 12,
                       'damage': 60,
                       'bullet_size': 'sm',
                       'clip size': 8,
@@ -171,7 +171,7 @@ WEAPONS['knife'] = {
 # Sounds
 WEAPON_SOUNDS = {'handgun': ['pistol.wav'],
                  'shotgun': ['shotgun.wav'],
-                 'rifle': ['Futuristic Assault Rifle Single Shot 02.wav']
+                 'rifle': ['Futuristic SMG Single Shot.wav']#['Futuristic Assault Rifle Single Shot 02.wav']
                  }
 
 # Item images
