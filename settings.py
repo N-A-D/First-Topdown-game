@@ -49,12 +49,12 @@ CROSSHAIRS = ['simple_ch_1.png',
               'simple_ch_10.png',
               'simple_ch_11.png'
               ]
-CLIP_IMG = 'clip_0001.png'
+CLIP_IMG = 'UI/clip_0001.png'
 
 # Bullet images
-RIFLE_BULLET_IMG = 'rifle_bullet.png'
-SHOTGUN_BULLET_IMG = 'shotgun_bullet.png'
-HANDGUN_BULLET_IMG = 'handgun_bullet.png'
+RIFLE_BULLET_IMG = 'Bullets/rifle_bullet.png'
+SHOTGUN_BULLET_IMG = 'Bullets/shotgun_bullet.png'
+HANDGUN_BULLET_IMG = 'Bullets/handgun_bullet.png'
 
 # Layers
 WALL_LAYER = 1

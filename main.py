@@ -63,7 +63,7 @@ class Game:
             self.pickup_items[item] = pg.image.load(path.join(self.item_folder, ITEM_IMAGES[item])).convert_alpha()
 
         # Fonts
-        self.hud_font = path.join(self.img_folder, 'Impacted2.0.ttf')
+        self.hud_font = path.join(self.img_folder, 'Fonts\Impacted2.0.ttf')
 
         # Sound loading
         self.weapon_sounds = {}
