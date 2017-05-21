@@ -120,11 +120,11 @@ class Mob(pg.sprite.Sprite):
         if target_dist.length_squared() < DETECT_RADIUS ** 2:
             seek_force = self.seek(self.target.pos)
             self.acc = vec(1, 0).rotate(-self.rot)
+            self.acc += seek_force
             self.avoid_mobs()
             self.acc.scale_to_length(self.speed)
             self.acc += self.vel * -1
             self.vel += self.acc * self.game.dt
-            self.vel += seek_force
             self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
             self.hit_rect.centerx = self.pos.x
             collide_with_obstacles(self, self.game.walls, 'x')
