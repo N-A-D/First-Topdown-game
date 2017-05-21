@@ -65,15 +65,15 @@ EFFECTS_LAYER = 4
 ITEMS_LAYER = 1
 
 # Effects
-MUZZLE_FLASHES = ['smokeparticleassets\\PNG\\Flash\\flash00.png',
-                  'smokeparticleassets\\PNG\\Flash\\flash01.png',
-                  'smokeparticleassets\\PNG\\Flash\\flash02.png',
-                  'smokeparticleassets\\PNG\\Flash\\flash03.png',
-                  'smokeparticleassets\\PNG\\Flash\\flash04.png',
-                  'smokeparticleassets\\PNG\\Flash\\flash05.png',
-                  'smokeparticleassets\\PNG\\Flash\\flash06.png',
-                  'smokeparticleassets\\PNG\\Flash\\flash07.png',
-                  'smokeparticleassets\\PNG\\Flash\\flash08.png',
+MUZZLE_FLASHES = ['smokeparticleassets/PNG/Flash/flash00.png',
+                  'smokeparticleassets/PNG/Flash/flash01.png',
+                  'smokeparticleassets/PNG/Flash/flash02.png',
+                  'smokeparticleassets/PNG/Flash/flash03.png',
+                  'smokeparticleassets/PNG/Flash/flash04.png',
+                  'smokeparticleassets/PNG/Flash/flash05.png',
+                  'smokeparticleassets/PNG/Flash/flash06.png',
+                  'smokeparticleassets/PNG/Flash/flash07.png',
+                  'smokeparticleassets/PNG/Flash/flash08.png',
                   ]
 FLASH_DURATION = 60
 
@@ -105,16 +105,16 @@ WANDER_RING_RADIUS = 20
 
 # Enemy Animations
 ENEMY_IMGS = [
-    'img\\Enemies\\citizenzombie1.png',
-    'img\\Enemies\\citizenzombie2.png',
-    'img\\Enemies\\citizenzombie3.png',
-    'img\\Enemies\\citizenzombie4.png',
-    'img\\Enemies\\citizenzombie5.png',
-    'img\\Enemies\\citizenzombie6.png',
-    'img\\Enemies\\citizenzombie7.png',
-    'img\\Enemies\\citizenzombie8.png',
-    'img\\Enemies\\citizenzombie9.png',
-    'img\\Enemies\\citizenzombie10.png',
+    'img/Enemies/citizenzombie1.png',
+    'img/Enemies/citizenzombie2.png',
+    'img/Enemies/citizenzombie3.png',
+    'img/Enemies/citizenzombie4.png',
+    'img/Enemies/citizenzombie5.png',
+    'img/Enemies/citizenzombie6.png',
+    'img/Enemies/citizenzombie7.png',
+    'img/Enemies/citizenzombie8.png',
+    'img/Enemies/citizenzombie9.png',
+    'img/Enemies/citizenzombie10.png',
 ]
 
 # Weapon settings
@@ -190,24 +190,24 @@ KNIFE_ANIMATIONS = {}
 RIFLE_ANIMATIONS = {}
 SHOTGUN_ANIMATIONS = {}
 
-HANDGUN_ANIMATIONS['idle'] = get_image_names('img\\Player animations\\handgun\\idle\\')
-HANDGUN_ANIMATIONS['melee'] = get_image_names('img\\Player animations\\handgun\\meleeattack\\')
-HANDGUN_ANIMATIONS['move'] = get_image_names('img\\Player animations\\handgun\\move\\')
-HANDGUN_ANIMATIONS['reload'] = get_image_names('img\\Player animations\\handgun\\reload\\')
-HANDGUN_ANIMATIONS['shoot'] = get_image_names('img\\Player animations\\handgun\\shoot\\')
+HANDGUN_ANIMATIONS['idle'] = get_image_names('img/Player animations/handgun/idle/')
+HANDGUN_ANIMATIONS['melee'] = get_image_names('img/Player animations/handgun/meleeattack/')
+HANDGUN_ANIMATIONS['move'] = get_image_names('img/Player animations/handgun/move/')
+HANDGUN_ANIMATIONS['reload'] = get_image_names('img/Player animations/handgun/reload/')
+HANDGUN_ANIMATIONS['shoot'] = get_image_names('img/Player animations/handgun/shoot/')
 
-KNIFE_ANIMATIONS['idle'] = get_image_names("img\\Player animations\\knife\\idle\\")
-KNIFE_ANIMATIONS['melee'] = get_image_names("img\\Player animations\\knife\\meleeattack\\")
-KNIFE_ANIMATIONS['move'] = get_image_names('img\\Player animations\\knife\\move\\')
+KNIFE_ANIMATIONS['idle'] = get_image_names("img/Player animations/knife/idle/")
+KNIFE_ANIMATIONS['melee'] = get_image_names("img/Player animations/knife/meleeattack/")
+KNIFE_ANIMATIONS['move'] = get_image_names('img/Player animations/knife/move/')
 
-RIFLE_ANIMATIONS['idle'] = get_image_names("img\\Player animations\\rifle\\idle\\")
-RIFLE_ANIMATIONS['melee'] = get_image_names("img\\Player animations\\rifle\\meleeattack\\")
-RIFLE_ANIMATIONS['move'] = get_image_names("img\\Player animations\\rifle\\move\\")
-RIFLE_ANIMATIONS['reload'] = get_image_names('img\\Player animations\\rifle\\reload\\')
-RIFLE_ANIMATIONS['shoot'] = get_image_names('img\\Player animations\\rifle\\shoot\\')
+RIFLE_ANIMATIONS['idle'] = get_image_names("img/Player animations/rifle/idle/")
+RIFLE_ANIMATIONS['melee'] = get_image_names("img/Player animations/rifle/meleeattack/")
+RIFLE_ANIMATIONS['move'] = get_image_names("img/Player animations/rifle/move/")
+RIFLE_ANIMATIONS['reload'] = get_image_names('img/Player animations/rifle/reload/')
+RIFLE_ANIMATIONS['shoot'] = get_image_names('img/Player animations/rifle/shoot/')
 
-SHOTGUN_ANIMATIONS['idle'] = get_image_names("img\\Player animations\\shotgun\\idle\\")
-SHOTGUN_ANIMATIONS['melee'] = get_image_names("img\\Player animations\\shotgun\\meleeattack\\")
-SHOTGUN_ANIMATIONS['move'] = get_image_names("img\\Player animations\\shotgun\\move\\")
-SHOTGUN_ANIMATIONS['reload'] = get_image_names('img\\Player animations\\shotgun\\reload\\')
-SHOTGUN_ANIMATIONS['shoot'] = get_image_names('img\\Player animations\\shotgun\\shoot\\')
+SHOTGUN_ANIMATIONS['idle'] = get_image_names("img/Player animations/shotgun/idle/")
+SHOTGUN_ANIMATIONS['melee'] = get_image_names("img/Player animations/shotgun/meleeattack/")
+SHOTGUN_ANIMATIONS['move'] = get_image_names("img/Player animations/shotgun/move/")
+SHOTGUN_ANIMATIONS['reload'] = get_image_names('img/Player animations/shotgun/reload/')
+SHOTGUN_ANIMATIONS['shoot'] = get_image_names('img/Player animations/shotgun/shoot/')
