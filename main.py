@@ -72,7 +72,7 @@ class Game:
             sound_list = {}
             for snd in WEAPON_SOUNDS[weapon]:
                 noise = pg.mixer.Sound(path.join(self.snd_folder, WEAPON_SOUNDS[weapon][snd]))
-                noise.set_volume(2)
+                noise.set_volume(.25)
                 sound_list[snd] = noise
             self.weapon_sounds[weapon] = sound_list
 
@@ -193,7 +193,7 @@ class Game:
             # butt stroking cancels out any attack by an enemy
             hit_melee_box = pg.sprite.spritecollide(hit, self.melee_box, True)
             if hit_melee_box:
-                hit.vel = vec(2 * PLAYER_MELEE_STUMBLE, 0).rotate(-self.player.rot)
+                hit.vel = vec(PLAYER_MELEE_STUMBLE, 0).rotate(-self.player.rot)
                 hit.health -= WEAPONS[self.player.weapon]['damage']
             else:
                 self.player.health -= hit.damage
@@ -210,7 +210,7 @@ class Game:
             mob.hit()
             for bullet in hits[mob]:
                 mob.health -= bullet.damage
-            mob.vel = vec(WEAPONS[self.player.weapon]['damage'], 0).rotate(-self.player.rot)
+            mob.vel += vec(0, 0)
 
         # Item collisions
         hits = pg.sprite.spritecollide(self.player, self.items, True, collide_hit_rect)

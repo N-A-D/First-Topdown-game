@@ -94,14 +94,15 @@ PLAYER_MELEE_STUMBLE = 100
 ENEMY_DAMAGE = [10]
 ENEMY_KNOCKBACK = 10
 ENEMY_HIT_RECT = pg.Rect(0, 0, TILESIZE, TILESIZE)
-ENEMY_SPEEDS = [150, 90, 300, 95, 85, 33, 94, 55, 200, 110, 45, 360, 86, 77, 109, 62, 56]
+ENEMY_SPEEDS = [150, 90, 120, 95, 85, 33, 94, 55, 90, 110, 45, 360, 86, 77, 109, 62, 56]
 ENEMY_HEALTH = [400]
 DETECT_RADIUS = 400
 APPROACH_RADIUS = 150
 AVOID_RADIUS = 50
-SEEK_FORCE = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-WANDER_RING_DISTANCE = 50
-WANDER_RING_RADIUS = 20
+SEEK_FORCE = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+WANDER_RING_DISTANCE = 150
+WANDER_RING_RADIUS = 200
+WANDER_TIMES = [2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000]
 
 # Enemy Animations
 ENEMY_IMGS = [
@@ -138,7 +139,7 @@ WEAPONS['rifle'] = {'bullet_speed': 4000,
                     'bullet_lifetime': 10000,
                     'rate': 100,
                     'kickback': 100,
-                    'spread': 5,
+                    'spread': 2,
                     'damage': 90,
                     'bullet_size': 'lg',
                     'clip size': 30,
