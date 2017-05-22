@@ -193,10 +193,10 @@ class Game:
             # butt stroking cancels out any attack by an enemy
             hit_melee_box = pg.sprite.spritecollide(hit, self.melee_box, True)
             if hit_melee_box:
-                hit.vel = vec(PLAYER_MELEE_STUMBLE, 0).rotate(-self.player.rot)
+                hit.vel = vec(0, 0)
                 hit.health -= WEAPONS[self.player.weapon]['damage']
             else:
-                self.player.health -= hit.damage
+                #self.player.health -= hit.damage
                 hit.vel = vec(0, 0)
                 if self.player.health <= 0:
                     self.playing = False
@@ -207,7 +207,6 @@ class Game:
         # Bullet collisions
         hits = pg.sprite.groupcollide(self.mobs, self.bullets, False, True, collide_hit_rect)
         for mob in hits:
-            mob.hit()
             for bullet in hits[mob]:
                 mob.health -= bullet.damage
             mob.vel += vec(0, 0)

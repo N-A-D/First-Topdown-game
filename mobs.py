@@ -51,7 +51,6 @@ class Mob(pg.sprite.Sprite):
 
         self.speed = choice(ENEMY_SPEEDS)
         self.health = choice(ENEMY_HEALTH)
-        self.is_damaged = False
         self.damage = choice(ENEMY_DAMAGE)
         self.wander_time = choice(WANDER_TIMES)
 
@@ -62,31 +61,11 @@ class Mob(pg.sprite.Sprite):
         # How often this mob will change targets while wondering
         self.last_target_time = 0
 
-    def avoid_mobs(self):
-        """
-        Each mob will try to move away from each other
-        so as to eliminate the issue where mob sprites
-        would bunch up into one location
-        :return: None
-        """
-        for mob in self.game.mobs:
-            if mob != self:
-                dist = self.pos - mob.pos
-                if 0 < dist.length() < AVOID_RADIUS:
-                    self.acc += dist.normalize()
-
-    def hit(self):
-        """
-        Indicate that this mob has been hit
-        :return: None
-        """
-        self.is_damaged = True
-
     def seek(self, target):
         """
         Gives a mob the ability to seek its target
         :param target: 
-        :return: None
+        :return: Vector2 representing the desired velocity
         """
         self.desired = target - self.pos
         dist = self.desired.length()
@@ -103,14 +82,19 @@ class Mob(pg.sprite.Sprite):
     def wander(self):
         """
         Gives a mob the ability to wander its environment
-        :return: None
+        :return: Vector2 representing the desired velocity
         """
         if self.vel.length() != 0:
             circle_pos = self.pos + self.vel.normalize() * WANDER_RING_DISTANCE
             target = circle_pos + vec(WANDER_RING_RADIUS, 0).rotate(uniform(0, 360))
-            return self.seek(target)
+            self.acc = self.seek(target)
 
     def avoid_obstacles(self):
+        """
+        Gives a mob the ability to perceive obstacles in its vicinity
+        and avoid them by moving in the opposite direction
+        :return: None
+        """
         hits = pg.sprite.spritecollide(self, self.game.walls, False)
         if hits:
             for obstacle in hits:
@@ -137,6 +121,33 @@ class Mob(pg.sprite.Sprite):
                         steer.scale_to_length(self.seek_force)
                     self.acc = steer
 
+    def avoid_mobs(self):
+        """
+        Each mob will try to move away from each other
+        so as to eliminate the issue where mob sprites
+        would bunch up into one location
+        :return: None
+        """
+        sum = vec(0, 0)
+        count = 0
+        for mob in self.game.mobs:
+            if mob != self:
+                diff = self.pos - mob.pos
+                dist = diff.length()
+                if 0 < dist < TILESIZE:
+                    diff.normalize_ip()
+                    diff /= dist
+                    sum += diff
+                    count += 1
+
+        if count > 0:
+            sum /= count
+            sum.normalize()
+            sum *= self.speed
+            steer = sum - self.vel
+            steer.scale_to_length(self.seek_force)
+            self.acc += steer
+
     def update(self):
         """
         Update his mob's internal state
@@ -144,27 +155,22 @@ class Mob(pg.sprite.Sprite):
         """
         if self.health <= 0:
             self.kill()
-        # target_dist = pg.mouse.get_pos() - self.pos #self.game.player.pos - self.pos
-        # if target_dist.length_squared() < DETECT_RADIUS ** 2:
-        self.acc = self.wander()
+        #self.avoid_mobs()
+        self.wander()
         self.vel += self.acc * self.game.dt
         if self.vel.length() > self.speed:
             self.vel.scale_to_length(self.speed)
         self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
-
         self.hit_rect.centerx = self.pos.x
-
         if collide_with_obstacles(self, self.game.walls, 'x'):
             self.avoid_obstacles()
-
         self.hit_rect.centery = self.pos.y
-
         if collide_with_obstacles(self, self.game.walls, 'y'):
             self.avoid_obstacles()
-
         self.rot = self.vel.angle_to(vec(1, 0))
         self.image = pg.transform.rotozoom(self.original_image, self.rot - 90, 1).copy()
         self.rect.center = self.hit_rect.center
+
 
     def draw_health(self):
         """

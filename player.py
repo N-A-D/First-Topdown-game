@@ -6,6 +6,7 @@ from core_functions import collide_with_obstacles
 from settings import *
 from random import uniform, choice
 from sprites import Bullet, MuzzleFlash, MeleeHitBox
+from itertools import chain
 
 vec = pg.math.Vector2
 

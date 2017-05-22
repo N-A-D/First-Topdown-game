@@ -76,7 +76,7 @@ MUZZLE_FLASHES = ['smokeparticleassets/PNG/Flash/flash00.png',
                   'smokeparticleassets/PNG/Flash/flash08.png',
                   ]
 FLASH_DURATION = 60
-
+DAMAGE_ALPHA = [x for x in range(0, 255, 50)]
 # Player settings
 DEFAULT_WEAPON = 'knife'
 WEAPON_ANIMATION_TIMES = {'handgun': {'idle': 100, 'melee': 35, 'move': 100, 'reload': 100, 'shoot': 125},
@@ -98,7 +98,7 @@ ENEMY_SPEEDS = [150, 90, 120, 95, 85, 33, 94, 55, 90, 110, 45, 360, 86, 77, 109,
 ENEMY_HEALTH = [400]
 DETECT_RADIUS = 400
 APPROACH_RADIUS = 150
-AVOID_RADIUS = 50
+AVOID_RADIUS = 20
 SEEK_FORCE = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 WANDER_RING_DISTANCE = 150
 WANDER_RING_RADIUS = 200
