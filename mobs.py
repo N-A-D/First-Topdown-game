@@ -137,7 +137,6 @@ class Mob(pg.sprite.Sprite):
                         steer.scale_to_length(self.seek_force)
                     self.acc = steer
 
-
     def update(self):
         """
         Update his mob's internal state
@@ -158,13 +157,10 @@ class Mob(pg.sprite.Sprite):
         if collide_with_obstacles(self, self.game.walls, 'x'):
             self.avoid_obstacles()
 
-
         self.hit_rect.centery = self.pos.y
 
         if collide_with_obstacles(self, self.game.walls, 'y'):
             self.avoid_obstacles()
-
-
 
         self.rot = self.vel.angle_to(vec(1, 0))
         self.image = pg.transform.rotozoom(self.original_image, self.rot - 90, 1).copy()
