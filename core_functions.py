@@ -30,8 +30,6 @@ def collide_with_obstacles(sprite, group, direction):
     :param direction: For vertical or horizontal movement
     :return: True if there is a collision. False otherwise
     """
-
-
     collided = False
     if direction == 'x':
         collided = True
