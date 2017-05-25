@@ -52,7 +52,7 @@ class Mob(pg.sprite.Sprite):
         self.speed = choice(ENEMY_SPEEDS)
         self.health = choice(ENEMY_HEALTH)
         self.damage = choice(ENEMY_DAMAGE)
-        self.wander_time = choice(WANDER_TIMES)
+        self.wander_radius = choice(WANDER_RING_RADIUS)
 
         # How fast this mob is able to track
         # the player
@@ -85,10 +85,11 @@ class Mob(pg.sprite.Sprite):
         Gives a mob the ability to wander its environment
         :return: Vector2 representing the desired velocity
         """
+        if self.vel.length() != 0:
+            circle_pos = self.pos + self.vel.normalize() * WANDER_RING_DISTANCE
+            target = circle_pos + vec(self.wander_radius, 0).rotate(uniform(0, 360))
+            self.acc += self.seek(target)
 
-        circle_pos = self.pos + self.vel.normalize() * WANDER_RING_DISTANCE
-        target = circle_pos + vec(WANDER_RING_RADIUS, 0).rotate(uniform(0, 360))
-        self.acc += self.seek(target)
 
     def avoid_obstacles(self):
         """
