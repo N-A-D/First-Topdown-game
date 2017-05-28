@@ -42,17 +42,17 @@ class Mob(pg.sprite.Sprite):
         self.hit_rect = ENEMY_HIT_RECT.copy()
         self.hit_rect.center = self.rect.center
 
-        # Positional, speed, and acceleration vectors
-        self.pos = vec(self.rect.center)
-        self.vel = vec(randint(-1, 1), randint(-1, 1))
-        self.acc = vec(0, 0)
-        self.rot = 0
-        self.current_rot = 0
-
         self.speed = choice(ENEMY_SPEEDS)
         self.health = choice(ENEMY_HEALTH)
         self.damage = choice(ENEMY_DAMAGE)
         self.wander_radius = choice(WANDER_RING_RADIUS)
+
+        # Positional, speed, and acceleration vectors
+        self.pos = vec(self.rect.center)
+        self.vel = vec(0, 0)
+        self.acc = vec(self.speed, 0).rotate(uniform(0, 360))
+        self.rot = 0
+        self.current_rot = 0
 
         # How fast this mob is able to track
         # the player
@@ -64,7 +64,7 @@ class Mob(pg.sprite.Sprite):
     def seek(self, target):
         """
         Gives a mob the ability to seek its target
-        :param target: 
+        :param target: target to seek
         :return: Vector2 representing the desired velocity
         """
         self.desired = target - self.pos
@@ -80,10 +80,13 @@ class Mob(pg.sprite.Sprite):
         Gives a mob the ability to wander its environment
         :return: None
         """
-        if self.vel.length() != 0:
-            circle_pos = self.pos + self.vel.normalize() * WANDER_RING_DISTANCE
-            target = circle_pos + vec(self.wander_radius, 0).rotate(uniform(0, 360))
-            self.acc += self.seek(target)
+        if self.vel.length() == 0:
+            self.vel += self.acc * self.game.dt
+            self.vel.scale_to_length(self.speed)
+        circle_pos = self.pos + self.vel.normalize() * WANDER_RING_DISTANCE
+        target = circle_pos + vec(self.wander_radius, 0).rotate(uniform(0, 360))
+        return self.seek(target)
+
 
 
     def avoid_obstacles(self):
@@ -92,24 +95,39 @@ class Mob(pg.sprite.Sprite):
         and avoid them by moving in the opposite direction
         :return: None
         """
-        if self.vel.length() != 0:
-            LOS = self.pos + self.vel.normalize() * 50
-            desired = vec(0, 0)
-            will_collide = False
-            for wall in self.game.walls:
-                if wall.rect.collidepoint(LOS):
-                    will_collide = True
-                    width = wall.rect.width
-                    if self.pos.x == wall.rect.centerx and (self.pos.y > wall.rect.centery or self.pos.y < wall.rect.centery):
-                        desired = vec(self.speed, self.vel.y).rotate(uniform(width, 360 - width))
-                    if self.pos.y == wall.rect.centery and (self.pos.x > wall.rect.centerx or self.pos.x < wall.rect.centerx):
-                        desired = vec(self.vel.x, self.speed).rotate(uniform(width, 360 - width))
-                    break
-            if will_collide:
-                steer = desired - self.vel
-                if steer.length() > self.seek_force:
-                    steer.scale_to_length(self.seek_force)
-                self.acc += steer
+        if self.vel.length() == 0:
+            self.vel += self.acc * self.game.dt
+            self.vel.scale_to_length(self.speed)
+
+        dynamic_length = 100 * self.vel.length() / self.speed
+        ahead = self.pos + self.vel.normalize() * dynamic_length
+        ahead2 = self.pos + self.vel.normalize() * dynamic_length / 2
+
+        obstacle = None
+
+        for wall in self.game.walls:
+            if wall.rect.collidepoint(ahead) or wall.rect.collidepoint(ahead2):
+                obstacle = wall
+                break
+
+        steer = vec(0, 0)
+
+        if obstacle:
+            desired = self.vel.normalize() * self.speed
+            if self.pos.x < obstacle.rect.right and self.pos.x > obstacle.rect.left:
+                if self.pos.y > obstacle.rect.bottom:
+                    desired = vec(self.vel.x, self.speed)
+                if self.pos.y < obstacle.rect.top:
+                    desired = vec(self.vel.x, -self.speed)
+            if self.pos.y < obstacle.rect.bottom and self.pos.x > obstacle.rect.top:
+                if self.pos.x > obstacle.rect.right:
+                    desired = vec(self.speed, self.vel.y)
+                if self.pos.x < obstacle.rect.left:
+                    desired = vec(-self.speed, self.vel.y)
+            steer = desired - self.vel
+            if steer.length() > self.seek_force:
+                steer.scale_to_length(self.seek_force)
+        return steer
 
     def avoid_mobs(self):
         """
@@ -129,6 +147,7 @@ class Mob(pg.sprite.Sprite):
                 sum += diff
                 count += 1
 
+        steer = vec(0, 0)
         if count > 0:
             sum /= count
             sum.normalize()
@@ -136,7 +155,20 @@ class Mob(pg.sprite.Sprite):
             steer = sum - self.vel
             if steer.length() > self.seek_force:
                 steer.scale_to_length(self.seek_force)
-            self.acc += steer
+        return steer
+
+    def apply_behaviours(self):
+        """
+        Applies steering behaviours to the mob
+        :return: None
+        """
+        wander = self.wander()
+        obs_avoidance = self.avoid_obstacles()
+        mob_avoidance = self.avoid_mobs()
+
+        self.acc += wander
+        self.acc += mob_avoidance
+        self.acc += obs_avoidance
 
     def update(self):
         """
@@ -145,17 +177,11 @@ class Mob(pg.sprite.Sprite):
         """
         if self.health <= 0:
             self.kill()
-        self.wander()
-        self.avoid_obstacles()
-        self.avoid_mobs()
+        self.apply_behaviours()
         self.vel += self.acc * self.game.dt
-        if self.vel.length() > self.speed:
-            self.vel.scale_to_length(self.speed)
+        self.vel.scale_to_length(self.speed)
         self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
-        self.hit_rect.centerx = self.pos.x
-        #collide_with_obstacles(self, self.game.walls, 'x')
-        self.hit_rect.centery = self.pos.y
-        #collide_with_obstacles(self, self.game.walls, 'y')
+        self.hit_rect.center = self.pos
         self.rot = self.vel.angle_to(vec(1, 0))
         self.image = pg.transform.rotozoom(self.original_image, self.rot - 90, 1).copy()
         self.rect.center = self.hit_rect.center
