@@ -87,8 +87,6 @@ class Mob(pg.sprite.Sprite):
         target = circle_pos + vec(self.wander_radius, 0).rotate(uniform(0, 360))
         return self.seek(target)
 
-
-
     def avoid_obstacles(self):
         """
         Gives a mob the ability to perceive obstacles in its vicinity
