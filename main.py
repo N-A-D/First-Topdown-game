@@ -149,7 +149,6 @@ class Game:
         self.walls = pg.sprite.Group()
         self.bullets = pg.sprite.Group()
         self.mobs = pg.sprite.Group()
-        self.melee_box = pg.sprite.GroupSingle()
         self.items = pg.sprite.Group()
 
         for row, tiles in enumerate(self.map.data):
@@ -191,18 +190,18 @@ class Game:
         hits = pg.sprite.spritecollide(self.player, self.mobs, False, collide_hit_rect)
         for hit in hits:
             # butt stroking cancels out any attack by an enemy
-            hit_melee_box = pg.sprite.spritecollide(hit, self.melee_box, True)
-            if hit_melee_box:
-                hit.vel.normalize()
-                hit.health -= WEAPONS[self.player.weapon]['damage']
+            if self.player.melee_box:
+                if self.player.melee_box.colliderect(hit.hit_rect):
+                    hit.vel.normalize()
+                    hit.health -= WEAPONS[self.player.weapon]['damage']
             else:
                 #self.player.health -= hit.damage
                 hit.vel.normalize()
                 if self.player.health <= 0:
                     self.playing = False
 
-        if hits:
-            self.player.pos += vec(ENEMY_KNOCKBACK, 0).rotate(-hits[0].rot)
+        #if hits:
+        #    self.player.pos += vec(ENEMY_KNOCKBACK, 0).rotate(-hits[0].rot)
 
         # Bullet collisions
         hits = pg.sprite.groupcollide(self.mobs, self.bullets, False, True, collide_hit_rect)

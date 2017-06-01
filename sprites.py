@@ -117,59 +117,6 @@ class MuzzleFlash(pg.sprite.Sprite):
             self.kill()
 
 
-class MeleeHitBox(pg.sprite.Sprite):
-    """
-    This class represents the damage area when the player swings their 
-    weapon in an attempt to push back mobs in the game. 
-    This is achieved my placing a rectangle in the same compass direction
-    that the player is facing. When mobs collide with this rectangle, they
-    will get pushed back. 
-    """
-
-    def __init__(self, game, pos, direction, action):
-        """
-        MeleeHitBox initialization
-        :param game: The game object to which this melee box belongs to
-        :param pos: The location where this melee box will appear
-        :param direction: The compass direction used for the physical placement of the rectangle
-        :param action: the melee action that invoked this object
-        """
-        self.groups = game.melee_box
-        pg.sprite.Sprite.__init__(self, self.groups)
-        self.game = game
-        self.rect = PLAYER_MELEE_RECT
-        self.pos = pos
-        self.action = action
-        if direction == 'E':
-            self.rect.midleft = pos
-        elif direction == 'NE':
-            self.rect.bottomleft = pos
-        elif direction == 'N':
-            self.rect.midbottom = pos
-        elif direction == 'NW':
-            self.rect.bottomright = pos
-        elif direction == 'W':
-            self.rect.midright = pos
-        elif direction == 'SW':
-            self.rect.topright = pos
-        elif direction == 'S':
-            self.rect.midtop = pos
-        elif direction == 'SE':
-            self.rect.topleft = pos
-
-        self.spawn_time = pg.time.get_ticks()
-
-    def update(self):
-        """
-        Update this sprite's internal state
-        :return: None
-        """
-        now = pg.time.get_ticks()
-        # Removes this hit box when the player concludes their melee animation
-        if now - self.spawn_time > WEAPON_ANIMATION_TIMES[self.game.player.weapon]['melee'] / 10:
-            self.kill()
-
-
 class Item(pg.sprite.Sprite):
     def __init__(self, game, pos, *type):
         """

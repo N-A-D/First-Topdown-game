@@ -5,7 +5,7 @@ import pygame as pg
 from core_functions import collide_with_obstacles
 from settings import *
 from random import uniform, choice
-from sprites import Bullet, MuzzleFlash, MeleeHitBox
+from sprites import Bullet, MuzzleFlash
 from itertools import chain
 
 vec = pg.math.Vector2
@@ -61,6 +61,10 @@ class Player(pg.sprite.Sprite):
         # Secondary rectangle is needed since rotating rectangles warps it.
         self.hit_rect = PLAYER_HIT_RECT
         self.hit_rect.center = self.rect.center
+
+        # Butt stroking area
+        self.melee_box = None
+        self.melee_box_spawn_time = 0
 
         # Paces the player's shots
         self.last_shot = 0
@@ -149,7 +153,7 @@ class Player(pg.sprite.Sprite):
         self.current_frame = 0
         self.play_static_animation = True
 
-    def handle_input(self):
+    def process_input(self):
         """
         Interprets player input into character actions
         :return: None
@@ -160,15 +164,86 @@ class Player(pg.sprite.Sprite):
         self.aim_wobble = 0
         keys = pg.key.get_pressed()
         self.update_rotation()
+        self.handle_player_movement(keys=keys)
+        if not self.play_static_animation:
+            self.handle_weapon_selection(keys=keys)
+            self.handle_combat_controls(keys=keys)
 
-        # Handle combat controls
+        # Accommodates for diagonal movement being slightly faster than pure horizontal or vertical movement
+        if self.vel.x != 0 and self.vel.y != 0:
+            self.vel *= 0.7071
+
+        if self.action == 'idle':
+            self.aim_wobble = WEAPONS[self.weapon]['wobble']['idle']
+            self.increase_stamina(1 / WEAPONS[self.weapon]['weight'])
+
+    def handle_combat_controls(self, keys):
+        """
+        Processes any combat related key pressed
+
+        Left mouse click --> shoot
+        Right mouse click --> butt stroke
+        R (r key) --> reload
+        :param keys: The list of keys pressed
+        :return: None
+        """
+        lc, _, rc = pg.mouse.get_pressed()
+        if lc and not self.weapon == 'knife':
+            if self.arsenal[self.weapon]['clip'] != 0:
+                self.action = 'shoot'
+                self.shoot()
+            else:
+                if self.arsenal[self.weapon]['reloads'] > 0:
+                    if not self.play_static_animation:
+                        self.reload()
+
         if keys[pg.K_r] and self.weapon != 'knife' and self.action != 'reload':
             if self.arsenal[self.weapon]['reloads'] > 0:
-                if not self.play_static_animation:
-                    self.reload()
+                self.reload()
 
-        # Handle player movement Walking & Running
-        # Space bar initiates a sprinting movement
+        if rc and not self.action == 'reload' and self.stamina > 0:
+            self.action = 'melee'
+            self.current_frame = 0
+            self.canned_action = self.action
+            self.play_static_animation = True
+            self.decrease_stamina(WEAPONS[self.weapon]['weight'])
+
+            # Find the area where the player is
+            # swinging their weapon and create
+            # a hit box to collide with any
+            # enemy in the vicinity
+            self.swing_weapon()
+
+
+    def handle_weapon_selection(self, keys):
+        """
+        Update's the player's current weapon to whichever
+        he/she chooses if they have that weapon
+        :param keys: The list of keys pressed
+        :return: None
+        """
+        if keys[pg.K_1] and self.arsenal['rifle']['hasWeapon'] and not self.weapon == 'rifle':
+            self.current_frame = 0
+            self.weapon = 'rifle'
+        elif keys[pg.K_2] and self.arsenal['shotgun']['hasWeapon'] and not self.weapon == 'shotgun':
+            self.current_frame = 0
+            self.weapon = 'shotgun'
+        elif keys[pg.K_3] and self.arsenal['handgun']['hasWeapon'] and not self.weapon == 'handgun':
+            self.current_frame = 0
+            self.weapon = 'handgun'
+        # Player always has a knife
+        elif keys[pg.K_4] and not self.weapon == 'knife':
+            self.current_frame = 0
+            self.weapon = 'knife'
+            self.game.weapon_sounds[self.weapon]['draw'].play()
+
+    def handle_player_movement(self, keys):
+        """
+        Updates the player's velocity such that the player
+        can move in the game map
+        :param keys: The list of keys pressed
+        :return: None
+        """
         if keys[pg.K_SPACE] and self.stamina > 0:
             if keys[pg.K_a]:
                 self.vel.x = -PLAYER_SPEED * 2
@@ -212,77 +287,33 @@ class Player(pg.sprite.Sprite):
                 self.aim_wobble = WEAPONS[self.weapon]['wobble']['walk']
                 self.increase_stamina(1 / WEAPONS[self.weapon]['weight'])
 
-        if not self.play_static_animation:
-            # Handle weapon selection
-            if keys[pg.K_1] and self.arsenal['rifle']['hasWeapon'] and not self.weapon == 'rifle':
-                self.current_frame = 0
-                self.weapon = 'rifle'
-            elif keys[pg.K_2] and self.arsenal['shotgun']['hasWeapon']and not self.weapon == 'shotgun':
-                self.current_frame = 0
-                self.weapon = 'shotgun'
-            elif keys[pg.K_3] and self.arsenal['handgun']['hasWeapon']and not self.weapon == 'handgun':
-                self.current_frame = 0
-                self.weapon = 'handgun'
-            # Player always has a knife
-            elif keys[pg.K_4] and not self.weapon == 'knife':
-                self.current_frame = 0
-                self.weapon = 'knife'
-                self.game.weapon_sounds[self.weapon]['draw'].play()
-
-            # Handle mouse clicks
-            lc, _, rc = pg.mouse.get_pressed()
-            if lc and not self.weapon == 'knife':
-                if self.arsenal[self.weapon]['clip'] != 0:
-                    self.action = 'shoot'
-                    self.shoot()
-                else:
-                    if self.arsenal[self.weapon]['reloads'] > 0:
-                        if not self.play_static_animation:
-                            self.reload()
-
-            if rc and not self.action == 'reload' and self.stamina > 0:
-                self.action = 'melee'
-                self.current_frame = 0
-                self.canned_action = self.action
-                self.play_static_animation = True
-                self.decrease_stamina(WEAPONS[self.weapon]['weight'])
-
-                # Find the area where the player is
-                # swinging their weapon and create
-                # a hit box to collide with any
-                # enemy in the vicinity
-                if self.direction == 'E':
-                    self.game.melee_box.add(
-                        MeleeHitBox(self.game, self.hit_rect.center, self.direction, self.canned_action))
-                elif self.direction == 'NE':
-                    self.game.melee_box.add(
-                        MeleeHitBox(self.game, self.hit_rect.center, self.direction, self.canned_action))
-                elif self.direction == 'N':
-                    self.game.melee_box.add(
-                        MeleeHitBox(self.game, self.hit_rect.center, self.direction, self.canned_action))
-                elif self.direction == 'NW':
-                    self.game.melee_box.add(
-                        MeleeHitBox(self.game, self.hit_rect.center, self.direction, self.canned_action))
-                elif self.direction == 'W':
-                    self.game.melee_box.add(
-                        MeleeHitBox(self.game, self.hit_rect.center, self.direction, self.canned_action))
-                elif self.direction == 'SW':
-                    self.game.melee_box.add(
-                        MeleeHitBox(self.game, self.hit_rect.center, self.direction, self.canned_action))
-                elif self.direction == 'S':
-                    self.game.melee_box.add(
-                        MeleeHitBox(self.game, self.hit_rect.center, self.direction, self.canned_action))
-                elif self.direction == 'SE':
-                    self.game.melee_box.add(
-                        MeleeHitBox(self.game, self.hit_rect.center, self.direction, self.canned_action))
-
-        # Accommodates for diagonal movement being slightly faster than pure horizontal or vertical movement
-        if self.vel.x != 0 and self.vel.y != 0:
-            self.vel *= 0.7071
-
-        if self.action == 'idle':
-            self.aim_wobble = WEAPONS[self.weapon]['wobble']['idle']
-            self.increase_stamina(1 / WEAPONS[self.weapon]['weight'])
+    def swing_weapon(self):
+        """
+        Creates a zone which damages any enemy caught in it
+        :return: None
+        """
+        if self.melee_box:
+            now = pg.time.get_ticks()
+            if now - self.melee_box_spawn_time > WEAPON_ANIMATION_TIMES[self.weapon]['melee']:
+                self.melee_box = None
+        else:
+            self.melee_box = PLAYER_MELEE_RECT.copy()
+            if self.direction == 'E':
+                self.melee_box.midleft = self.hit_rect.center
+            elif self.direction == 'NE':
+                self.melee_box.bottomleft = self.hit_rect.center
+            elif self.direction == 'N':
+                self.melee_box.midbottom = self.hit_rect.center
+            elif self.direction == 'NW':
+                self.melee_box.bottomright = self.hit_rect.center
+            elif self.direction == 'W':
+                self.melee_box.midright = self.hit_rect.center
+            elif self.direction == 'SW':
+                self.melee_box.topright = self.hit_rect.center
+            elif self.direction == 'S':
+                self.melee_box.midtop = self.hit_rect.center
+            elif self.direction == 'SE':
+                self.melee_box.topleft = self.hit_rect.center
 
     def animate(self):
         """
@@ -392,7 +423,7 @@ class Player(pg.sprite.Sprite):
         Updates the player's internal state
         :return: None
         """
-        self.handle_input()
+        self.process_input()
         self.animate()
         self.rect.center = self.pos
         self.pos += self.vel * self.game.dt
