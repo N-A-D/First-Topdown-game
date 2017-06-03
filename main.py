@@ -13,6 +13,7 @@ from core_functions import collide_hit_rect
 
 vec = pg.math.Vector2
 
+
 class Game:
     def __init__(self):
         # initialize game window, etc
@@ -195,12 +196,12 @@ class Game:
                     hit.vel.normalize()
                     hit.health -= WEAPONS[self.player.weapon]['damage']
             else:
-                #self.player.health -= hit.damage
+                # self.player.health -= hit.damage
                 hit.vel.normalize()
                 if self.player.health <= 0:
                     self.playing = False
 
-        #if hits:
+        # if hits:
         #    self.player.pos += vec(ENEMY_KNOCKBACK, 0).rotate(-hits[0].rot)
 
         # Bullet collisions
@@ -215,7 +216,6 @@ class Game:
         for hit in hits:
             if hit.item_type == 'weapon':
                 self.player.pickup_item(hit)
-
 
     def events(self):
         """
@@ -407,23 +407,29 @@ class Game:
     def show_start_screen(self):
         """
         Displays the start screen for the game
-        :return: 
+        :return: None
         """
         pass
 
     def show_gameover_screen(self):
         """
         Displays the gameover screen for the game
-        :return: 
+        :return: None
         """
         pass
 
     def show_pause_screen(self):
         """
         Displays the pause screen for the game
-        :return: 
+        :return: None
         """
         pass
+
+    def show_start_screen(self):
+        """
+        Displays the start screen for the game
+        :return: None
+        """
 
 
 if __name__ == '__main__':
