@@ -42,8 +42,8 @@ class Mob(pg.sprite.Sprite):
         # size and causes issues with collision detection.
         self.hit_rect = ENEMY_HIT_RECT.copy()
         self.hit_rect.center = self.rect.center
+        self.radius = self.rect.width * .7071
 
-        self.view_distance = choice(ENEMY_VIEW_DISTANCES)
         self.speed = choice(ENEMY_SPEEDS)
         self.health = choice(ENEMY_HEALTH)
         self.damage = choice(ENEMY_DAMAGE)
@@ -60,8 +60,13 @@ class Mob(pg.sprite.Sprite):
         # the player
         self.seek_force = choice(SEEK_FORCE) * self.speed
         self.desired = vec(0, 0)
+        self.can_pursue = False
         # How often this mob will change targets while wondering
         self.last_target_time = 0
+        if self.rect.x < WIDTH + TILESIZE and self.rect.y <= HEIGHT + TILESIZE:
+            self.is_onscreen = True
+        else:
+            self.is_onscreen = False
 
     def move_from_rest(self):
         self.vel += self.acc * self.game.dt
@@ -81,6 +86,19 @@ class Mob(pg.sprite.Sprite):
             steer.scale_to_length(self.seek_force)
         return steer
 
+    def seek_with_approach(self, target):
+        self.desired = target - self.pos
+        dist = self.desired.length()
+        self.desired.normalize_ip()
+        if dist < APPROACH_RADIUS:
+            self.desired *= dist / APPROACH_RADIUS * self.speed
+        else:
+            self.desired *= self.speed
+        steer = self.desired - self.vel
+        if steer.length() > self.seek_force:
+            steer.scale_to_length(self.seek_force)
+        return steer
+
     def wander(self):
         """
         Gives a mob the ability to wander its environment
@@ -92,19 +110,38 @@ class Mob(pg.sprite.Sprite):
         target = circle_pos + vec(self.wander_radius, 0).rotate(uniform(0, 360))
         return self.seek(target)
 
+    def pursue(self):
+        target = vec(0, 0)
+        if self.game.player.vel.length() == 0:
+            target = self.game.player.pos
+        else:
+            target = self.game.player.pos + self.game.player.vel.normalize()
+        return self.seek_with_approach(target)
+
     def avoid_collisions(self):
-        all_obstacles = [mob for mob in self.game.mobs] + [obs for obs in self.game.walls]
+        all_obstacles = []#[mob for mob in self.game.mobs] + [obs for obs in self.game.walls]
+        for mob in self.game.mobs:
+            if mob.is_onscreen:
+                all_obstacles.append(mob)
+        all_obstacles += [obs for obs in self.game.walls]
         sum = vec(0, 0)
         count = 0
 
         for obs in all_obstacles:
-            diff = self.pos - obs.pos
-            dist = diff.length()
-            if 0 < dist < AVOID_RADIUS:
-                diff.normalize_ip()
-                diff /= dist
-                sum += diff
-                count += 1
+            ahead = self.pos + self.vel.normalize() * ENEMY_LINE_OF_SIGHT / 2
+            further_ahead = self.pos + self.vel.normalize() * ENEMY_LINE_OF_SIGHT
+            var = self.find_most_threatening([ahead, further_ahead, self.pos], obs)
+            if var:
+                diff = var - obs.pos
+                dist = diff.length()
+                if 0 < dist < AVOID_RADIUS:
+                    diff.normalize_ip()
+                    diff /= dist
+                    sum += diff
+                    count += 1
+            else:
+                continue
+
         steer = vec(0, 0)
         if count > 0:
             sum /= count
@@ -115,33 +152,60 @@ class Mob(pg.sprite.Sprite):
                 steer.scale_to_length(self.seek_force)
         return steer
 
+    def find_most_threatening(self, awareness_vectors, obj):
+        for vector in awareness_vectors:
+            if vector.distance_to(obj.pos) < obj.radius:
+                return vector
+        return None
+
     def apply_behaviours(self):
         """
         Applies steering behaviours to the mob
         :return: None
         """
-        wander = self.wander()
-        collisions_avoidance = self.avoid_collisions()
+        # steering_force = vec(0, 0)
+        # if not self.can_pursue:
+        #     steering_force = self.wander() + self.avoid_collisions()
+        # else:
+        #     steering_force = self.pursue() + self.avoid_collisions()
+        steering_force = self.wander() + self.avoid_collisions()
+        self.acc += steering_force
 
-        self.acc += wander
-        self.acc += collisions_avoidance
+    def check_if_is_on_screen(self):
+        """
+        Used to check if this mob is on the screen or not
+        :return: True if on the screen, False otherwise
+        """
+        location = vec(self.hit_rect.x + self.game.camera.camera.x, self.hit_rect.y + self.game.camera.camera.y)
+        if location.x <= WIDTH + TILESIZE and location.y <= HEIGHT + TILESIZE:
+            if self.pos.distance_to(self.game.player.pos) < DETECT_RADIUS:
+                self.can_pursue = True
+            else:
+                self.can_pursue = False
+            self.is_onscreen = True
+        else:
+            self.is_onscreen = False
 
     def update(self):
         """
         Update his mob's internal state
         :return: None
         """
-        if self.health <= 0:
-            self.kill()
-        self.apply_behaviours()
-        self.vel += self.acc * self.game.dt
-        self.vel.scale_to_length(self.speed)
-        self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
-        self.hit_rect.center = self.pos
-        self.rot = self.vel.angle_to(vec(1, 0))
-        self.image = pg.transform.rotozoom(self.original_image, self.rot - 90, 1).copy()
-        self.rect.center = self.hit_rect.center
-
+        self.check_if_is_on_screen()
+        if self.is_onscreen:
+            if self.health <= 0:
+                self.kill()
+            self.apply_behaviours()
+            self.vel += self.acc * self.game.dt
+            self.vel.scale_to_length(self.speed)
+            self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
+            self.hit_rect.centerx = self.pos.x
+            collide_with_obstacles(self, self.game.walls, 'x')
+            self.hit_rect.centery = self.pos.y
+            collide_with_obstacles(self, self.game.walls, 'y')
+            self.rot = self.vel.angle_to(vec(1, 0))
+            self.image = pg.transform.rotozoom(self.original_image, self.rot - 90, 1).copy()
+            self.rect.center = self.hit_rect.center
 
     def draw_health(self):
         """

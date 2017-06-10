@@ -93,6 +93,7 @@ PLAYER_MELEE_STUMBLE = 100
 # Enemy settings
 ENEMY_DAMAGE = [10]
 ENEMY_KNOCKBACK = 10
+ENEMY_LINE_OF_SIGHT = 2.5 * TILESIZE
 ENEMY_HIT_RECT = pg.Rect(0, 0, TILESIZE, TILESIZE)
 ENEMY_SPEEDS = [100]
 ENEMY_HEALTH = [400]
@@ -102,7 +103,6 @@ AVOID_RADIUS = 2 * TILESIZE
 SEEK_FORCE = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 WANDER_RING_DISTANCE = 100
 WANDER_RING_RADIUS = [40, 50, 60]
-ENEMY_VIEW_DISTANCES = [TILESIZE]
 
 # Enemy Animations
 ENEMY_IMGS = [
@@ -123,7 +123,7 @@ WEAPONS = {}
 WEAPONS['handgun'] = {'bullet_speed': 4000,
                       'bullet_lifetime': 1000,
                       'rate': 300,
-                      'kickback': 50,
+                      'kickback': 2.5,
                       'spread': 1,
                       'damage': 40,
                       'bullet_size': 'med',
@@ -138,21 +138,21 @@ WEAPONS['handgun'] = {'bullet_speed': 4000,
 WEAPONS['rifle'] = {'bullet_speed': 4000,
                     'bullet_lifetime': 10000,
                     'rate': 100,
-                    'kickback': 100,
+                    'kickback': 6,
                     'spread': 2,
                     'damage': 90,
                     'bullet_size': 'lg',
-                    'clip size': 30,
+                    'clip size': 45,
                     'weight': 6,
                     'wobble': {'sprint': 14, 'walk': 7, 'idle': 2},
                     'muzzle flash range': [35, 60],
                     'barrel offset': vec(72, 20),
-                    'default ammo': 4,
+                    'default ammo': 20,
                     'bullet_count': 1}
 WEAPONS['shotgun'] = {'bullet_speed': 4000,
                       'bullet_lifetime': 1000,
                       'rate': 500,
-                      'kickback': 660,
+                      'kickback': 7.5,
                       'spread': 12,
                       'damage': 60,
                       'bullet_size': 'sm',

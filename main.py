@@ -43,7 +43,7 @@ class Game:
         :return: None
         """
         # Game map
-        self.map = Map(path.join(self.game_folder, 'map.txt'))
+        self.map = Map(path.join(self.game_folder, 'map3.txt'))
 
         # HUD Elements
         self.mag_img = pg.transform.smoothscale(pg.image.load(path.join(self.img_folder, CLIP_IMG)),
@@ -79,7 +79,8 @@ class Game:
 
         # Bullets
         self.bullet_images = {}
-        self.bullet_images['lg'] = pg.image.load(path.join(self.img_folder, RIFLE_BULLET_IMG)).convert_alpha()
+        self.bullet_images['lg'] = pg.transform.smoothscale(pg.image.load(path.join(self.img_folder, RIFLE_BULLET_IMG)),
+                                                            (10, 3)).convert_alpha()
         self.bullet_images['med'] = pg.image.load(path.join(self.img_folder, HANDGUN_BULLET_IMG)).convert_alpha()
         self.bullet_images['sm'] = pg.transform.smoothscale(pg.image.load(
             path.join(self.img_folder, SHOTGUN_BULLET_IMG)).convert_alpha(), (7, 7))
@@ -152,6 +153,7 @@ class Game:
         self.mobs = pg.sprite.Group()
         self.items = pg.sprite.Group()
 
+        counter = 1
         for row, tiles in enumerate(self.map.data):
             for col, tile in enumerate(tiles):
                 if tile == '1':
@@ -160,6 +162,7 @@ class Game:
                     self.player = Player(self, col, row)
                 if tile == 'E':
                     Mob(self, col, row)
+                    counter += 1
                 if tile == 'I':
                     Item(self, vec(col * TILESIZE, row * TILESIZE), 'rifle', 'weapon')
         self.camera = Camera(self.map.width, self.map.height)
@@ -209,7 +212,7 @@ class Game:
         for mob in hits:
             for bullet in hits[mob]:
                 mob.health -= bullet.damage
-            mob.vel += vec(10, 0).rotate(-self.player.rot)
+            mob.pos += vec(WEAPONS[self.player.weapon]['kickback'], 0).rotate(-self.player.rot)
 
         # Item collisions
         hits = pg.sprite.spritecollide(self.player, self.items, True, collide_hit_rect)

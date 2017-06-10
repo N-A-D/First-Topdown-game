@@ -37,9 +37,7 @@ class Camera:
         :param entity: The focus of the camera
         :return: None
         """
-        # Applies the camera offset, i.e, 
-        # moves this entity the camera's 
-        # topleft corner
+        # Applies the camera offset to the entity
         return entity.rect.move(self.camera.topleft)
 
     def apply_rect(self, rect):

@@ -89,7 +89,6 @@ class Player(pg.sprite.Sprite):
         # The direction the player is facing
         self.direction = 'E'
 
-
     def decrease_stamina(self, decrease_rate):
         """
         Decreases the player's stamina
@@ -214,7 +213,6 @@ class Player(pg.sprite.Sprite):
             # enemy in the vicinity
             self.swing_weapon()
 
-
     def handle_weapon_selection(self, keys):
         """
         Update's the player's current weapon to whichever
@@ -292,28 +290,23 @@ class Player(pg.sprite.Sprite):
         Creates a zone which damages any enemy caught in it
         :return: None
         """
-        if self.melee_box:
-            now = pg.time.get_ticks()
-            if now - self.melee_box_spawn_time > WEAPON_ANIMATION_TIMES[self.weapon]['melee']:
-                self.melee_box = None
-        else:
-            self.melee_box = PLAYER_MELEE_RECT.copy()
-            if self.direction == 'E':
-                self.melee_box.midleft = self.hit_rect.center
-            elif self.direction == 'NE':
-                self.melee_box.bottomleft = self.hit_rect.center
-            elif self.direction == 'N':
-                self.melee_box.midbottom = self.hit_rect.center
-            elif self.direction == 'NW':
-                self.melee_box.bottomright = self.hit_rect.center
-            elif self.direction == 'W':
-                self.melee_box.midright = self.hit_rect.center
-            elif self.direction == 'SW':
-                self.melee_box.topright = self.hit_rect.center
-            elif self.direction == 'S':
-                self.melee_box.midtop = self.hit_rect.center
-            elif self.direction == 'SE':
-                self.melee_box.topleft = self.hit_rect.center
+        self.melee_box = PLAYER_MELEE_RECT.copy()
+        if self.direction == 'E':
+            self.melee_box.midleft = self.hit_rect.center
+        elif self.direction == 'NE':
+            self.melee_box.bottomleft = self.hit_rect.center
+        elif self.direction == 'N':
+            self.melee_box.midbottom = self.hit_rect.center
+        elif self.direction == 'NW':
+            self.melee_box.bottomright = self.hit_rect.center
+        elif self.direction == 'W':
+            self.melee_box.midright = self.hit_rect.center
+        elif self.direction == 'SW':
+            self.melee_box.topright = self.hit_rect.center
+        elif self.direction == 'S':
+            self.melee_box.midtop = self.hit_rect.center
+        elif self.direction == 'SE':
+            self.melee_box.topleft = self.hit_rect.center
 
     def animate(self):
         """
@@ -368,6 +361,15 @@ class Player(pg.sprite.Sprite):
                 self.arsenal['handgun']['reloads'] = WEAPONS['handgun']['default ammo'] - 1
         else:
             pass
+
+    def update_melee_box(self):
+        """
+        Removes the melee box the player creates after a certain amount of time
+        :return: None
+        """
+        now = pg.time.get_ticks()
+        if now - self.melee_box_spawn_time > WEAPON_ANIMATION_TIMES[self.weapon]['melee']:
+            self.melee_box = None
 
     def update_rotation(self):
         """
@@ -425,6 +427,7 @@ class Player(pg.sprite.Sprite):
         """
         self.process_input()
         self.animate()
+        self.update_melee_box()
         self.rect.center = self.pos
         self.pos += self.vel * self.game.dt
         self.hit_rect.centerx = self.pos.x

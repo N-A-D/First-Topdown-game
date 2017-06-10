@@ -33,7 +33,7 @@ class Obstacle(pg.sprite.Sprite):
         self.rect.x = x * width
         self.rect.y = y * height
         self.hit_rect = pg.Rect(self.rect.x, self.rect.y, self.rect.width, self.rect.height)
-        self.radius = self.rect.width * 1.414 + 15
+        self.radius = self.rect.width * 0.7071
         self.pos = self.rect.center
 
 class Bullet(pg.sprite.Sprite):
