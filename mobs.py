@@ -3,11 +3,13 @@
 '''
 
 import pygame as pg
-from random import choice, uniform, randint
+from random import choice, uniform, randint, randrange
 from core_functions import collide_with_obstacles, collide_hit_rect
 from itertools import chain
 from math import cos, fabs
+from sprites import Item
 from settings import *
+from sprites import WeaponPickup, MiscPickup
 
 
 class Mob(pg.sprite.Sprite):
@@ -163,12 +165,12 @@ class Mob(pg.sprite.Sprite):
         Applies steering behaviours to the mob
         :return: None
         """
-        # steering_force = vec(0, 0)
-        # if not self.can_pursue:
-        #     steering_force = self.wander() + self.avoid_collisions()
-        # else:
-        #     steering_force = self.pursue() + self.avoid_collisions()
-        steering_force = self.wander() + self.avoid_collisions()
+        steering_force = vec(0, 0)
+        if not self.can_pursue:
+            steering_force = self.wander() + self.avoid_collisions()
+        else:
+            steering_force = self.pursue() + self.avoid_collisions()
+        #steering_force = self.wander() + self.avoid_collisions()
         self.acc += steering_force
 
     def check_if_is_on_screen(self):
@@ -185,16 +187,23 @@ class Mob(pg.sprite.Sprite):
             self.is_onscreen = True
         else:
             self.is_onscreen = False
+    def drop_item(self):
+        if uniform(0, 1) <= .5:
+            WeaponPickup( self.game, self.pos)
+        else:
+            MiscPickup(self.game, self.pos)
 
     def update(self):
         """
         Update his mob's internal state
         :return: None
         """
+        if self.health <= 0:
+            if uniform(0, 1) < .25:
+                self.drop_item()
+            self.kill()
         self.check_if_is_on_screen()
         if self.is_onscreen:
-            if self.health <= 0:
-                self.kill()
             self.apply_behaviours()
             self.vel += self.acc * self.game.dt
             self.vel.scale_to_length(self.speed)
