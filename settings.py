@@ -19,7 +19,6 @@ DEEPSKYBLUE = (0, 191, 255)
 DODGERBLUE = (30, 144, 255)
 LIMEGREEN = (50, 205, 50)
 GOLD = (255, 215, 0)
-
 # Game settings
 WIDTH = 1024  # 16 * 64 or 32 * 32 or 64 * 16
 HEIGHT = 640  # 16 * 48 or 32 * 24 or 64 * 12
@@ -77,6 +76,12 @@ MUZZLE_FLASHES = ['smokeparticleassets/PNG/Flash/flash00.png',
                   ]
 FLASH_DURATION = 60
 DAMAGE_ALPHA = [x for x in range(0, 255, 50)]
+
+
+# Item settings
+BOB_RANGE = 20
+BOB_SPEED = .5
+
 # Player settings
 DEFAULT_WEAPON = 'knife'
 WEAPON_ANIMATION_TIMES = {'handgun': {'idle': 100, 'melee': 35, 'move': 100, 'reload': 100, 'shoot': 125},
@@ -85,7 +90,7 @@ WEAPON_ANIMATION_TIMES = {'handgun': {'idle': 100, 'melee': 35, 'move': 100, 're
                           'shotgun': {'idle': 100, 'melee': 35, 'move': 125, 'reload': 100, 'shoot': 175}}
 PLAYER_SPEED = 150
 PLAYER_HIT_RECT = pg.Rect(0, 0, 50, 50)
-PLAYER_MELEE_RECT = pg.Rect(0, 0, 64, 64)
+PLAYER_MELEE_RECT = pg.Rect(0, 0, 256, 256)
 PLAYER_HEALTH = 100
 PLAYER_STAMINA = 100
 PLAYER_MELEE_STUMBLE = 100
@@ -95,7 +100,8 @@ ENEMY_DAMAGE = [10]
 ENEMY_KNOCKBACK = 10
 ENEMY_LINE_OF_SIGHT = 2.5 * TILESIZE
 ENEMY_HIT_RECT = pg.Rect(0, 0, TILESIZE, TILESIZE)
-ENEMY_SPEEDS = [100]
+ENEMY_SPEEDS = [speed for speed in range(50, 150, 15)]
+ENEMY_SPEEDS = [speed for speed in range(50, 150, 15)]
 ENEMY_HEALTH = [400]
 DETECT_RADIUS = 400
 APPROACH_RADIUS = 150
@@ -154,7 +160,7 @@ WEAPONS['shotgun'] = {'bullet_speed': 4000,
                       'rate': 500,
                       'kickback': 7.5,
                       'spread': 12,
-                      'damage': 60,
+                      'damage': 100,
                       'bullet_size': 'sm',
                       'clip size': 8,
                       'weight': 7,
@@ -179,11 +185,13 @@ WEAPON_SOUNDS = {'handgun': {'attack': 'pistol.wav', 'pickup': 'gun_pickup.wav'}
 # Item images
 ITEM_IMAGES = {'rifle': 'rifle.png',
                'handgun': 'glock.png',
-               'knife': 'knife.png',
                'shotgun': 'shotgun.png',
                'ammo': 'Ammo.png',
                'health': 'health.png'
                }
+
+# Blood colors
+BLOOD_SHADES = [(114, 47, 55), (165, 42, 42), (255, 56, 0), (192, 64, 0), (139, 0, 0), (230, 32, 32)]
 
 # Player Animations
 HANDGUN_ANIMATIONS = {}

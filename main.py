@@ -4,11 +4,11 @@
 import pygame as pg
 from os import path
 from settings import *
-from random import random, choice
+from random import random, choice, randrange
 from player import Player
 from mobs import Mob
 from tilemap import Map, Camera
-from sprites import Obstacle, Item
+from sprites import Obstacle, WeaponPickup, MiscPickup
 from core_functions import collide_hit_rect
 
 vec = pg.math.Vector2
@@ -43,7 +43,7 @@ class Game:
         :return: None
         """
         # Game map
-        self.map = Map(path.join(self.game_folder, 'map3.txt'))
+        self.map = Map(path.join(self.game_folder, 'map2.txt'))
 
         # HUD Elements
         self.mag_img = pg.transform.smoothscale(pg.image.load(path.join(self.img_folder, CLIP_IMG)),
@@ -153,7 +153,6 @@ class Game:
         self.mobs = pg.sprite.Group()
         self.items = pg.sprite.Group()
 
-        counter = 1
         for row, tiles in enumerate(self.map.data):
             for col, tile in enumerate(tiles):
                 if tile == '1':
@@ -162,9 +161,9 @@ class Game:
                     self.player = Player(self, col, row)
                 if tile == 'E':
                     Mob(self, col, row)
-                    counter += 1
-                if tile == 'I':
-                    Item(self, vec(col * TILESIZE, row * TILESIZE), 'rifle', 'weapon')
+                if tile == 'W':
+                    WeaponPickup(self, (col * TILESIZE, row * TILESIZE))
+
         self.camera = Camera(self.map.width, self.map.height)
         g.run()
 
@@ -186,6 +185,8 @@ class Game:
         Updates game state
         :return: None
         """
+        self.impact_positions = []
+
         self.all_sprites.update()
         self.camera.update(self.player)
         # self.melee_box.update()
@@ -199,17 +200,18 @@ class Game:
                     hit.vel.normalize()
                     hit.health -= WEAPONS[self.player.weapon]['damage']
             else:
-                # self.player.health -= hit.damage
+                #self.player.health -= hit.damage
                 hit.vel.normalize()
                 if self.player.health <= 0:
                     self.playing = False
 
-        # if hits:
-        #    self.player.pos += vec(ENEMY_KNOCKBACK, 0).rotate(-hits[0].rot)
+        if hits:
+            self.player.pos += vec(ENEMY_KNOCKBACK, 0).rotate(-hits[0].rot)
 
         # Bullet collisions
-        hits = pg.sprite.groupcollide(self.mobs, self.bullets, False, True, collide_hit_rect)
+        hits = pg.sprite.groupcollide(self.mobs, self.bullets, False, False, collide_hit_rect)
         for mob in hits:
+            self.impact_positions.append(mob.rect.center)
             for bullet in hits[mob]:
                 mob.health -= bullet.damage
             mob.pos += vec(WEAPONS[self.player.weapon]['kickback'], 0).rotate(-self.player.rot)
@@ -217,8 +219,7 @@ class Game:
         # Item collisions
         hits = pg.sprite.spritecollide(self.player, self.items, True, collide_hit_rect)
         for hit in hits:
-            if hit.item_type == 'weapon':
-                self.player.pickup_item(hit)
+            self.player.pickup_item(hit)
 
     def events(self):
         """
@@ -255,11 +256,11 @@ class Game:
                                           y - self.crosshair.get_rect().height // 2))
         if self.debug:
             self.draw_grid()
-
+        self.bullet_impact_animation(self.impact_positions)
         # Draw all sprites to the screen
         for sprite in self.all_sprites:
-            if isinstance(sprite, Mob):
-                sprite.draw_health()
+            # if isinstance(sprite, Mob):
+            #     sprite.draw_health()
             self.screen.blit(sprite.image, self.camera.apply(sprite))
             if self.debug:
                 pg.draw.rect(self.screen, (0, 255, 255), self.camera.apply_rect(sprite.hit_rect), 1)
@@ -406,6 +407,17 @@ class Game:
             text_rect.center = (x, y)
 
         self.screen.blit(text_surface, text_rect)
+
+    def bullet_impact_animation(self, positions):
+        for pos in positions:
+            impact = True
+            while impact:
+                self.events()
+                for magnitude in range(1, 50):
+                    exploding_bit_x = pos[0] + randrange(-1 * magnitude, magnitude) + self.camera.camera.x
+                    exploding_bit_y = pos[1] + randrange(-1 * magnitude, magnitude) + self.camera.camera.y
+                    pg.draw.circle(self.screen, choice(BLOOD_SHADES), (exploding_bit_x, exploding_bit_y), randrange(1, 5))
+                impact = False
 
     def show_start_screen(self):
         """
