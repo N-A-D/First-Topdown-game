@@ -4,7 +4,7 @@
 import pygame as pg
 from os import path
 from settings import *
-from random import random, choice, randrange
+from random import choice, randrange
 from player import Player
 from mobs import Mob
 from tilemap import Map, Camera
@@ -30,10 +30,9 @@ class Game:
         self.snd_folder = path.join(self.game_folder, 'snd')
         self.crosshair_folder = path.join(self.img_folder, 'Crosshairs')
         self.item_folder = path.join(self.img_folder, 'Items')
-
+        # Loads game assests
         self.load_data()
         self.running = True
-
         # Debugging flags
         self.debug = False
 
@@ -45,10 +44,12 @@ class Game:
         # Game map
         self.map = Map(path.join(self.game_folder, 'map2.txt'))
 
+
+        self.screen_dimmer = pg.Surface(self.screen.get_size()).convert_alpha()
+        self.screen_dimmer.fill((0, 0, 0, 180))
         # HUD Elements
         self.mag_img = pg.transform.smoothscale(pg.image.load(path.join(self.img_folder, CLIP_IMG)),
                                                 (40, 40)).convert_alpha()
-
         # Crosshairs
         self.crosshairs = [
             pg.transform.smoothscale(pg.image.load(path.join(self.crosshair_folder, crosshair)),
@@ -68,11 +69,11 @@ class Game:
 
         # Sound loading
         self.weapon_sounds = {}
-        for weapon in WEAPON_SOUNDS:
+        for weapon in WEAPONS['sound']:
             self.weapon_sounds[weapon] = {}
             sound_list = {}
-            for snd in WEAPON_SOUNDS[weapon]:
-                noise = pg.mixer.Sound(path.join(self.snd_folder, WEAPON_SOUNDS[weapon][snd]))
+            for snd in WEAPONS['sound'][weapon]:
+                noise = pg.mixer.Sound(path.join(self.snd_folder, WEAPONS['sound'][weapon][snd]))
                 noise.set_volume(.25)
                 sound_list[snd] = noise
             self.weapon_sounds[weapon] = sound_list
@@ -81,7 +82,8 @@ class Game:
         self.bullet_images = {}
         self.bullet_images['lg'] = pg.transform.smoothscale(pg.image.load(path.join(self.img_folder, RIFLE_BULLET_IMG)),
                                                             (10, 3)).convert_alpha()
-        self.bullet_images['med'] = pg.image.load(path.join(self.img_folder, HANDGUN_BULLET_IMG)).convert_alpha()
+        self.bullet_images['med'] = pg.transform.smoothscale(
+            pg.image.load(path.join(self.img_folder, HANDGUN_BULLET_IMG)), (5, 3)).convert_alpha()
         self.bullet_images['sm'] = pg.transform.smoothscale(pg.image.load(
             path.join(self.img_folder, SHOTGUN_BULLET_IMG)).convert_alpha(), (7, 7))
 
@@ -165,6 +167,8 @@ class Game:
                     WeaponPickup(self, (col * TILESIZE, row * TILESIZE))
 
         self.camera = Camera(self.map.width, self.map.height)
+        self.paused = False
+        self.running = True
         g.run()
 
     def run(self):
@@ -177,7 +181,8 @@ class Game:
             pg.display.set_caption("{:.0f}".format(self.clock.get_fps()))
             self.dt = self.clock.tick(FPS) / 1000
             self.events()
-            self.update()
+            if not self.paused:
+                self.update()
             self.draw()
 
     def update(self):
@@ -198,15 +203,19 @@ class Game:
             if self.player.melee_box:
                 if self.player.melee_box.colliderect(hit.hit_rect):
                     hit.vel.normalize()
+                    hit.pos += vec(WEAPONS[self.player.weapon]['knockback'], 0).rotate(-self.player.rot)
                     hit.health -= WEAPONS[self.player.weapon]['damage']
+                    self.impact_positions.append(hit.rect.center)
             else:
-                #self.player.health -= hit.damage
+                self.impact_positions.append(self.player.rect.center)
+                self.player.health -= hit.damage
                 hit.vel.normalize()
+                hit.pos += vec(hit.damage).rotate(hit.rot)
                 if self.player.health <= 0:
                     self.playing = False
 
-        if hits:
-            self.player.pos += vec(ENEMY_KNOCKBACK, 0).rotate(-hits[0].rot)
+        # if hits:
+        #     self.player.pos += vec(ENEMY_KNOCKBACK, 0).rotate(-hits[0].rot)
 
         # Bullet collisions
         hits = pg.sprite.groupcollide(self.mobs, self.bullets, False, False, collide_hit_rect)
@@ -234,6 +243,8 @@ class Game:
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_b:
                     self.debug = not self.debug
+                if event.key == pg.K_p:
+                    self.paused = not self.paused
 
     def draw_grid(self):
         """
@@ -256,17 +267,20 @@ class Game:
                                           y - self.crosshair.get_rect().height // 2))
         if self.debug:
             self.draw_grid()
-        self.bullet_impact_animation(self.impact_positions)
+        self.bullet_impact_animation()
         # Draw all sprites to the screen
         for sprite in self.all_sprites:
-            # if isinstance(sprite, Mob):
-            #     sprite.draw_health()
+            if isinstance(sprite, Mob):
+                sprite.draw_health()
             self.screen.blit(sprite.image, self.camera.apply(sprite))
             if self.debug:
                 pg.draw.rect(self.screen, (0, 255, 255), self.camera.apply_rect(sprite.hit_rect), 1)
 
         # draw hud information
         self.update_hud()
+        if self.paused:
+            self.screen.blit(self.screen_dimmer, (0, 0))
+            self.draw_text('Paused', self.hud_font, 105, RED, WIDTH / 2, HEIGHT / 2, align='center')
         pg.display.flip()
 
     def update_hud(self):
@@ -408,16 +422,18 @@ class Game:
 
         self.screen.blit(text_surface, text_rect)
 
-    def bullet_impact_animation(self, positions):
-        for pos in positions:
+    def bullet_impact_animation(self):
+        for pos in self.impact_positions:
             impact = True
             while impact:
                 self.events()
                 for magnitude in range(1, 50):
                     exploding_bit_x = pos[0] + randrange(-1 * magnitude, magnitude) + self.camera.camera.x
                     exploding_bit_y = pos[1] + randrange(-1 * magnitude, magnitude) + self.camera.camera.y
-                    pg.draw.circle(self.screen, choice(BLOOD_SHADES), (exploding_bit_x, exploding_bit_y), randrange(1, 5))
+                    pg.draw.circle(self.screen, choice(BLOOD_SHADES), (exploding_bit_x, exploding_bit_y),
+                                   randrange(1, 5))
                 impact = False
+        self.impact_positions.clear()
 
     def show_start_screen(self):
         """
