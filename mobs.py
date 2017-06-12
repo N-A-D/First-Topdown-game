@@ -3,11 +3,8 @@
 '''
 
 import pygame as pg
-from random import choice, uniform, randint, randrange
-from core_functions import collide_with_obstacles, collide_hit_rect
-from itertools import chain
-from math import cos, fabs
-from sprites import Item
+from random import choice, uniform
+from core_functions import collide_with_obstacles
 from settings import *
 from sprites import WeaponPickup, MiscPickup
 
@@ -63,6 +60,8 @@ class Mob(pg.sprite.Sprite):
         self.seek_force = choice(SEEK_FORCE) * self.speed
         self.desired = vec(0, 0)
         self.can_pursue = False
+        self.can_attack = True
+        self.last_attack_time = 0
         # How often this mob will change targets while wondering
         self.last_target_time = 0
         if self.rect.x < WIDTH + TILESIZE and self.rect.y <= HEIGHT + TILESIZE:
@@ -70,7 +69,20 @@ class Mob(pg.sprite.Sprite):
         else:
             self.is_onscreen = False
 
+    def pause(self):
+        """
+        Slows down the attacks of mobs
+        to reduce instant death for the player
+        :return: None
+        """
+        self.can_attack = False
+        self.last_attack_time = pg.time.get_ticks()
+
     def move_from_rest(self):
+        """
+        Moves the mob from rest
+        :return: None
+        """
         self.vel += self.acc * self.game.dt
         self.vel.scale_to_length(self.speed)
 
@@ -78,7 +90,7 @@ class Mob(pg.sprite.Sprite):
         """
         Gives a mob the ability to seek its target
         :param target: target to seek
-        :return: Vector2 representing the desired velocity
+        :return: Vector2 representing the steering force
         """
         self.desired = target - self.pos
         self.desired.normalize_ip()
@@ -89,6 +101,12 @@ class Mob(pg.sprite.Sprite):
         return steer
 
     def seek_with_approach(self, target):
+        """
+        Gives a mob the ability to seek its target
+        and slow down as it approaches the target
+        :param target: target to seek
+        :return: Vector2 representing the steering force
+        """
         self.desired = target - self.pos
         dist = self.desired.length()
         self.desired.normalize_ip()
@@ -113,6 +131,12 @@ class Mob(pg.sprite.Sprite):
         return self.seek(target)
 
     def pursue(self):
+        """
+        Gives this mob the ability to
+        pursue a target by predicting
+        the target's future location
+        :return:
+        """
         target = vec(0, 0)
         if self.game.player.vel.length() == 0:
             target = self.game.player.pos
@@ -121,7 +145,12 @@ class Mob(pg.sprite.Sprite):
         return self.seek_with_approach(target)
 
     def avoid_collisions(self):
-        all_obstacles = []#[mob for mob in self.game.mobs] + [obs for obs in self.game.walls]
+        """
+        Gives this mob the ability to avoid
+        collisions with other obstacles
+        :return: None
+        """
+        all_obstacles = []
         for mob in self.game.mobs:
             if mob.is_onscreen:
                 all_obstacles.append(mob)
@@ -172,7 +201,7 @@ class Mob(pg.sprite.Sprite):
             steering_force = self.wander() + self.avoid_collisions()
         else:
             steering_force = self.pursue() + self.avoid_collisions()
-        #steering_force = self.wander() + self.avoid_collisions()
+        # steering_force = self.wander() + self.avoid_collisions()
         self.acc += steering_force
 
     def check_if_is_on_screen(self):
@@ -189,9 +218,15 @@ class Mob(pg.sprite.Sprite):
             self.is_onscreen = True
         else:
             self.is_onscreen = False
+
     def drop_item(self):
+        """
+        Drops an item onto the game map where
+        this mob dies
+        :return: None
+        """
         if uniform(0, 1) <= .5:
-            WeaponPickup( self.game, self.pos)
+            WeaponPickup(self.game, self.pos)
         else:
             MiscPickup(self.game, self.pos)
 
@@ -201,22 +236,26 @@ class Mob(pg.sprite.Sprite):
         :return: None
         """
         if self.health <= 0:
-            if uniform(0, 1) < .25:
+            if uniform(0, 1) < .025:
                 self.drop_item()
             self.kill()
         self.check_if_is_on_screen()
+
         if self.is_onscreen:
             self.apply_behaviours()
             self.vel += self.acc * self.game.dt
             self.vel.scale_to_length(self.speed)
-            self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
-            self.hit_rect.centerx = self.pos.x
-            collide_with_obstacles(self, self.game.walls, 'x')
-            self.hit_rect.centery = self.pos.y
-            collide_with_obstacles(self, self.game.walls, 'y')
+            if self.can_attack:
+                self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
+                self.hit_rect.centerx = self.pos.x
+                collide_with_obstacles(self, self.game.walls, 'x')
+                self.hit_rect.centery = self.pos.y
+                collide_with_obstacles(self, self.game.walls, 'y')
             self.rot = self.vel.angle_to(vec(1, 0))
             self.image = pg.transform.rotozoom(self.original_image, self.rot - 90, 1).copy()
             self.rect.center = self.hit_rect.center
+        if pg.time.get_ticks() - self.last_attack_time > 500:
+            self.can_attack = True
 
     def draw_health(self):
         """
