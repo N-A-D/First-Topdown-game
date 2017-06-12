@@ -220,9 +220,10 @@ class Game:
         # Bullet collisions
         hits = pg.sprite.groupcollide(self.mobs, self.bullets, False, False, collide_hit_rect)
         for mob in hits:
-            self.impact_positions.append(mob.rect.center)
             for bullet in hits[mob]:
+                self.impact_positions.append(mob.rect.center)
                 mob.health -= bullet.damage
+            #if mob.health < 0:
             mob.pos += vec(WEAPONS[self.player.weapon]['kickback'], 0).rotate(-self.player.rot)
 
         # Item collisions

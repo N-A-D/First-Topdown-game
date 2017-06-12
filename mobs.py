@@ -130,6 +130,8 @@ class Mob(pg.sprite.Sprite):
         count = 0
 
         for obs in all_obstacles:
+            if self.vel.length() == 0:
+                self.move_from_rest()
             ahead = self.pos + self.vel.normalize() * ENEMY_LINE_OF_SIGHT / 2
             further_ahead = self.pos + self.vel.normalize() * ENEMY_LINE_OF_SIGHT
             var = self.find_most_threatening([ahead, further_ahead, self.pos], obs)
