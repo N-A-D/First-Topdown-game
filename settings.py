@@ -77,17 +77,12 @@ MUZZLE_FLASHES = ['smokeparticleassets/PNG/Flash/flash00.png',
 FLASH_DURATION = 60
 DAMAGE_ALPHA = [x for x in range(0, 255, 50)]
 
-
 # Item settings
 BOB_RANGE = 20
 BOB_SPEED = .5
 
 # Player settings
 DEFAULT_WEAPON = 'knife'
-WEAPON_ANIMATION_TIMES = {'handgun': {'idle': 100, 'melee': 35, 'move': 100, 'reload': 100, 'shoot': 125},
-                          'knife': {'idle': 100, 'melee': 35, 'move': 75, 'reload': 0, 'shoot': 0},
-                          'rifle': {'idle': 100, 'melee': 35, 'move': 125, 'reload': 100, 'shoot': 55},
-                          'shotgun': {'idle': 100, 'melee': 35, 'move': 125, 'reload': 100, 'shoot': 175}}
 PLAYER_SPEED = 150
 PLAYER_HIT_RECT = pg.Rect(0, 0, 50, 50)
 PLAYER_MELEE_RECT = pg.Rect(0, 0, 256, 256)
@@ -105,7 +100,7 @@ ENEMY_SPEEDS = [speed for speed in range(50, 150, 15)]
 ENEMY_HEALTH = [400]
 DETECT_RADIUS = 400
 APPROACH_RADIUS = 150
-AVOID_RADIUS = 2 * TILESIZE
+AVOID_RADIUS = TILESIZE
 SEEK_FORCE = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 WANDER_RING_DISTANCE = 100
 WANDER_RING_RADIUS = [40, 50, 60]
@@ -126,12 +121,24 @@ ENEMY_IMGS = [
 
 # Weapon settings
 WEAPONS = {}
+
+WEAPONS['animation times'] = {'handgun': {'idle': 100, 'melee': 35, 'move': 100, 'reload': 100, 'shoot': 125},
+                              'knife': {'idle': 100, 'melee': 35, 'move': 75, 'reload': 0, 'shoot': 0},
+                              'rifle': {'idle': 100, 'melee': 35, 'move': 125, 'reload': 100, 'shoot': 55},
+                              'shotgun': {'idle': 100, 'melee': 35, 'move': 125, 'reload': 100, 'shoot': 175}}
+
+WEAPONS['sound'] = {'handgun': {'attack': 'pistol.wav', 'pickup': 'gun_pickup.wav'},
+                    'shotgun': {'attack': 'shotgun.wav', 'pickup': 'gun_pickup.wav'},
+                    'rifle': {'attack': 'Futuristic SMG Single Shot.wav', 'pickup': 'gun_pickup.wav'},
+                    'knife': {'draw': 'knifedraw.wav'}
+                    }
+
 WEAPONS['handgun'] = {'bullet_speed': 4000,
-                      'bullet_lifetime': 1000,
+                      'bullet_lifetime': 10000,
                       'rate': 300,
                       'kickback': 2.5,
                       'spread': 1,
-                      'damage': 40,
+                      'damage': 100,
                       'bullet_size': 'med',
                       'clip size': 12,
                       'weight': 3,
@@ -139,6 +146,7 @@ WEAPONS['handgun'] = {'bullet_speed': 4000,
                       'muzzle flash range': [25, 35],
                       'barrel offset': vec(50, 20),
                       'default ammo': 5,
+
                       'bullet_count': 1}
 
 WEAPONS['rifle'] = {'bullet_speed': 4000,
@@ -146,7 +154,7 @@ WEAPONS['rifle'] = {'bullet_speed': 4000,
                     'rate': 100,
                     'kickback': 6,
                     'spread': 2,
-                    'damage': 90,
+                    'damage': 125,
                     'bullet_size': 'lg',
                     'clip size': 45,
                     'weight': 6,
@@ -156,11 +164,11 @@ WEAPONS['rifle'] = {'bullet_speed': 4000,
                     'default ammo': 20,
                     'bullet_count': 1}
 WEAPONS['shotgun'] = {'bullet_speed': 4000,
-                      'bullet_lifetime': 1000,
+                      'bullet_lifetime': 10000,
                       'rate': 500,
                       'kickback': 7.5,
                       'spread': 12,
-                      'damage': 100,
+                      'damage': 135,
                       'bullet_size': 'sm',
                       'clip size': 8,
                       'weight': 7,
@@ -172,15 +180,9 @@ WEAPONS['shotgun'] = {'bullet_speed': 4000,
 WEAPONS['knife'] = {
     'damage': 50,
     'weight': 1,
+    'knockback': 20,
     'wobble': {'sprint': 0, 'walk': 0, 'idle': 0}
 }
-
-# Sounds
-WEAPON_SOUNDS = {'handgun': {'attack': 'pistol.wav', 'pickup': 'gun_pickup.wav'},
-                 'shotgun': {'attack': 'shotgun.wav', 'pickup': 'gun_pickup.wav'},
-                 'rifle': {'attack': 'Futuristic SMG Single Shot.wav', 'pickup': 'gun_pickup.wav'},
-                 'knife': {'draw': 'knifedraw.wav'}
-                 }
 
 # Item images
 ITEM_IMAGES = {'rifle': 'rifle.png',
@@ -191,7 +193,8 @@ ITEM_IMAGES = {'rifle': 'rifle.png',
                }
 
 # Blood colors
-BLOOD_SHADES = [(114, 47, 55), (165, 42, 42), (255, 56, 0), (192, 64, 0), (139, 0, 0), (230, 32, 32)]
+BLOOD_SHADES = [(114, 47, 55), (165, 42, 42), (255, 56, 0), (226, 88, 34), (178, 34, 34), (252, 40, 71), (125, 17, 12),
+                (192, 64, 0), (139, 0, 0), (89, 0, 0), (65, 32, 32), (70, 0, 0), (124, 0, 0), (102, 0, 0)]
 
 # Player Animations
 HANDGUN_ANIMATIONS = {}

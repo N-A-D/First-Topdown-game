@@ -4,10 +4,9 @@
 import pygame as pg
 from core_functions import collide_with_obstacles
 from settings import *
-from random import uniform, choice
+from random import uniform
 from sprites import Bullet, MuzzleFlash
-from itertools import chain
-from sprites import WeaponPickup, MiscPickup
+from sprites import WeaponPickup
 
 vec = pg.math.Vector2
 
@@ -32,7 +31,7 @@ class Player(pg.sprite.Sprite):
         self.game = game
 
         # Player's physical attributes
-        self.health = PLAYER_HEALTH
+        self.health = PLAYER_HEALTH // 2
         self.stamina = PLAYER_STAMINA
 
         # Used to identify when to decrease the player's stamina
@@ -293,28 +292,28 @@ class Player(pg.sprite.Sprite):
         """
         self.melee_box = PLAYER_MELEE_RECT.copy()
         if self.direction == 'E':
-            self.melee_box.midleft = self.hit_rect.center
+            self.melee_box.midleft = self.hit_rect.midright
             self.melee_box_spawn_time = pg.time.get_ticks()
         elif self.direction == 'NE':
-            self.melee_box.bottomleft = self.hit_rect.center
+            self.melee_box.bottomleft = self.hit_rect.topright
             self.melee_box_spawn_time = pg.time.get_ticks()
         elif self.direction == 'N':
-            self.melee_box.midbottom = self.hit_rect.center
+            self.melee_box.midbottom = self.hit_rect.midtop
             self.melee_box_spawn_time = pg.time.get_ticks()
         elif self.direction == 'NW':
-            self.melee_box.bottomright = self.hit_rect.center
+            self.melee_box.bottomright = self.hit_rect.topleft
             self.melee_box_spawn_time = pg.time.get_ticks()
         elif self.direction == 'W':
-            self.melee_box.midright = self.hit_rect.center
+            self.melee_box.midright = self.hit_rect.midleft
             self.melee_box_spawn_time = pg.time.get_ticks()
         elif self.direction == 'SW':
-            self.melee_box.topright = self.hit_rect.center
+            self.melee_box.topright = self.hit_rect.bottomleft
             self.melee_box_spawn_time = pg.time.get_ticks()
         elif self.direction == 'S':
-            self.melee_box.midtop = self.hit_rect.center
+            self.melee_box.midtop = self.hit_rect.midbottom
             self.melee_box_spawn_time = pg.time.get_ticks()
         elif self.direction == 'SE':
-            self.melee_box.topleft = self.hit_rect.center
+            self.melee_box.topleft = self.hit_rect.bottomright
             self.melee_box_spawn_time = pg.time.get_ticks()
 
     def animate(self):
@@ -327,14 +326,14 @@ class Player(pg.sprite.Sprite):
         if not self.play_static_animation:
             self.animations = self.game.player_animations[self.weapon][self.action]
             self.current_frame %= len(self.animations)
-            if now - self.last_update > WEAPON_ANIMATION_TIMES[self.weapon][self.action]:
+            if now - self.last_update > WEAPONS['animation times'][self.weapon][self.action]:
                 self.last_update = now
                 self.current_frame = (self.current_frame + 1) % len(self.animations)
             self.image = pg.transform.rotozoom(self.animations[self.current_frame], self.rot, 1)
             self.rect = self.image.get_rect()
         else:
             self.animations = self.game.player_animations[self.weapon][self.canned_action]
-            if now - self.last_update > WEAPON_ANIMATION_TIMES[self.weapon][self.canned_action]:
+            if now - self.last_update > WEAPONS['animation times'][self.weapon][self.canned_action]:
                 self.last_update = now
                 self.current_frame += 1
                 # Keep the player in the reload or melee animation
@@ -355,6 +354,10 @@ class Player(pg.sprite.Sprite):
         :return: None
         """
         if isinstance(item, WeaponPickup):
+            snd = self.game.weapon_sounds[item.type]['pickup']
+            if snd.get_num_channels() > 2:
+                snd.stop()
+            snd.play()
             if self.arsenal[item.type]['hasWeapon']:
                 self.arsenal[item.type]['reloads'] += item.ammo_boost
             else:
@@ -375,10 +378,9 @@ class Player(pg.sprite.Sprite):
                 else:
                     self.arsenal[self.weapon]['reloads'] += item.AMMO_BOOST
             else:
-                if self.health < 100:
-                    self.health += item.HEALTH_BOOST
-                    if self.heath > 100:
-                        self.heatlh = 100
+                self.health += item.HEALTH_BOOST
+                if self.health > PLAYER_HEALTH:
+                    self.heatlh = PLAYER_HEALTH
 
     def update_melee_box(self):
         """
