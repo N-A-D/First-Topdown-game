@@ -6,7 +6,7 @@ from core_functions import collide_with_obstacles
 from settings import *
 from random import uniform
 from sprites import Bullet, MuzzleFlash
-from sprites import WeaponPickup
+from sprites import WeaponPickup, SwingArea
 
 vec = pg.math.Vector2
 
@@ -31,7 +31,7 @@ class Player(pg.sprite.Sprite):
         self.game = game
 
         # Player's physical attributes
-        self.health = PLAYER_HEALTH // 2
+        self.health = PLAYER_HEALTH
         self.stamina = PLAYER_STAMINA
 
         # Used to identify when to decrease the player's stamina
@@ -63,8 +63,8 @@ class Player(pg.sprite.Sprite):
         self.hit_rect.center = self.rect.center
 
         # Butt stroking area
-        self.melee_box = None
-        self.melee_box_spawn_time = 0
+        # self.melee_box = None
+        # self.melee_box_spawn_time = 0
 
         # Paces the player's shots
         self.last_shot = 0
@@ -290,31 +290,22 @@ class Player(pg.sprite.Sprite):
         Creates a zone which damages any enemy caught in it
         :return: None
         """
-        self.melee_box = PLAYER_MELEE_RECT.copy()
         if self.direction == 'E':
-            self.melee_box.midleft = self.hit_rect.midright
-            self.melee_box_spawn_time = pg.time.get_ticks()
+            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.midright))
         elif self.direction == 'NE':
-            self.melee_box.bottomleft = self.hit_rect.topright
-            self.melee_box_spawn_time = pg.time.get_ticks()
+            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.topright))
         elif self.direction == 'N':
-            self.melee_box.midbottom = self.hit_rect.midtop
-            self.melee_box_spawn_time = pg.time.get_ticks()
+            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.midtop))
         elif self.direction == 'NW':
-            self.melee_box.bottomright = self.hit_rect.topleft
-            self.melee_box_spawn_time = pg.time.get_ticks()
+            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.topleft))
         elif self.direction == 'W':
-            self.melee_box.midright = self.hit_rect.midleft
-            self.melee_box_spawn_time = pg.time.get_ticks()
+            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.midleft))
         elif self.direction == 'SW':
-            self.melee_box.topright = self.hit_rect.bottomleft
-            self.melee_box_spawn_time = pg.time.get_ticks()
+            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.bottomleft))
         elif self.direction == 'S':
-            self.melee_box.midtop = self.hit_rect.midbottom
-            self.melee_box_spawn_time = pg.time.get_ticks()
+            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.midbottom))
         elif self.direction == 'SE':
-            self.melee_box.topleft = self.hit_rect.bottomright
-            self.melee_box_spawn_time = pg.time.get_ticks()
+            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.bottomright))
 
     def animate(self):
         """
@@ -354,10 +345,6 @@ class Player(pg.sprite.Sprite):
         :return: None
         """
         if isinstance(item, WeaponPickup):
-            snd = self.game.weapon_sounds[item.type]['pickup']
-            if snd.get_num_channels() > 2:
-                snd.stop()
-            snd.play()
             if self.arsenal[item.type]['hasWeapon']:
                 self.arsenal[item.type]['reloads'] += item.ammo_boost
             else:
@@ -447,7 +434,7 @@ class Player(pg.sprite.Sprite):
         """
         self.process_input()
         self.animate()
-        self.update_melee_box()
+        #self.update_melee_box()
         self.rect.center = self.pos
         self.pos += self.vel * self.game.dt
         self.hit_rect.centerx = self.pos.x

@@ -188,3 +188,17 @@ class MiscPickup(Item):
 
     def update(self):
         super().update()
+
+class SwingArea(pg.sprite.Sprite):
+    def __init__(self, game, pos):
+        self.groups = game.swingAreas
+        self.game = game
+        self.pos = pos
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.rect = PLAYER_MELEE_RECT.copy()
+        self.rect.center = pos
+        self.spawn_time = pg.time.get_ticks()
+
+    def update(self):
+        if pg.time.get_ticks() - self.spawn_time > WEAPONS['animation times'][self.game.player.weapon]['melee']:
+            self.kill()

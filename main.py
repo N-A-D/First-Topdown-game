@@ -46,7 +46,7 @@ class Game:
 
 
         self.screen_dimmer = pg.Surface(self.screen.get_size()).convert_alpha()
-        self.screen_dimmer.fill((0, 0, 0, 180))
+        self.screen_dimmer.fill((0, 0, 0, 225))
         # HUD Elements
         self.mag_img = pg.transform.smoothscale(pg.image.load(path.join(self.img_folder, CLIP_IMG)),
                                                 (40, 40)).convert_alpha()
@@ -154,6 +154,7 @@ class Game:
         self.bullets = pg.sprite.Group()
         self.mobs = pg.sprite.Group()
         self.items = pg.sprite.Group()
+        self.swingAreas = pg.sprite.Group()
 
         for row, tiles in enumerate(self.map.data):
             for col, tile in enumerate(tiles):
@@ -194,28 +195,29 @@ class Game:
 
         self.all_sprites.update()
         self.camera.update(self.player)
-        # self.melee_box.update()
+        self.swingAreas.update()
+
+        # Player hits mobs
+        hit_melee_box = pg.sprite.groupcollide(self.mobs, self.swingAreas, False, True, collide_hit_rect)
+        for hit in hit_melee_box:
+            hit.vel.normalize()
+            hit.pos += vec(20, 0).rotate(-self.player.rot)
+            hit.health -= hit.health
+            self.impact_positions.append(hit.rect.center)
+            hit.pause()
 
         # Enemy hits player
         hits = pg.sprite.spritecollide(self.player, self.mobs, False, collide_hit_rect)
         for hit in hits:
-            # butt stroking cancels out any attack by an enemy
-            if self.player.melee_box:
-                if self.player.melee_box.colliderect(hit.hit_rect):
-                    hit.vel.normalize()
-                    hit.pos += vec(WEAPONS[self.player.weapon]['knockback'], 0).rotate(-self.player.rot)
-                    hit.health -= WEAPONS[self.player.weapon]['damage']
-                    self.impact_positions.append(hit.rect.center)
-            else:
+            if hit.can_attack:
                 self.impact_positions.append(self.player.rect.center)
                 self.player.health -= hit.damage
                 hit.vel.normalize()
-                hit.pos += vec(hit.damage).rotate(hit.rot)
+                hit.pause()
                 if self.player.health <= 0:
                     self.playing = False
-
-        # if hits:
-        #     self.player.pos += vec(ENEMY_KNOCKBACK, 0).rotate(-hits[0].rot)
+        if hits:
+            self.player.pos += vec(ENEMY_KNOCKBACK, 0).rotate(-hits[0].rot)
 
         # Bullet collisions
         hits = pg.sprite.groupcollide(self.mobs, self.bullets, False, False, collide_hit_rect)
@@ -223,13 +225,17 @@ class Game:
             for bullet in hits[mob]:
                 self.impact_positions.append(mob.rect.center)
                 mob.health -= bullet.damage
-            #if mob.health < 0:
-            mob.pos += vec(WEAPONS[self.player.weapon]['kickback'], 0).rotate(-self.player.rot)
+                mob.pos += vec(WEAPONS[self.player.weapon]['kickback'], 0).rotate(-self.player.rot)
 
         # Item collisions
         hits = pg.sprite.spritecollide(self.player, self.items, True, collide_hit_rect)
         for hit in hits:
             self.player.pickup_item(hit)
+            if isinstance(hit, WeaponPickup):
+                snd = self.weapon_sounds[hit.type]['pickup']
+                snd.play()
+            else:
+                pass
 
     def events(self):
         """
@@ -462,7 +468,7 @@ class Game:
         Displays the start screen for the game
         :return: None
         """
-
+        pass
 
 if __name__ == '__main__':
     g = Game()
