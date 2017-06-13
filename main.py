@@ -15,6 +15,9 @@ vec = pg.math.Vector2
 
 
 class Game:
+    """
+    Blueprint for game objects
+    """
     def __init__(self):
         # initialize game window, etc
         pg.init()
@@ -192,7 +195,6 @@ class Game:
         :return: None
         """
         self.impact_positions = []
-
         self.all_sprites.update()
         self.camera.update(self.player)
         self.swingAreas.update()
@@ -200,11 +202,8 @@ class Game:
         # Player hits mobs
         hit_melee_box = pg.sprite.groupcollide(self.mobs, self.swingAreas, False, True, collide_hit_rect)
         for hit in hit_melee_box:
-            hit.vel.normalize()
-            hit.pos += vec(20, 0).rotate(-self.player.rot)
             hit.health -= hit.health
             self.impact_positions.append(hit.rect.center)
-            hit.pause()
 
         # Enemy hits player
         hits = pg.sprite.spritecollide(self.player, self.mobs, False, collide_hit_rect)
@@ -223,7 +222,7 @@ class Game:
         hits = pg.sprite.groupcollide(self.mobs, self.bullets, False, False, collide_hit_rect)
         for mob in hits:
             for bullet in hits[mob]:
-                self.impact_positions.append(mob.rect.center)
+                self.impact_positions.append(bullet.rect.center)
                 mob.health -= bullet.damage
                 mob.pos += vec(WEAPONS[self.player.weapon]['kickback'], 0).rotate(-self.player.rot)
 
@@ -434,7 +433,7 @@ class Game:
             impact = True
             while impact:
                 self.events()
-                for magnitude in range(1, 50):
+                for magnitude in range(1, randrange(35, 60)):
                     exploding_bit_x = pos[0] + randrange(-1 * magnitude, magnitude) + self.camera.camera.x
                     exploding_bit_y = pos[1] + randrange(-1 * magnitude, magnitude) + self.camera.camera.y
                     pg.draw.circle(self.screen, choice(BLOOD_SHADES), (exploding_bit_x, exploding_bit_y),
