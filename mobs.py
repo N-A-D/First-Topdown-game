@@ -126,8 +126,8 @@ class Mob(pg.sprite.Sprite):
         """
         if self.vel.length() == 0:
             self.move_from_rest()
-        circle_pos = self.pos + self.vel.normalize() * WANDER_RING_DISTANCE
-        target = circle_pos + vec(self.wander_radius, 0).rotate(uniform(0, 360))
+        self.target = self.pos + self.vel.normalize() * WANDER_RING_DISTANCE
+        target = self.target + vec(self.wander_radius, 0).rotate(uniform(0, 360))
         return self.seek(target)
 
     def pursue(self):
@@ -137,59 +137,78 @@ class Mob(pg.sprite.Sprite):
         the target's future location
         :return:
         """
-        target = vec(0, 0)
         if self.game.player.vel.length() == 0:
-            target = self.game.player.pos
+            self.target = self.game.player.pos
         else:
-            target = self.game.player.pos + self.game.player.vel.normalize()
-        return self.seek_with_approach(target)
+            self.target = self.game.player.pos + self.game.player.vel.normalize()
+        return self.seek(self.target) #self.seek_with_approach(self.target)
 
-    def avoid_collisions(self):
+    def cohesion(self):
+        sum = vec(0, 0)
+        count = 0
+        all_obstacles = [mob for mob in self.game.mobs if mob.is_onscreen]
+        for mob in all_obstacles:
+            distance = (self.pos - mob.pos).length()
+            if 0 < distance < AVOID_RADIUS:
+                sum += mob.pos
+                count += 1
+        if count > 0:
+            sum /= count
+            return self.seek(sum)
+        else:
+            return vec(0, 0)
+
+    def align(self):
+        sum = vec(0, 0)
+        count = 0
+        all_obstacles = [mob for mob in self.game.mobs if mob.is_onscreen]
+        for mob in all_obstacles:
+            distance = (self.pos - mob.pos).length()
+            if 0 < distance < AVOID_RADIUS:
+                sum += mob.vel
+                count += 1
+        steer = vec(0, 0)
+        if count > 0:
+            sum /= count
+            if sum.length() == 0:
+                return steer
+            sum.normalize()
+            sum *= self.speed
+            steer = sum - self.vel
+            steer.scale_to_length(self.seek_force)
+        return steer
+
+    def seperation(self):
         """
         Gives this mob the ability to avoid
         collisions with other obstacles
         :return: None
         """
-        all_obstacles = []
-        for mob in self.game.mobs:
-            if mob.is_onscreen:
-                all_obstacles.append(mob)
-        all_obstacles += [obs for obs in self.game.walls]
+        all_obstacles = [mob for mob in self.game.mobs if mob.is_onscreen]
         sum = vec(0, 0)
         count = 0
-
-        for obs in all_obstacles:
-            if self.vel.length() == 0:
-                self.move_from_rest()
-            ahead = self.pos + self.vel.normalize() * ENEMY_LINE_OF_SIGHT / 2
-            further_ahead = self.pos + self.vel.normalize() * ENEMY_LINE_OF_SIGHT
-            var = self.find_most_threatening([ahead, further_ahead, self.pos], obs)
-            if var:
-                diff = var - obs.pos
-                dist = diff.length()
-                if 0 < dist < AVOID_RADIUS:
-                    diff.normalize_ip()
-                    diff /= dist
-                    sum += diff
-                    count += 1
-            else:
-                continue
-
-        steer = vec(0, 0)
+        for mob in all_obstacles:
+            distance = (self.pos - mob.pos).length()
+            if 0 < distance < AVOID_RADIUS:
+                diff = self.pos - mob.pos
+                diff.normalize()
+                diff /= distance
+                sum += diff
+                count += 1
         if count > 0:
             sum /= count
-            sum.normalize_ip()
-            sum *= self.speed
-            steer = sum - self.vel
-            if steer.length() > self.seek_force:
-                steer.scale_to_length(self.seek_force)
-        return steer
+            if sum.length() == 0:
+                return vec(0, 0)
+            else:
+                sum.normalize()
+                sum *= self.speed
+                steer = sum - self.vel
+                return steer
+        else:
+            return vec(0, 0)
 
-    def find_most_threatening(self, awareness_vectors, obj):
-        for vector in awareness_vectors:
-            if vector.distance_to(obj.pos) < obj.radius:
-                return vector
-        return None
+    def avoid_walls(self):
+        pass
 
     def apply_behaviours(self):
         """
@@ -198,10 +217,10 @@ class Mob(pg.sprite.Sprite):
         """
         steering_force = vec(0, 0)
         if not self.can_pursue:
-            steering_force = self.wander() + self.avoid_collisions()
+            steering_force = self.wander() + self.seperation() + self.align() + self.cohesion()
         else:
-            steering_force = self.pursue() + self.avoid_collisions()
-        # steering_force = self.wander() + self.avoid_collisions()
+            steering_force = self.pursue() + self.seperation() + self.align() + self.cohesion()
+        # steering_force = self.wander() + self.seperation() + self.align() + self.cohesion()
         self.acc += steering_force
 
     def check_if_is_on_screen(self):

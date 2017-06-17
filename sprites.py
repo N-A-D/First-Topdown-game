@@ -128,6 +128,7 @@ class MuzzleFlash(pg.sprite.Sprite):
         if pg.time.get_ticks() - self.spawn_time > FLASH_DURATION:
             self.kill()
 
+
 class Item(pg.sprite.Sprite):
     def __init__(self, game, pos, img):
         """
@@ -162,6 +163,7 @@ class Item(pg.sprite.Sprite):
             self.step = 0
             self.dir *= -1
 
+
 class WeaponPickup(Item):
     def __init__(self, game, pos):
         types = ['rifle', 'shotgun', 'handgun']
@@ -177,9 +179,11 @@ class WeaponPickup(Item):
     def update(self):
         super().update()
 
+
 class MiscPickup(Item):
     AMMO_BOOST = 5
     HEALTH_BOOST = 25
+
     def __init__(self, game, pos):
         types = ['ammo', 'health']
         self.type = choice(types)
@@ -189,16 +193,46 @@ class MiscPickup(Item):
     def update(self):
         super().update()
 
+
 class SwingArea(pg.sprite.Sprite):
-    def __init__(self, game, pos):
+    """
+    This class represents the area that the player swings their weapon.
+    Any enemy caught in this area is dealt damage.
+    """
+    def __init__(self, game, pos, direction):
+        """
+        Damage area effect constuctor
+        :param game: The game object
+        :param pos: the position to place this damage area
+        :param direction: in what direction the player is facing
+        """
         self.groups = game.swingAreas
         self.game = game
         self.pos = pos
         pg.sprite.Sprite.__init__(self, self.groups)
         self.rect = PLAYER_MELEE_RECT.copy()
-        self.rect.center = pos
+        if direction == 'E':
+            self.rect.midleft = pos
+        elif direction == 'NE':
+            self.rect.bottomleft = pos
+        elif direction == 'N':
+            self.rect.midbottom = pos
+        elif direction == 'NW':
+            self.rect.bottomright = pos
+        elif direction == 'W':
+            self.rect.midright = pos
+        elif direction == 'SW':
+            self.rect.topright = pos
+        elif direction == 'S':
+            self.rect.midtop = pos
+        elif direction == 'SE':
+            self.rect.topleft = pos
         self.spawn_time = pg.time.get_ticks()
 
     def update(self):
+        """
+        Updates the state of this swing area
+        :return:
+        """
         if pg.time.get_ticks() - self.spawn_time > WEAPONS['animation times'][self.game.player.weapon]['melee']:
             self.kill()

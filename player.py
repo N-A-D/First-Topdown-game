@@ -291,21 +291,21 @@ class Player(pg.sprite.Sprite):
         :return: None
         """
         if self.direction == 'E':
-            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.midright))
+            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.midright, self.direction))
         elif self.direction == 'NE':
-            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.topright))
+            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.topright, self.direction))
         elif self.direction == 'N':
-            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.midtop))
+            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.midtop, self.direction))
         elif self.direction == 'NW':
-            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.topleft))
+            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.topleft, self.direction))
         elif self.direction == 'W':
-            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.midleft))
+            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.midleft, self.direction))
         elif self.direction == 'SW':
-            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.bottomleft))
+            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.bottomleft, self.direction))
         elif self.direction == 'S':
-            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.midbottom))
+            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.midbottom, self.direction))
         elif self.direction == 'SE':
-            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.bottomright))
+            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.bottomright, self.direction))
 
     def animate(self):
         """
@@ -365,9 +365,10 @@ class Player(pg.sprite.Sprite):
                 else:
                     self.arsenal[self.weapon]['reloads'] += item.AMMO_BOOST
             else:
-                self.health += item.HEALTH_BOOST
-                if self.health > PLAYER_HEALTH:
-                    self.heatlh = PLAYER_HEALTH
+                if self.health + item.HEALTH_BOOST > PLAYER_HEALTH:
+                    self.health = PLAYER_HEALTH
+                else:
+                    self.health += item.HEALTH_BOOST
 
     def update_melee_box(self):
         """

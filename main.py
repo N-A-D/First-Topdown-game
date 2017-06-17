@@ -158,11 +158,12 @@ class Game:
         self.mobs = pg.sprite.Group()
         self.items = pg.sprite.Group()
         self.swingAreas = pg.sprite.Group()
-
+        self.wall_locations = []
         for row, tiles in enumerate(self.map.data):
             for col, tile in enumerate(tiles):
                 if tile == '1':
                     Obstacle(self, col, row, TILESIZE, TILESIZE)
+                    self.wall_locations.append((col * TILESIZE, row * TILESIZE))
                 if tile == 'P':
                     self.player = Player(self, col, row)
                 if tile == 'E':
