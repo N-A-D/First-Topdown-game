@@ -10,6 +10,7 @@ from mobs import Mob
 from tilemap import Map, Camera
 from sprites import Obstacle, WeaponPickup, MiscPickup
 from core_functions import collide_hit_rect
+from pathfinding import WeightedGraph
 
 vec = pg.math.Vector2
 
@@ -24,6 +25,8 @@ class Game:
         pg.mixer.pre_init(44100, -16, 1, 1024)
         pg.mouse.set_visible(False)
         self.screen = pg.display.set_mode((WIDTH, HEIGHT))
+        self.screen_width = WIDTH
+        self.screen_height = HEIGHT
         pg.display.set_caption(TITLE)
         self.clock = pg.time.Clock()
 
@@ -45,7 +48,7 @@ class Game:
         :return: None
         """
         # Game map
-        self.map = Map(path.join(self.game_folder, 'map2.txt'))
+        self.map = Map(path.join(self.game_folder, 'map3.txt'))
 
 
         self.screen_dimmer = pg.Surface(self.screen.get_size()).convert_alpha()
@@ -159,6 +162,7 @@ class Game:
         self.items = pg.sprite.Group()
         self.swingAreas = pg.sprite.Group()
         self.wall_locations = []
+        self.enemy_locations = []
         for row, tiles in enumerate(self.map.data):
             for col, tile in enumerate(tiles):
                 if tile == '1':
@@ -168,12 +172,14 @@ class Game:
                     self.player = Player(self, col, row)
                 if tile == 'E':
                     Mob(self, col, row)
+                    self.enemy_locations.append((col * TILESIZE, row * TILESIZE))
                 if tile == 'W':
                     WeaponPickup(self, (col * TILESIZE, row * TILESIZE))
 
         self.camera = Camera(self.map.width, self.map.height)
         self.paused = False
         self.running = True
+        self.graph = WeightedGraph(self, self.screen_width, self.screen_height)
         g.run()
 
     def run(self):
@@ -236,6 +242,11 @@ class Game:
                 snd.play()
             else:
                 pass
+
+        # Update enemy locations
+        x = self.enemy_locations
+        self.enemy_locations = [(int(mob.pos.x), int(mob.pos.y)) for mob in self.mobs if mob.is_onscreen]
+        del x
 
     def events(self):
         """

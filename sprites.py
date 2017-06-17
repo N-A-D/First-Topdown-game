@@ -208,24 +208,24 @@ class SwingArea(pg.sprite.Sprite):
         """
         self.groups = game.swingAreas
         self.game = game
-        self.pos = pos
         pg.sprite.Sprite.__init__(self, self.groups)
         self.rect = PLAYER_MELEE_RECT.copy()
-        if direction == 'E':
+        self.direction = direction
+        if self.direction == 'E':
             self.rect.midleft = pos
-        elif direction == 'NE':
+        elif self.direction == 'NE':
             self.rect.bottomleft = pos
-        elif direction == 'N':
+        elif self.direction == 'N':
             self.rect.midbottom = pos
-        elif direction == 'NW':
+        elif self.direction == 'NW':
             self.rect.bottomright = pos
-        elif direction == 'W':
+        elif self.direction == 'W':
             self.rect.midright = pos
-        elif direction == 'SW':
+        elif self.direction == 'SW':
             self.rect.topright = pos
-        elif direction == 'S':
+        elif self.direction == 'S':
             self.rect.midtop = pos
-        elif direction == 'SE':
+        elif self.direction == 'SE':
             self.rect.topleft = pos
         self.spawn_time = pg.time.get_ticks()
 
@@ -234,5 +234,24 @@ class SwingArea(pg.sprite.Sprite):
         Updates the state of this swing area
         :return:
         """
+
         if pg.time.get_ticks() - self.spawn_time > WEAPONS['animation times'][self.game.player.weapon]['melee']:
             self.kill()
+
+        if self.direction == 'E':
+            self.rect.midleft = self.game.player.pos
+        elif self.direction == 'NE':
+            self.rect.bottomleft = self.game.player.pos
+        elif self.direction == 'N':
+            self.rect.midbottom = self.game.player.pos
+        elif self.direction == 'NW':
+            self.rect.bottomright = self.game.player.pos
+        elif self.direction == 'W':
+            self.rect.midright = self.game.player.pos
+        elif self.direction == 'SW':
+            self.rect.topright = self.game.player.pos
+        elif self.direction == 'S':
+            self.rect.midtop = self.game.player.pos
+        elif self.direction == 'SE':
+            self.rect.topleft = self.game.player.pos
+

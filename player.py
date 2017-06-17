@@ -361,7 +361,8 @@ class Player(pg.sprite.Sprite):
                             hasFireArm = True
                             firearm = key
                             break
-                    self.arsenal[firearm]['reloads'] = item.AMMO_BOOST
+                    if firearm != 'knife':
+                        self.arsenal[firearm]['reloads'] = item.AMMO_BOOST
                 else:
                     self.arsenal[self.weapon]['reloads'] += item.AMMO_BOOST
             else:
@@ -435,7 +436,7 @@ class Player(pg.sprite.Sprite):
         """
         self.process_input()
         self.animate()
-        #self.update_melee_box()
+        # self.update_melee_box()
         self.rect.center = self.pos
         self.pos += self.vel * self.game.dt
         self.hit_rect.centerx = self.pos.x

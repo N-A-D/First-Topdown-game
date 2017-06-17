@@ -7,7 +7,7 @@ from random import choice, uniform
 from core_functions import collide_with_obstacles
 from settings import *
 from sprites import WeaponPickup, MiscPickup
-
+from pathfinding import Pathfinder
 
 class Mob(pg.sprite.Sprite):
     """
@@ -22,11 +22,15 @@ class Mob(pg.sprite.Sprite):
         :param x: x location in the plane
         :param y: y location in the plane
         """
+        # A path finder to give a mob a path to its target
+        self.pathfinder = Pathfinder()
+
         # Used to determine when the mob will be drawn
         self._layer = MOB_LAYER
         self.groups = game.all_sprites, game.mobs
         self.game = game
         pg.sprite.Sprite.__init__(self, self.groups)
+
         # Image copies are necessary because if were not
         # for the copy, any damages pasted onto the enemy
         # image would be replicated onto the other enemies
@@ -62,6 +66,7 @@ class Mob(pg.sprite.Sprite):
         self.can_pursue = False
         self.can_attack = True
         self.last_attack_time = 0
+
         # How often this mob will change targets while wondering
         self.last_target_time = 0
         if self.rect.x < WIDTH + TILESIZE and self.rect.y <= HEIGHT + TILESIZE:
@@ -259,7 +264,6 @@ class Mob(pg.sprite.Sprite):
                 self.drop_item()
             self.kill()
         self.check_if_is_on_screen()
-
         if self.is_onscreen:
             self.apply_behaviours()
             self.vel += self.acc * self.game.dt

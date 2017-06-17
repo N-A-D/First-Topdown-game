@@ -8,6 +8,7 @@ class Heap:
     Heap implementation that supports heapification of
     items with custom weights.
     """
+
     def __init__(self, pairs):
         """
         Creates a heap with the given list of item, value pairs.
@@ -67,10 +68,12 @@ class Heap:
         """
         print(self.items)
 
+
 class PriorityQueue:
     """
     Priority queue implementation utilizing a heap.
     """
+
     def __init__(self):
         """
         Creates a priority queue.
@@ -106,6 +109,7 @@ class Graph:
     """
     Graph implementation specific to the game.
     """
+
     def __init__(self, game, width, height):
         """
         Creates a graph.
@@ -115,8 +119,8 @@ class Graph:
         """
         self.width = width
         self.height = height
-        self.wall_positions = game.wall_positions
-        self.enemy_positions = game.enemy_positions
+        self.wall_positions = game.wall_locations
+        self.enemy_positions = game.enemy_locations
         self.connections = [vec(1, 0), vec(-1, 0), vec(0, 1), vec(0, -1)]
         self.connections += [vec(1, 1), vec(-1, 1), vec(1, -1), vec(-1, -1)]
 
@@ -147,11 +151,13 @@ class Graph:
         neighbors = filter(self.passable, neighbors)
         return neighbors
 
+
 class WeightedGraph(Graph):
     """
     Weighted graph implementation that attached weights to the edges
     between nodes
     """
+
     def __init__(self, game, width, height):
         """
         Creates a weighted graph.
@@ -172,11 +178,11 @@ class WeightedGraph(Graph):
         else:
             return self.weights.get(end, 0) + 14
 
-class Pathfinder:
 
-    def __init__(self, game):
-        self.game_graph = WeightedGraph(game)
+class Pathfinder:
+    def __init__(self):
         self.frontier = PriorityQueue()
+        self.path = {}
 
     def vector_to_coordinate(self, vector):
         return (int(vector.x), int(vector.y))
@@ -184,7 +190,7 @@ class Pathfinder:
     def heuristic(self, A, B):
         return (abs(A.x - B.x) + abs(A.y - B.y)) * 10
 
-    def A_star_search(self, start, end):
+    def A_star_search(self, graph, start, end):
         path = {}
         cost = {}
         path[self.vector_to_coordinate(start)] = None
@@ -195,9 +201,9 @@ class Pathfinder:
             if current == end:
                 break
             else:
-                for neighbour in self.game_graph.find_neighbors(vec(current)):
+                for neighbour in graph.find_neighbors(vec(current)):
                     neighbour = self.vector_to_coordinate(neighbour)
-                    neighbour_cost = cost[current] + self.game_graph.cost(current, end)
+                    neighbour_cost = cost[current] + graph.cost(current, end)
                     if neighbour not in cost or neighbour_cost < cost[neighbour]:
                         cost[neighbour] = neighbour_cost
                         priority = neighbour_cost + self.heuristic(end, vec(neighbour))
