@@ -10,7 +10,6 @@ from mobs import Mob
 from tilemap import Map, Camera
 from sprites import Obstacle, WeaponPickup, MiscPickup
 from core_functions import collide_hit_rect
-from pathfinding import WeightedGraph
 
 vec = pg.math.Vector2
 
@@ -161,25 +160,29 @@ class Game:
         self.mobs = pg.sprite.Group()
         self.items = pg.sprite.Group()
         self.swingAreas = pg.sprite.Group()
-        self.wall_locations = []
-        self.enemy_locations = []
-        for row, tiles in enumerate(self.map.data):
-            for col, tile in enumerate(tiles):
-                if tile == '1':
-                    Obstacle(self, col, row, TILESIZE, TILESIZE)
-                    self.wall_locations.append((col * TILESIZE, row * TILESIZE))
-                if tile == 'P':
-                    self.player = Player(self, col, row)
-                if tile == 'E':
-                    Mob(self, col, row)
-                    self.enemy_locations.append((col * TILESIZE, row * TILESIZE))
-                if tile == 'W':
-                    WeaponPickup(self, (col * TILESIZE, row * TILESIZE))
-
         self.camera = Camera(self.map.width, self.map.height)
         self.paused = False
         self.running = True
-        self.graph = WeightedGraph(self, self.screen_width, self.screen_height)
+
+        mob_positions = []
+        wall_positions = []
+        for row, tiles in enumerate(self.map.data):
+            for col, tile in enumerate(tiles):
+                if tile == '1':
+                    # Obstacle(self, col, row, TILESIZE, TILESIZE)
+                    wall_positions.append((col * TILESIZE, row * TILESIZE))
+                if tile == 'P':
+                    self.player = Player(self, col, row)
+                if tile == 'E':
+                    # Mob(self, col, row)
+                    mob_positions.append((col * TILESIZE, row * TILESIZE))
+                if tile == 'W':
+                    WeaponPickup(self, (col * TILESIZE, row * TILESIZE))
+
+        for position in wall_positions:
+            Obstacle(self, position[0], position[1])
+        for position in mob_positions:
+            Mob(self, position[0], position[1])
         g.run()
 
     def run(self):
@@ -189,7 +192,7 @@ class Game:
         """
         self.playing = True
         while self.playing:
-            pg.display.set_caption("{:.0f}".format(self.clock.get_fps()))
+            pg.display.set_caption("{:.1f}".format(self.clock.get_fps()))
             self.dt = self.clock.tick(FPS) / 1000
             self.events()
             if not self.paused:
@@ -202,7 +205,12 @@ class Game:
         :return: None
         """
         self.impact_positions = []
-        self.all_sprites.update()
+        #self.all_sprites.update()
+        for sprite in self.all_sprites:
+            if sprite == self.player:
+                sprite.update(pg.key.get_pressed())
+            else:
+                sprite.update()
         self.camera.update(self.player)
         self.swingAreas.update()
 
@@ -242,11 +250,6 @@ class Game:
                 snd.play()
             else:
                 pass
-
-        # Update enemy locations
-        x = self.enemy_locations
-        self.enemy_locations = [(int(mob.pos.x), int(mob.pos.y)) for mob in self.mobs if mob.is_onscreen]
-        del x
 
     def events(self):
         """

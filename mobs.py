@@ -7,7 +7,8 @@ from random import choice, uniform
 from core_functions import collide_with_obstacles
 from settings import *
 from sprites import WeaponPickup, MiscPickup
-from pathfinding import Pathfinder
+from pathfinding import Pathfinder, WeightedGrid
+
 
 class Mob(pg.sprite.Sprite):
     """
@@ -22,9 +23,6 @@ class Mob(pg.sprite.Sprite):
         :param x: x location in the plane
         :param y: y location in the plane
         """
-        # A path finder to give a mob a path to its target
-        self.pathfinder = Pathfinder()
-
         # Used to determine when the mob will be drawn
         self._layer = MOB_LAYER
         self.groups = game.all_sprites, game.mobs
@@ -38,7 +36,7 @@ class Mob(pg.sprite.Sprite):
         self.original_image = choice(game.enemy_imgs).copy()
         self.image = self.original_image.copy()
         self.rect = self.image.get_rect()
-        self.rect.center = vec(x, y) * TILESIZE
+        self.rect.center = vec(x, y)
 
         # Secondary rectangle for collisions is necessary
         # because rotation of the main rectangle warps its
@@ -73,6 +71,11 @@ class Mob(pg.sprite.Sprite):
             self.is_onscreen = True
         else:
             self.is_onscreen = False
+
+        print(x, y)
+        self.pathfinder = Pathfinder()
+        self.game_grid = WeightedGrid()
+        self.game_grid.walls = [(int(wall.pos.x // TILESIZE), int(wall.pos.y // TILESIZE)) for wall in game.walls]
 
     def pause(self):
         """
@@ -146,7 +149,7 @@ class Mob(pg.sprite.Sprite):
             self.target = self.game.player.pos
         else:
             self.target = self.game.player.pos + self.game.player.vel.normalize()
-        return self.seek(self.target) #self.seek_with_approach(self.target)
+        return self.seek(self.target)  # self.seek_with_approach(self.target)
 
     def cohesion(self):
         sum = vec(0, 0)
@@ -254,6 +257,11 @@ class Mob(pg.sprite.Sprite):
         else:
             MiscPickup(self.game, self.pos)
 
+    def update_mob_locations(self):
+        self.game_grid.enemies = [(int(enemy.pos.x // TILESIZE), int(enemy.pos.y // TILESIZE)) for enemy in
+                                  self.game.mobs
+                                  if enemy != self]
+
     def update(self):
         """
         Update his mob's internal state
@@ -263,22 +271,28 @@ class Mob(pg.sprite.Sprite):
             if uniform(0, 1) < .025:
                 self.drop_item()
             self.kill()
-        self.check_if_is_on_screen()
-        if self.is_onscreen:
-            self.apply_behaviours()
-            self.vel += self.acc * self.game.dt
-            self.vel.scale_to_length(self.speed)
-            if self.can_attack:
-                self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
-                self.hit_rect.centerx = self.pos.x
-                collide_with_obstacles(self, self.game.walls, 'x')
-                self.hit_rect.centery = self.pos.y
-                collide_with_obstacles(self, self.game.walls, 'y')
-            self.rot = self.vel.angle_to(vec(1, 0))
-            self.image = pg.transform.rotozoom(self.original_image, self.rot - 90, 1).copy()
-            self.rect.center = self.hit_rect.center
-        if pg.time.get_ticks() - self.last_attack_time > 500:
-            self.can_attack = True
+        self.update_mob_locations()
+        self.path = self.pathfinder.a_star_search(self.game_grid,
+                                                  vec(self.game.player.pos.x // TILESIZE,
+                                                      self.game.player.pos.y // TILESIZE),
+                                                  vec(self.pos.x // TILESIZE, self.pos.y // TILESIZE))
+        print(len(self.game_grid.enemies))
+        # self.check_if_is_on_screen()
+        # if self.is_onscreen:
+        #     self.apply_behaviours()
+        #     self.vel += self.acc * self.game.dt
+        #     self.vel.scale_to_length(self.speed)
+        #     if self.can_attack:
+        #         self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
+        #         self.hit_rect.centerx = self.pos.x
+        #         collide_with_obstacles(self, self.game.walls, 'x')
+        #         self.hit_rect.centery = self.pos.y
+        #         collide_with_obstacles(self, self.game.walls, 'y')
+        #     self.rot = self.vel.angle_to(vec(1, 0))
+        #     self.image = pg.transform.rotozoom(self.original_image, self.rot - 90, 1).copy()
+        #     self.rect.center = self.hit_rect.center
+        #     if pg.time.get_ticks() - self.last_attack_time > 500:
+        #         self.can_attack = True
 
     def draw_health(self):
         """
