@@ -15,35 +15,32 @@ class Obstacle(pg.sprite.Sprite):
     This class represents obstacles in the game
     """
 
-    def __init__(self, game, x, y, width, height):
+    def __init__(self, game, x, y):
         """
         Obstacle initialization
         :param game: The game object to which this obstacle belongs
         :param x: The x location of this obstacle
         :param y: The y location of this obstacle
-        :param width: The width of this obstacle
-        :param height: The height of this obstacle
         """
         # When this obstacle will be drawn to the screen
         self._layer = WALL_LAYER
         self.groups = game.walls, game.all_sprites
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
-        self.image = pg.Surface((width, height))
+        self.image = pg.Surface((TILESIZE, TILESIZE))
         self.image.fill(LIGHTGREY)
         self.rect = self.image.get_rect()
-        self.rect.x = x * width
-        self.rect.y = y * height
+        self.rect.x = x
+        self.rect.y = y
         self.hit_rect = pg.Rect(self.rect.x, self.rect.y, self.rect.width, self.rect.height)
         self.radius = self.rect.width * 0.7071
-        self.pos = self.rect.center
+        self.pos = vec(self.rect.center)
 
 
 class Bullet(pg.sprite.Sprite):
     """
     This class represents bullets in the game
     """
-
     def __init__(self, game, pos, dir, damage):
         """
         Bullet initialization

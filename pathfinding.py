@@ -1,4 +1,4 @@
-import heapq
+import heap
 import pygame as pg
 from settings import GRIDWIDTH, GRIDHEIGHT
 
@@ -41,10 +41,10 @@ class PriorityQueue:
         self.nodes = []
 
     def put(self, node, cost):
-        heapq.heappush(self.nodes, (cost, node))
+        heap.min_heap_push(heap=self.nodes, item=node, cost=cost)
 
     def get(self):
-        return heapq.heappop(self.nodes)[1]
+        return heap.min_heap_pop(heap=self.nodes)[1]
 
     def empty(self):
         return len(self.nodes) == 0

@@ -7,6 +7,7 @@ from settings import *
 from random import uniform
 from sprites import Bullet, MuzzleFlash
 from sprites import WeaponPickup, SwingArea
+from random import choice
 
 vec = pg.math.Vector2
 
@@ -152,21 +153,21 @@ class Player(pg.sprite.Sprite):
         self.current_frame = 0
         self.play_static_animation = True
 
-    def process_input(self):
+    def process_input(self, input):
         """
-        Interprets player input into character actions
-        :return: None
+        Processes keyboard inputs relevant to the player's character
+        :param input: The list of input keys
+        :return:
         """
         self.rot = 0
         self.vel = vec(0, 0)
         self.action = 'idle'
         self.aim_wobble = 0
-        keys = pg.key.get_pressed()
         self.update_rotation()
-        self.handle_player_movement(keys=keys)
+        self.handle_player_movement(keys=input)
         if not self.play_static_animation:
-            self.handle_weapon_selection(keys=keys)
-            self.handle_combat_controls(keys=keys)
+            self.handle_weapon_selection(keys=input)
+            self.handle_combat_controls(keys=input)
 
         # Accommodates for diagonal movement being slightly faster than pure horizontal or vertical movement
         if self.vel.x != 0 and self.vel.y != 0:
@@ -354,15 +355,10 @@ class Player(pg.sprite.Sprite):
         else:
             if item.type == 'ammo':
                 if self.weapon == 'knife':
-                    hasFireArm = False
-                    firearm = ""
-                    for key, _ in enumerate(self.arsenal):
-                        if self.arsenal[key]['hasWeapon']:
-                            hasFireArm = True
-                            firearm = key
-                            break
-                    if firearm != 'knife':
-                        self.arsenal[firearm]['reloads'] = item.AMMO_BOOST
+                    keys = ['rifle', 'shotgun', 'handgun']
+                    firearm = choice(keys)
+                    self.arsenal[firearm]['reloads'] += item.AMMO_BOOST
+
                 else:
                     self.arsenal[self.weapon]['reloads'] += item.AMMO_BOOST
             else:
@@ -429,12 +425,13 @@ class Player(pg.sprite.Sprite):
         elif -67.5 < self.rot <= -22.5:
             self.direction = 'SE'
 
-    def update(self):
+    def update(self, keyboard_input):
         """
-        Updates the player's internal state
+        Updates the player character.
+        :param keyboard_input: The list of keyboard inputs given.
         :return: None
         """
-        self.process_input()
+        self.process_input(keyboard_input)
         self.animate()
         # self.update_melee_box()
         self.rect.center = self.pos
