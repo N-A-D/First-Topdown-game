@@ -1,6 +1,6 @@
 import heap
 import pygame as pg
-from settings import GRIDWIDTH, GRIDHEIGHT
+from settings import GRIDWIDTH, GRIDHEIGHT, TILESIZE
 
 vec = pg.math.Vector2
 
@@ -62,13 +62,22 @@ class Pathfinder:
         def vector_to_tuple(v):
             return (int(v.x), int(v.y))
 
+        def construct_path(came_from, start, goal):
+            current = start
+            path = [vec(current.x * TILESIZE, current.y * TILESIZE)]
+            while current != goal:
+                next = came_from[(current.x, current.y)]
+                current = current + next
+                path.append(vec(current.x * TILESIZE, current.y * TILESIZE))
+            return path
+
+
         self.frontier = PriorityQueue()
         self.frontier.put(vector_to_tuple(start), 0)
         self.path = {}
         self.cost = {}
         self.path[vector_to_tuple(start)] = None
         self.cost[vector_to_tuple(start)] = 0
-
         goal = vector_to_tuple(end)
 
         while not self.frontier.empty():
@@ -83,6 +92,4 @@ class Pathfinder:
                     priority = next_cost + heuristic(end, vec(next))
                     self.frontier.put(next, priority)
                     self.path[next] = vec(current) - vec(next)
-
-        return self.path
-
+        return construct_path(self.path, end, start)

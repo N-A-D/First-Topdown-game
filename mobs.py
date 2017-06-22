@@ -55,7 +55,6 @@ class Mob(pg.sprite.Sprite):
         self.vel = vec(0, 0)
         self.acc = vec(self.speed, 0).rotate(uniform(0, 360))
         self.rot = 0
-        self.current_rot = 0
 
         # How fast this mob is able to track
         # the player
@@ -72,10 +71,12 @@ class Mob(pg.sprite.Sprite):
         else:
             self.is_onscreen = False
 
-        print(x, y)
         self.pathfinder = Pathfinder()
         self.game_grid = WeightedGrid()
         self.game_grid.walls = [(int(wall.pos.x // TILESIZE), int(wall.pos.y // TILESIZE)) for wall in game.walls]
+        self.path = self.pathfinder.a_star_search(self.game_grid, vec(self.pos.x // TILESIZE, self.pos.y // TILESIZE),
+                                                  vec(self.game.player.pos.x // TILESIZE, self.game.player.pos.y // TILESIZE))
+        self.current_path_target = len(self.path) - 2
 
     def pause(self):
         """
@@ -134,8 +135,8 @@ class Mob(pg.sprite.Sprite):
         """
         if self.vel.length() == 0:
             self.move_from_rest()
-        self.target = self.pos + self.vel.normalize() * WANDER_RING_DISTANCE
-        target = self.target + vec(self.wander_radius, 0).rotate(uniform(0, 360))
+        circle_pos = self.pos + self.vel.normalize() * WANDER_RING_DISTANCE
+        target = circle_pos + vec(self.wander_radius, 0).rotate(uniform(0, 360))
         return self.seek(target)
 
     def pursue(self):
@@ -146,18 +147,18 @@ class Mob(pg.sprite.Sprite):
         :return:
         """
         if self.game.player.vel.length() == 0:
-            self.target = self.game.player.pos
+            target = self.game.player.pos
         else:
-            self.target = self.game.player.pos + self.game.player.vel.normalize()
-        return self.seek(self.target)  # self.seek_with_approach(self.target)
+            target = self.game.player.pos + self.game.player.vel.normalize()
+        return self.seek(target)
 
     def cohesion(self):
         sum = vec(0, 0)
         count = 0
         all_obstacles = [mob for mob in self.game.mobs if mob.is_onscreen]
         for mob in all_obstacles:
-            distance = (self.pos - mob.pos).length()
-            if 0 < distance < AVOID_RADIUS:
+            distance = self.pos.distance_squared_to(mob.pos) #(self.pos - mob.pos).length()
+            if 0 < distance < AVOID_RADIUS ** 2:
                 sum += mob.pos
                 count += 1
         if count > 0:
@@ -171,8 +172,8 @@ class Mob(pg.sprite.Sprite):
         count = 0
         all_obstacles = [mob for mob in self.game.mobs if mob.is_onscreen]
         for mob in all_obstacles:
-            distance = (self.pos - mob.pos).length()
-            if 0 < distance < AVOID_RADIUS:
+            distance = self.pos.distance_squared_to(mob.pos)#(self.pos - mob.pos).length()
+            if 0 < distance < AVOID_RADIUS ** 2:
                 sum += mob.vel
                 count += 1
         steer = vec(0, 0)
@@ -196,8 +197,8 @@ class Mob(pg.sprite.Sprite):
         sum = vec(0, 0)
         count = 0
         for mob in all_obstacles:
-            distance = (self.pos - mob.pos).length()
-            if 0 < distance < AVOID_RADIUS:
+            distance = self.pos.distance_squared_to(mob.pos) #self.pos - mob.pos).length()
+            if 0 < distance < AVOID_RADIUS ** 2:
                 diff = self.pos - mob.pos
                 diff.normalize()
                 diff /= distance
@@ -224,11 +225,11 @@ class Mob(pg.sprite.Sprite):
         :return: None
         """
         steering_force = vec(0, 0)
-        if not self.can_pursue:
-            steering_force = self.wander() + self.seperation() + self.align() + self.cohesion()
-        else:
-            steering_force = self.pursue() + self.seperation() + self.align() + self.cohesion()
-        # steering_force = self.wander() + self.seperation() + self.align() + self.cohesion()
+        # if not self.can_pursue:
+        #     steering_force = self.wander() + self.seperation() + self.align() + self.cohesion()
+        # else:
+        #     steering_force = self.pursue() + self.seperation() + self.align() + self.cohesion()
+        steering_force = self.pursue() + self.seperation() + self.align() + self.cohesion()
         self.acc += steering_force
 
     def check_if_is_on_screen(self):
@@ -262,6 +263,16 @@ class Mob(pg.sprite.Sprite):
                                   self.game.mobs
                                   if enemy != self]
 
+    def follow_path(self):
+        target = vec(0, 0)
+        if self.current_path_target >= 0:
+            target = self.path[self.current_path_target]
+            if self.pos.distance_squared_to(target) <= DETECT_RADIUS**2:
+                self.current_path_target -= 1
+        else:
+            self.current_path_target = 0
+        return self.seek(target)
+
     def update(self):
         """
         Update his mob's internal state
@@ -271,13 +282,29 @@ class Mob(pg.sprite.Sprite):
             if uniform(0, 1) < .025:
                 self.drop_item()
             self.kill()
+
         self.update_mob_locations()
-        self.path = self.pathfinder.a_star_search(self.game_grid,
-                                                  vec(self.game.player.pos.x // TILESIZE,
-                                                      self.game.player.pos.y // TILESIZE),
-                                                  vec(self.pos.x // TILESIZE, self.pos.y // TILESIZE))
-        print(len(self.game_grid.enemies))
-        # self.check_if_is_on_screen()
+
+        # if self.pos.distance_squared_to(self.game.player.pos) < DETECT_RADIUS**2:
+        #     self.acc = self.pursue()
+        #     self.apply_behaviours()
+        # else:
+        #     self.acc = self.follow_path()
+        self.acc = self.follow_path()
+        self.vel += self.acc * self.game.dt
+        self.vel.scale_to_length(self.speed)
+        if self.can_attack:
+            self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
+            self.hit_rect.centerx = self.pos.x
+            collide_with_obstacles(self, self.game.walls, 'x')
+            self.hit_rect.centery = self.pos.y
+            collide_with_obstacles(self, self.game.walls, 'y')
+        self.rot = self.vel.angle_to(vec(1, 0))
+        self.image = pg.transform.rotozoom(self.original_image, self.rot - 90, 1).copy()
+        self.rect.center = self.hit_rect.center
+        if pg.time.get_ticks() - self.last_attack_time > 500:
+            self.can_attack = True
+        self.check_if_is_on_screen()
         # if self.is_onscreen:
         #     self.apply_behaviours()
         #     self.vel += self.acc * self.game.dt
