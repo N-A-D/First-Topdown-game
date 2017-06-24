@@ -310,8 +310,8 @@ class Game:
         self.draw_blood_splatters()
         # Draw all sprites to the screen
         for sprite in self.all_sprites:
-            if isinstance(sprite, Mob):
-                sprite.draw_health()
+            # if isinstance(sprite, Mob):
+            #     sprite.draw_health()
             self.screen.blit(sprite.image, self.camera.apply(sprite))
             if self.debug:
                 pg.draw.rect(self.screen, (0, 255, 255), self.camera.apply_rect(sprite.hit_rect), 1)

@@ -74,7 +74,7 @@ class Mob(pg.sprite.Sprite):
 
     def track_prey(self, target):
         now = pg.time.get_ticks()
-        if (self.path == None or now - self.last_path_found > 12000) and randint(1, 100) % 3 == 0:
+        if self.path == None or now - self.last_path_found > 5000:
             self.last_path_found = now
             self.path = self.game.find_path(self, target)
             self.current_path_target = len(self.path) - 2
@@ -216,6 +216,20 @@ class Mob(pg.sprite.Sprite):
         else:
             return vec(0, 0)
 
+    def apply_flocking_behaviour(self):
+        """
+        Applies flcoking steering behaviours to the mob
+        :return: None
+        """
+        self.acc += self.separation() + self.align() + self.cohesion()
+
+    def apply_pursuing_behaviour(self):
+        """
+        Allows the mob to pursue the target
+        :return:
+        """
+        self.acc += self.pursue(self.game.player) + self.separation() + self.align() + self.cohesion()
+
     def avoid_walls(self):
         sum = vec(0, 0)
         count = 0
@@ -231,20 +245,6 @@ class Mob(pg.sprite.Sprite):
             sum *= self.speed
             steer = sum - self.vel
         return steer
-
-    def apply_flocking_behaviour(self):
-        """
-        Applies flcoking steering behaviours to the mob
-        :return: None
-        """
-        self.acc += self.separation() + self.align() + self.cohesion()
-
-    def apply_pursuing_behaviour(self):
-        """
-        Allows the mob to pursue the target
-        :return:
-        """
-        self.acc += self.pursue(self.game.player) + self.separation() + self.align() + self.cohesion()
 
     def apply_wandering_behaviour(self):
         """
