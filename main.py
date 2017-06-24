@@ -36,7 +36,7 @@ class Game:
         self.snd_folder = path.join(self.game_folder, 'snd')
         self.crosshair_folder = path.join(self.img_folder, 'Crosshairs')
         self.item_folder = path.join(self.img_folder, 'Items')
-        # Loads game assests
+        # Loads game assets
         self.load_data()
         self.running = True
         # Debugging flags
@@ -472,13 +472,6 @@ class Game:
     def show_pause_screen(self):
         """
         Displays the pause screen for the game
-        :return: None
-        """
-        pass
-
-    def show_start_screen(self):
-        """
-        Displays the start screen for the game
         :return: None
         """
         pass

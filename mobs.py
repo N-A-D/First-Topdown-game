@@ -315,7 +315,7 @@ class Mob(pg.sprite.Sprite):
                 self.drop_item()
             self.kill()
         self.update_path()
-        if self.pos.distance_squared_to(self.game.player.pos) < DETECT_RADIUS ** 2:
+        if (self.pos - self.game.player.pos).length_squared() < DETECT_RADIUS ** 2:
             self.apply_pursuing_behaviour()
         elif self.path != None:
             self.acc += self.follow_path()
