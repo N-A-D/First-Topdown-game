@@ -10,6 +10,7 @@ from mobs import Mob
 from tilemap import Map, Camera
 from sprites import Obstacle, WeaponPickup, MiscPickup
 from core_functions import collide_hit_rect
+from pathfinding import Pathfinder, WeightedGrid
 
 vec = pg.math.Vector2
 
@@ -163,6 +164,8 @@ class Game:
         self.camera = Camera(self.map.width, self.map.height)
         self.paused = False
         self.running = True
+        self.pathfinder = Pathfinder()
+        self.game_graph = WeightedGrid()
 
         mob_positions = []
         wall_positions = []
@@ -183,7 +186,24 @@ class Game:
             Obstacle(self, position[0], position[1])
         for position in mob_positions:
             Mob(self, position[0], position[1])
+        self.game_graph.walls = [(int(wall[0] // TILESIZE), int(wall[1] // TILESIZE)) for wall in wall_positions]
         g.run()
+
+    def find_path(self, predator, prey):
+        """
+        Finds a path for the predator to reach its prey
+        :param predator: The entity who seeks
+        :param prey: The unknowning target
+        :return: A list of Vector2 objects to guide the predator
+        """
+        # Update enemy locations in the graph so as to avoid finding
+        # paths that will collide with other enemies
+        self.game_graph.enemies = [(int(enemy.pos.x // TILESIZE), int(enemy.pos.y // TILESIZE))
+                                   for enemy in self.mobs if enemy != predator]
+        path = self.pathfinder.a_star_search(self.game_graph,
+                                             vec(predator.pos.x // TILESIZE, predator.pos.y // TILESIZE),
+                                             vec(prey.pos.x // TILESIZE, prey.pos.y // TILESIZE))
+        return path
 
     def run(self):
         """
@@ -287,7 +307,7 @@ class Game:
                                           y - self.crosshair.get_rect().height // 2))
         if self.debug:
             self.draw_grid()
-        self.bullet_impact_animation()
+        self.draw_blood_splatters()
         # Draw all sprites to the screen
         for sprite in self.all_sprites:
             if isinstance(sprite, Mob):
@@ -442,12 +462,12 @@ class Game:
 
         self.screen.blit(text_surface, text_rect)
 
-    def bullet_impact_animation(self):
+    def draw_blood_splatters(self):
         for pos in self.impact_positions:
             impact = True
             while impact:
                 self.events()
-                for magnitude in range(1, randrange(35, 60)):
+                for magnitude in range(1, randrange(35, 65)):
                     exploding_bit_x = pos[0] + randrange(-1 * magnitude, magnitude) + self.camera.camera.x
                     exploding_bit_y = pos[1] + randrange(-1 * magnitude, magnitude) + self.camera.camera.y
                     pg.draw.circle(self.screen, choice(BLOOD_SHADES), (exploding_bit_x, exploding_bit_y),
