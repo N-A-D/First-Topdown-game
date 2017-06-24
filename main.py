@@ -18,6 +18,7 @@ class Game:
     """
     Blueprint for game objects
     """
+
     def __init__(self):
         # initialize game window, etc
         pg.init()
@@ -48,7 +49,6 @@ class Game:
         """
         # Game map
         self.map = Map(path.join(self.game_folder, 'map3.txt'))
-
 
         self.screen_dimmer = pg.Surface(self.screen.get_size()).convert_alpha()
         self.screen_dimmer.fill((0, 0, 0, 225))
@@ -205,7 +205,6 @@ class Game:
         :return: None
         """
         self.impact_positions = []
-        #self.all_sprites.update()
         for sprite in self.all_sprites:
             if sprite == self.player:
                 sprite.update(pg.key.get_pressed())
@@ -239,7 +238,7 @@ class Game:
             for bullet in hits[mob]:
                 self.impact_positions.append(bullet.rect.center)
                 mob.health -= bullet.damage
-                mob.pos += vec(WEAPONS[self.player.weapon]['kickback'], 0).rotate(-self.player.rot)
+                mob.pos += vec(WEAPONS[self.player.weapon]['damage'] // 10, 0).rotate(-self.player.rot)
 
         # Item collisions
         hits = pg.sprite.spritecollide(self.player, self.items, True, collide_hit_rect)
@@ -483,6 +482,7 @@ class Game:
         :return: None
         """
         pass
+
 
 if __name__ == '__main__':
     g = Game()

@@ -4,6 +4,7 @@ from settings import GRIDWIDTH, GRIDHEIGHT, TILESIZE
 
 vec = pg.math.Vector2
 
+
 class SquareGrid:
     def __init__(self):
         self.height = GRIDHEIGHT
@@ -25,6 +26,7 @@ class SquareGrid:
         neighbors = filter(self.passable, neighbors)
         return neighbors
 
+
 class WeightedGrid(SquareGrid):
     def __init__(self):
         super().__init__()
@@ -35,6 +37,7 @@ class WeightedGrid(SquareGrid):
             return self.weights.get(end, 0) + 10
         else:
             return self.weights.get(end, 0) + 14
+
 
 class PriorityQueue:
     def __init__(self):
@@ -48,6 +51,7 @@ class PriorityQueue:
 
     def empty(self):
         return len(self.nodes) == 0
+
 
 class Pathfinder:
     def __init__(self):
@@ -70,7 +74,6 @@ class Pathfinder:
                 current = current + next
                 path.append(vec(current.x * TILESIZE, current.y * TILESIZE))
             return path
-
 
         self.frontier = PriorityQueue()
         self.frontier.put(vector_to_tuple(start), 0)

@@ -96,8 +96,7 @@ ENEMY_DAMAGE = [10]
 ENEMY_KNOCKBACK = 10
 ENEMY_LINE_OF_SIGHT = 2.5 * TILESIZE
 ENEMY_HIT_RECT = pg.Rect(0, 0, 50, 50)
-ENEMY_SPEEDS = [speed for speed in range(50, 150, 15)]
-ENEMY_SPEEDS = [speed for speed in range(50, 150, 15)]
+ENEMY_SPEEDS = [speed for speed in range(30, 70, 10)]
 ENEMY_HEALTH = [400]
 DETECT_RADIUS = 400
 APPROACH_RADIUS = 150
@@ -137,7 +136,7 @@ WEAPONS['sound'] = {'handgun': {'attack': 'pistol.wav', 'pickup': 'gun_pickup.wa
 WEAPONS['handgun'] = {'bullet_speed': 4000,
                       'bullet_lifetime': 10000,
                       'rate': 300,
-                      'kickback': 2.5,
+                      'kickback': 125,
                       'spread': 1,
                       'damage': 100,
                       'bullet_size': 'med',
@@ -153,7 +152,7 @@ WEAPONS['handgun'] = {'bullet_speed': 4000,
 WEAPONS['rifle'] = {'bullet_speed': 4000,
                     'bullet_lifetime': 10000,
                     'rate': 100,
-                    'kickback': 6,
+                    'kickback': 200,
                     'spread': 2,
                     'damage': 125,
                     'bullet_size': 'lg',
@@ -167,7 +166,7 @@ WEAPONS['rifle'] = {'bullet_speed': 4000,
 WEAPONS['shotgun'] = {'bullet_speed': 4000,
                       'bullet_lifetime': 10000,
                       'rate': 500,
-                      'kickback': 7.5,
+                      'kickback': 300,
                       'spread': 12,
                       'damage': 135,
                       'bullet_size': 'sm',

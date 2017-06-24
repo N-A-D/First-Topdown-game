@@ -3,7 +3,7 @@
 '''
 
 import pygame as pg
-from random import choice, uniform
+from random import choice, uniform, randint
 from core_functions import collide_with_obstacles
 from settings import *
 from sprites import WeaponPickup, MiscPickup
@@ -74,9 +74,20 @@ class Mob(pg.sprite.Sprite):
         self.pathfinder = Pathfinder()
         self.game_grid = WeightedGrid()
         self.game_grid.walls = [(int(wall.pos.x // TILESIZE), int(wall.pos.y // TILESIZE)) for wall in game.walls]
-        self.path = self.pathfinder.a_star_search(self.game_grid, vec(self.pos.x // TILESIZE, self.pos.y // TILESIZE),
-                                                  vec(self.game.player.pos.x // TILESIZE, self.game.player.pos.y // TILESIZE))
-        self.current_path_target = len(self.path) - 2
+        self.path = None
+        self.current_path_target = 0
+        self.last_path_found = 0
+
+    def update_path(self):
+        now = pg.time.get_ticks()
+        if (self.path == None or now - self.last_path_found > 12000) and randint(1, 100) % 3 == 0:
+            self.last_path_found = now
+            self.update_mob_locations()
+            self.path = self.pathfinder.a_star_search(self.game_grid,
+                                                      vec(self.pos.x // TILESIZE, self.pos.y // TILESIZE),
+                                                      vec(self.game.player.pos.x // TILESIZE,
+                                                          self.game.player.pos.y // TILESIZE))
+            self.current_path_target = len(self.path) - 2
 
     def pause(self):
         """
@@ -139,17 +150,16 @@ class Mob(pg.sprite.Sprite):
         target = circle_pos + vec(self.wander_radius, 0).rotate(uniform(0, 360))
         return self.seek(target)
 
-    def pursue(self):
+    def pursue(self, prey):
         """
-        Gives this mob the ability to
-        pursue a target by predicting
-        the target's future location
+        Gives a mob the ability to pursue its prey.
+        :param prey: The mob's target
         :return:
         """
-        if self.game.player.vel.length() == 0:
-            target = self.game.player.pos
+        if prey.vel.length() == 0:
+            target = prey.pos
         else:
-            target = self.game.player.pos + self.game.player.vel.normalize()
+            target = prey.pos + prey.vel.normalize()
         return self.seek(target)
 
     def cohesion(self):
@@ -157,7 +167,7 @@ class Mob(pg.sprite.Sprite):
         count = 0
         all_obstacles = [mob for mob in self.game.mobs if mob.is_onscreen]
         for mob in all_obstacles:
-            distance = self.pos.distance_squared_to(mob.pos) #(self.pos - mob.pos).length()
+            distance = (self.pos - mob.pos).length_squared()
             if 0 < distance < AVOID_RADIUS ** 2:
                 sum += mob.pos
                 count += 1
@@ -172,7 +182,7 @@ class Mob(pg.sprite.Sprite):
         count = 0
         all_obstacles = [mob for mob in self.game.mobs if mob.is_onscreen]
         for mob in all_obstacles:
-            distance = self.pos.distance_squared_to(mob.pos)#(self.pos - mob.pos).length()
+            distance = (self.pos - mob.pos).length_squared()
             if 0 < distance < AVOID_RADIUS ** 2:
                 sum += mob.vel
                 count += 1
@@ -197,7 +207,7 @@ class Mob(pg.sprite.Sprite):
         sum = vec(0, 0)
         count = 0
         for mob in all_obstacles:
-            distance = self.pos.distance_squared_to(mob.pos) #self.pos - mob.pos).length()
+            distance = (self.pos - mob.pos).length_squared()
             if 0 < distance < AVOID_RADIUS ** 2:
                 diff = self.pos - mob.pos
                 diff.normalize()
@@ -217,20 +227,41 @@ class Mob(pg.sprite.Sprite):
             return vec(0, 0)
 
     def avoid_walls(self):
-        pass
+        sum = vec(0, 0)
+        count = 0
+        for wall in self.game.walls:
+            distance = (self.pos - wall.pos).length_squared()
+            if 0 < distance < AVOID_RADIUS ** 2:
+                diff = (self.pos - wall.pos).normalize() / distance
+                sum += diff
+                count += 1
+        steer = vec(0, 0)
+        if count > 0:
+            sum /= count
+            sum *= self.speed
+            steer = sum - self.vel
+        return steer
 
-    def apply_behaviours(self):
+    def apply_flocking_behaviour(self):
         """
-        Applies steering behaviours to the mob
+        Applies flcoking steering behaviours to the mob
         :return: None
         """
-        steering_force = vec(0, 0)
-        # if not self.can_pursue:
-        #     steering_force = self.wander() + self.seperation() + self.align() + self.cohesion()
-        # else:
-        #     steering_force = self.pursue() + self.seperation() + self.align() + self.cohesion()
-        steering_force = self.pursue() + self.seperation() + self.align() + self.cohesion()
-        self.acc += steering_force
+        self.acc += self.seperation() + self.align() + self.cohesion()
+
+    def apply_pursuing_behaviour(self):
+        """
+        Allows the mob to pursue the target
+        :return:
+        """
+        self.acc += self.pursue(self.game.player) + self.seperation() + self.align() + self.cohesion()
+
+    def apply_wandering_behaviour(self):
+        """
+        Gives a mob the ability to wander the around.
+        :return:
+        """
+        self.acc += self.wander() + self.seperation() + self.align() + self.cohesion()
 
     def check_if_is_on_screen(self):
         """
@@ -267,7 +298,7 @@ class Mob(pg.sprite.Sprite):
         target = vec(0, 0)
         if self.current_path_target >= 0:
             target = self.path[self.current_path_target]
-            if self.pos.distance_squared_to(target) <= DETECT_RADIUS**2:
+            if self.pos.distance_squared_to(target) <= DETECT_RADIUS ** 2:
                 self.current_path_target -= 1
         else:
             self.current_path_target = 0
@@ -278,19 +309,20 @@ class Mob(pg.sprite.Sprite):
         Update his mob's internal state
         :return: None
         """
+        self.check_if_is_on_screen()
         if self.health <= 0:
-            if uniform(0, 1) < .025:
+            if uniform(0, 1) < .015:
                 self.drop_item()
             self.kill()
-
-        self.update_mob_locations()
-
-        # if self.pos.distance_squared_to(self.game.player.pos) < DETECT_RADIUS**2:
-        #     self.acc = self.pursue()
-        #     self.apply_behaviours()
-        # else:
-        #     self.acc = self.follow_path()
-        self.acc = self.follow_path()
+        self.update_path()
+        if self.pos.distance_squared_to(self.game.player.pos) < DETECT_RADIUS ** 2:
+            self.apply_pursuing_behaviour()
+        elif self.path != None:
+            self.acc += self.follow_path()
+            self.apply_flocking_behaviour()
+        else:
+            self.apply_wandering_behaviour()
+        self.acc.scale_to_length(self.seek_force)
         self.vel += self.acc * self.game.dt
         self.vel.scale_to_length(self.speed)
         if self.can_attack:
@@ -302,24 +334,8 @@ class Mob(pg.sprite.Sprite):
         self.rot = self.vel.angle_to(vec(1, 0))
         self.image = pg.transform.rotozoom(self.original_image, self.rot - 90, 1).copy()
         self.rect.center = self.hit_rect.center
-        if pg.time.get_ticks() - self.last_attack_time > 500:
+        if pg.time.get_ticks() - self.last_attack_time > 750:
             self.can_attack = True
-        self.check_if_is_on_screen()
-        # if self.is_onscreen:
-        #     self.apply_behaviours()
-        #     self.vel += self.acc * self.game.dt
-        #     self.vel.scale_to_length(self.speed)
-        #     if self.can_attack:
-        #         self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
-        #         self.hit_rect.centerx = self.pos.x
-        #         collide_with_obstacles(self, self.game.walls, 'x')
-        #         self.hit_rect.centery = self.pos.y
-        #         collide_with_obstacles(self, self.game.walls, 'y')
-        #     self.rot = self.vel.angle_to(vec(1, 0))
-        #     self.image = pg.transform.rotozoom(self.original_image, self.rot - 90, 1).copy()
-        #     self.rect.center = self.hit_rect.center
-        #     if pg.time.get_ticks() - self.last_attack_time > 500:
-        #         self.can_attack = True
 
     def draw_health(self):
         """
