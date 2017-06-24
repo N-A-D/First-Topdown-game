@@ -33,7 +33,6 @@ class Obstacle(pg.sprite.Sprite):
         self.rect.x = x
         self.rect.y = y
         self.hit_rect = pg.Rect(self.rect.x, self.rect.y, self.rect.width, self.rect.height)
-        self.radius = self.rect.width * 0.7071
         self.pos = vec(self.rect.center)
 
 
@@ -178,8 +177,8 @@ class WeaponPickup(Item):
 
 
 class MiscPickup(Item):
-    AMMO_BOOST = 5
-    HEALTH_BOOST = 25
+    AMMO_BOOST = randint(2, 5)
+    HEALTH_BOOST = randint(15, 25)
 
     def __init__(self, game, pos):
         types = ['ammo', 'health']
@@ -207,6 +206,7 @@ class SwingArea(pg.sprite.Sprite):
         self.game = game
         pg.sprite.Sprite.__init__(self, self.groups)
         self.rect = PLAYER_MELEE_RECT.copy()
+        self.hit_rect = self.rect.copy()
         self.direction = direction
         if self.direction == 'E':
             self.rect.midleft = pos

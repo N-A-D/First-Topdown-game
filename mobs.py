@@ -7,7 +7,6 @@ from random import choice, uniform, randint
 from core_functions import collide_with_obstacles
 from settings import *
 from sprites import WeaponPickup, MiscPickup
-from pathfinding import Pathfinder, WeightedGrid
 
 
 class Mob(pg.sprite.Sprite):
@@ -43,7 +42,6 @@ class Mob(pg.sprite.Sprite):
         # size and causes issues with collision detection.
         self.hit_rect = ENEMY_HIT_RECT.copy()
         self.hit_rect.center = self.rect.center
-        self.radius = self.rect.width * .7071
 
         self.speed = choice(ENEMY_SPEEDS)
         self.health = choice(ENEMY_HEALTH)
@@ -70,23 +68,15 @@ class Mob(pg.sprite.Sprite):
             self.is_onscreen = True
         else:
             self.is_onscreen = False
-
-        self.pathfinder = Pathfinder()
-        self.game_grid = WeightedGrid()
-        self.game_grid.walls = [(int(wall.pos.x // TILESIZE), int(wall.pos.y // TILESIZE)) for wall in game.walls]
         self.path = None
         self.current_path_target = 0
         self.last_path_found = 0
 
-    def update_path(self):
+    def track_prey(self, target):
         now = pg.time.get_ticks()
         if (self.path == None or now - self.last_path_found > 12000) and randint(1, 100) % 3 == 0:
             self.last_path_found = now
-            self.update_mob_locations()
-            self.path = self.pathfinder.a_star_search(self.game_grid,
-                                                      vec(self.pos.x // TILESIZE, self.pos.y // TILESIZE),
-                                                      vec(self.game.player.pos.x // TILESIZE,
-                                                          self.game.player.pos.y // TILESIZE))
+            self.path = self.game.find_path(self, target)
             self.current_path_target = len(self.path) - 2
 
     def pause(self):
@@ -197,7 +187,7 @@ class Mob(pg.sprite.Sprite):
             steer.scale_to_length(self.seek_force)
         return steer
 
-    def seperation(self):
+    def separation(self):
         """
         Gives this mob the ability to avoid
         collisions with other obstacles
@@ -247,21 +237,21 @@ class Mob(pg.sprite.Sprite):
         Applies flcoking steering behaviours to the mob
         :return: None
         """
-        self.acc += self.seperation() + self.align() + self.cohesion()
+        self.acc += self.separation() + self.align() + self.cohesion()
 
     def apply_pursuing_behaviour(self):
         """
         Allows the mob to pursue the target
         :return:
         """
-        self.acc += self.pursue(self.game.player) + self.seperation() + self.align() + self.cohesion()
+        self.acc += self.pursue(self.game.player) + self.separation() + self.align() + self.cohesion()
 
     def apply_wandering_behaviour(self):
         """
         Gives a mob the ability to wander the around.
         :return:
         """
-        self.acc += self.wander() + self.seperation() + self.align() + self.cohesion()
+        self.acc += self.wander() + self.separation() + self.align() + self.cohesion()
 
     def check_if_is_on_screen(self):
         """
@@ -289,11 +279,6 @@ class Mob(pg.sprite.Sprite):
         else:
             MiscPickup(self.game, self.pos)
 
-    def update_mob_locations(self):
-        self.game_grid.enemies = [(int(enemy.pos.x // TILESIZE), int(enemy.pos.y // TILESIZE)) for enemy in
-                                  self.game.mobs
-                                  if enemy != self]
-
     def follow_path(self):
         target = vec(0, 0)
         if self.current_path_target >= 0:
@@ -301,12 +286,12 @@ class Mob(pg.sprite.Sprite):
             if self.pos.distance_squared_to(target) <= DETECT_RADIUS ** 2:
                 self.current_path_target -= 1
         else:
-            self.current_path_target = 0
+            self.path = None
         return self.seek(target)
 
     def update(self):
         """
-        Update his mob's internal state
+        Update this mob's internal state
         :return: None
         """
         self.check_if_is_on_screen()
@@ -314,14 +299,15 @@ class Mob(pg.sprite.Sprite):
             if uniform(0, 1) < .015:
                 self.drop_item()
             self.kill()
-        self.update_path()
+        self.track_prey(self.game.player)
         if (self.pos - self.game.player.pos).length_squared() < DETECT_RADIUS ** 2:
             self.apply_pursuing_behaviour()
         elif self.path != None:
             self.acc += self.follow_path()
             self.apply_flocking_behaviour()
         else:
-            self.apply_wandering_behaviour()
+            if self.is_onscreen:
+                self.apply_wandering_behaviour()
         self.acc.scale_to_length(self.seek_force)
         self.vel += self.acc * self.game.dt
         self.vel.scale_to_length(self.speed)

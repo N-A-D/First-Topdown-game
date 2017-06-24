@@ -77,7 +77,7 @@ MUZZLE_FLASHES = ['smokeparticleassets/PNG/Flash/flash00.png',
                   ]
 FLASH_DURATION = 60
 DAMAGE_ALPHA = [x for x in range(0, 255, 50)]
-
+LASER_SIGHT_COLORS = [(124, 252, 0), (50, 205, 50), (173, 255, 47), (152, 251, 152), (34, 139, 34)]
 # Item settings
 BOB_RANGE = 20
 BOB_SPEED = .5
@@ -100,7 +100,7 @@ ENEMY_SPEEDS = [speed for speed in range(30, 70, 10)]
 ENEMY_HEALTH = [400]
 DETECT_RADIUS = 400
 APPROACH_RADIUS = 150
-AVOID_RADIUS = 2 * TILESIZE
+AVOID_RADIUS = 2.5 * TILESIZE
 SEEK_FORCE = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 WANDER_RING_DISTANCE = 100
 WANDER_RING_RADIUS = [40, 50, 60]
