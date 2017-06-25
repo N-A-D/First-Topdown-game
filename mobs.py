@@ -8,7 +8,7 @@ from core_functions import collide_with_obstacles
 from settings import *
 from sprites import WeaponPickup, MiscPickup
 from math import sqrt
-
+from pathfinding import Pathfinder, WeightedGrid
 
 class Mob(pg.sprite.Sprite):
     """
@@ -72,11 +72,11 @@ class Mob(pg.sprite.Sprite):
         self.path = None
         self.current_path_target = 0
 
+
     def track_prey(self, target):
         now = pg.time.get_ticks()
         dist = self.pos.distance_to(self.game.player.pos)
-        if dist > 750 and now - self.last_attack_time > 10000:
-            print("Found path")
+        if dist > DETECT_RADIUS * 2 and now - self.last_attack_time > 60000 and uniform(0, 1) <= .25:
             self.path = self.game.find_path(self, target)
             self.current_path_target = len(self.path) - 2
             self.last_attack_time = now

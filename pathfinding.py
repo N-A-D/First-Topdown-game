@@ -10,7 +10,6 @@ class SquareGrid:
         self.height = GRIDHEIGHT
         self.width = GRIDWIDTH
         self.walls = []
-        self.enemies = []
         self.connections = [vec(1, 0), vec(-1, 0), vec(0, 1), vec(0, -1)]
         self.connections += [vec(1, 1), vec(-1, 1), vec(1, -1), vec(-1, -1)]
 
@@ -18,7 +17,7 @@ class SquareGrid:
         return 0 <= node.x < self.width and 0 <= node.y < self.height
 
     def passable(self, node):
-        return node not in self.walls and node not in self.enemies
+        return node not in self.walls
 
     def find_neighbors(self, node):
         neighbors = [node + connection for connection in self.connections]
