@@ -75,7 +75,7 @@ class Player(pg.sprite.Sprite):
 
         # Positional and velocity vectors
         self.vel = vec(0, 0)
-        self.pos = vec(x, y) * TILESIZE
+        self.pos = vec(x, y)
         self.rect.center = self.pos
 
         # Player rotation

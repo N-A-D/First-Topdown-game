@@ -236,8 +236,8 @@ class Mob(pg.sprite.Sprite):
     def obstacle_avoidance(self):
         if self.vel.length() == 0:
             self.move_from_rest()
-        further_ahead = self.pos + self.vel.normalize() * AVOID_RADIUS
-        ahead = self.pos + self.vel.normalize() * AVOID_RADIUS / 2
+        further_ahead = self.pos + self.vel.normalize() * ENEMY_LINE_OF_SIGHT
+        ahead = self.pos + self.vel.normalize() * ENEMY_LINE_OF_SIGHT / 2
         most_threatening = self.find_most_threatening_obstacle(ahead, further_ahead, self.pos)
         avoidance_force = vec(0, 0)
         if most_threatening != None:
