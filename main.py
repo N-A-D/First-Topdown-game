@@ -10,7 +10,7 @@ from settings import WIDTH, HEIGHT, TITLE, TILESIZE, CLIP_IMG, CROSSHAIRS, \
                     KNIFE_ANIMATIONS, RIFLE_ANIMATIONS, SHOTGUN_ANIMATIONS, \
                     FPS, LIGHTGREY, WHITE, DARKGREY, RED, PLAYER_HEALTH, \
                     PLAYER_STAMINA, BAR_LENGTH, BAR_HEIGHT, GOLD, LIMEGREEN, \
-                    DODGERBLUE, GREEN, DEEPSKYBLUE, BLOOD_SHADES
+                    DODGERBLUE, GREEN, DEEPSKYBLUE, BLOOD_SHADES, ENEMY_KNOCKBACK
 
 from random import choice, randrange
 from player import Player
@@ -250,16 +250,16 @@ class Game:
 
         # Enemy hits player
         hits = pg.sprite.spritecollide(self.player, self.mobs, False, collide_hit_rect)
-        # for hit in hits:
-        #     if hit.can_attack:
-        #         self.impact_positions.append(self.player.rect.center)
-        #         self.player.health -= hit.damage
-        #         hit.vel.normalize()
-        #         hit.pause()
-        #         if self.player.health <= 0:
-        #             self.playing = False
-        # if hits:
-        #     self.player.pos += vec(ENEMY_KNOCKBACK, 0).rotate(-hits[0].rot)
+        for hit in hits:
+            if hit.can_attack:
+                self.impact_positions.append(self.player.rect.center)
+                self.player.health -= hit.damage
+                hit.vel.normalize()
+                hit.pause()
+                if self.player.health <= 0:
+                    self.playing = False
+        if hits:
+            self.player.pos += vec(ENEMY_KNOCKBACK, 0).rotate(-hits[0].rot)
 
         # Bullet collisions
         hits = pg.sprite.groupcollide(self.mobs, self.bullets, False, False, collide_hit_rect)

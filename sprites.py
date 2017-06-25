@@ -68,7 +68,7 @@ class Bullet(pg.sprite.Sprite):
         self.pos = vec(pos)
         self.rect.center = pos
         self.hit_rect = pg.Rect(self.rect.x, self.rect.y, 15, 15)
-        self.vel = dir * WEAPONS[game.player.weapon]['bullet_speed'] * uniform(0.8, 1.2)
+        self.vel = dir * WEAPONS[game.player.weapon]['bullet_speed'] * uniform(0.75, 1)
         self.spawn_time = pg.time.get_ticks()
         # Damage and penetration depreciation are inversely proportional
         # As the damage decreases, the chance for this bullet to stop upon

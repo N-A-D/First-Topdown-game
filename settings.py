@@ -134,7 +134,7 @@ WEAPONS['sound'] = {'handgun': {'attack': 'pistol.wav', 'pickup': 'gun_pickup.wa
                     }
 
 WEAPONS['handgun'] = {'bullet_speed': 4000,
-                      'bullet_lifetime': 10000,
+                      'bullet_lifetime': 20000,
                       'rate': 200,
                       'kickback': 125,
                       'spread': 1,
@@ -150,7 +150,7 @@ WEAPONS['handgun'] = {'bullet_speed': 4000,
                       'bullet_count': 1}
 
 WEAPONS['rifle'] = {'bullet_speed': 4000,
-                    'bullet_lifetime': 10000,
+                    'bullet_lifetime': 20000,
                     'rate': 150,
                     'kickback': 200,
                     'spread': 2,
@@ -164,7 +164,7 @@ WEAPONS['rifle'] = {'bullet_speed': 4000,
                     'default ammo': 20,
                     'bullet_count': 1}
 WEAPONS['shotgun'] = {'bullet_speed': 4000,
-                      'bullet_lifetime': 10000,
+                      'bullet_lifetime': 20000,
                       'rate': 600,
                       'kickback': 300,
                       'spread': 12,

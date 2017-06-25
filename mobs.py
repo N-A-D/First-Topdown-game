@@ -7,7 +7,7 @@ from random import choice, uniform, randint
 from core_functions import collide_with_obstacles
 from settings import MOB_LAYER, ENEMY_HIT_RECT, ENEMY_SPEEDS, ENEMY_HEALTH, ENEMY_DAMAGE, WANDER_RING_RADIUS, \
     SEEK_FORCE, WIDTH, HEIGHT, TILESIZE, DETECT_RADIUS, GREEN, RED, YELLOW, vec, WANDER_RING_DISTANCE, \
-    ENEMY_LINE_OF_SIGHT, AVOID_RADIUS
+    ENEMY_LINE_OF_SIGHT, AVOID_RADIUS, APPROACH_RADIUS
 from sprites import WeaponPickup, MiscPickup
 from math import sqrt
 from pathfinding import Pathfinder, WeightedGrid
@@ -73,7 +73,6 @@ class Mob(pg.sprite.Sprite):
             self.is_onscreen = False
         self.path = None
         self.current_path_target = 0
-
 
     def track_prey(self, target):
         now = pg.time.get_ticks()
@@ -331,29 +330,31 @@ class Mob(pg.sprite.Sprite):
             if uniform(0, 1) < .015:
                 self.drop_item()
             self.kill()
-
-        self.track_prey(self.game.player)
-        if self.pos.distance_to(self.game.player.pos) < DETECT_RADIUS:
-            self.apply_pursuing_behaviour()
-        elif self.path != None:
-            self.acc += self.follow_path()
-            self.apply_flocking_behaviour()
-        else:
-            if self.is_onscreen:
-               self.apply_wandering_behaviour()
-        self.vel += self.acc * self.game.dt
-        self.vel.scale_to_length(self.speed)
-        if self.can_attack:
-            self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
-            self.hit_rect.centerx = self.pos.x
-            collide_with_obstacles(self, self.game.walls, 'x')
-            self.hit_rect.centery = self.pos.y
-            collide_with_obstacles(self, self.game.walls, 'y')
-        self.rot = self.vel.angle_to(vec(1, 0))
-        self.image = pg.transform.rotozoom(self.original_image, self.rot - 90, 1).copy()
-        self.rect.center = self.hit_rect.center
-        if pg.time.get_ticks() - self.last_attack_time > 750:
-            self.can_attack = True
+        if self.is_onscreen:
+            print("On screen!")
+            self.track_prey(self.game.player)
+            if self.pos.distance_to(self.game.player.pos) < DETECT_RADIUS:
+                self.apply_pursuing_behaviour()
+            elif self.path != None:
+                print("On screen!")
+                self.acc += self.follow_path()
+                self.apply_flocking_behaviour()
+            else:
+                if self.is_onscreen:
+                   self.apply_wandering_behaviour()
+            self.vel += self.acc * self.game.dt
+            self.vel.scale_to_length(self.speed)
+            if self.can_attack:
+                self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
+                self.hit_rect.centerx = self.pos.x
+                collide_with_obstacles(self, self.game.walls, 'x')
+                self.hit_rect.centery = self.pos.y
+                collide_with_obstacles(self, self.game.walls, 'y')
+            self.rot = self.vel.angle_to(vec(1, 0))
+            self.image = pg.transform.rotozoom(self.original_image, self.rot - 90, 1).copy()
+            self.rect.center = self.hit_rect.center
+            if pg.time.get_ticks() - self.last_attack_time > 750:
+                self.can_attack = True
 
     def draw_health(self):
         """
