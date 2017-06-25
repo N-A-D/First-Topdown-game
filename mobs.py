@@ -10,7 +10,6 @@ from settings import MOB_LAYER, ENEMY_HIT_RECT, ENEMY_SPEEDS, ENEMY_HEALTH, ENEM
     ENEMY_LINE_OF_SIGHT, AVOID_RADIUS, APPROACH_RADIUS
 from sprites import WeaponPickup, MiscPickup
 from math import sqrt
-from pathfinding import Pathfinder, WeightedGrid
 
 class Mob(pg.sprite.Sprite):
     """
@@ -75,6 +74,11 @@ class Mob(pg.sprite.Sprite):
         self.current_path_target = 0
 
     def track_prey(self, target):
+        """
+        Gives a mob a path to follow in order for it to track its prey
+        :param target: The mob's prey.
+        :return:
+        """
         now = pg.time.get_ticks()
         dist = self.pos.distance_to(self.game.player.pos)
         if dist > DETECT_RADIUS * 2 and now - self.last_attack_time > 60000 and uniform(0, 1) <= .25:
@@ -156,6 +160,11 @@ class Mob(pg.sprite.Sprite):
         return self.seek(target)
 
     def cohesion(self):
+        """
+        Cohesion steering behaviour. This steer's a mob towards the
+        center of its neighbours.
+        :return: Vector2 object to steer towards
+        """
         sum = vec(0, 0)
         count = 0
         for mob in self.game.mobs:
@@ -173,6 +182,11 @@ class Mob(pg.sprite.Sprite):
             return vec(0, 0)
 
     def align(self):
+        """
+        Alignment steering behaviour. This steer's a mob in the same direction as
+        its neighbours.
+        :return: Vector2 object to steer towards
+        """
         sum = vec(0, 0)
         count = 0
         for mob in self.game.mobs:
@@ -223,6 +237,15 @@ class Mob(pg.sprite.Sprite):
             return vec(0, 0)
 
     def find_collision(self, obs, ahead, further_ahead, pos):
+        """
+        Checks to see if there is potential for a collision with
+        the observered object.
+        :param obs: The object under consideration.
+        :param ahead: Secondary line of sight.
+        :param further_ahead: Main line of sight.
+        :param pos: The mob's position
+        :return: True if there is a potential collision False otherwise
+        """
         obs_center = vec(obs.rect.center)
         d1 = obs_center.distance_to(ahead)
         d2 = obs_center.distance_to(further_ahead)
@@ -230,6 +253,14 @@ class Mob(pg.sprite.Sprite):
         return (d1 <= obs.radius) or (d2 <= obs.radius) or (d3 <= obs.radius)
 
     def find_most_threatening_obstacle(self, ahead, further_ahead, pos):
+        """
+        Finds the most threatening object and returns its position.
+        :param ahead: Secondary line of sight
+        :param further_ahead: Primary line of sight
+        :param pos: mob's position
+        :return: Vector2 object containing the location of the most
+                threatening obstacle in the mob's path.
+        """
         most_threatening = None
         for wall in self.game.walls:
             collide = self.find_collision(wall, ahead, further_ahead, pos)
@@ -239,6 +270,12 @@ class Mob(pg.sprite.Sprite):
         return most_threatening
 
     def obstacle_avoidance(self):
+        """
+        Gives a mob the ability to avoid obstacles in the path its
+        currently walking.
+        :return: Vector2 object representing the force needed to avoid
+                a potential collision.
+        """
         if self.vel.length() == 0:
             self.move_from_rest()
         further_ahead = self.pos + self.vel.normalize() * ENEMY_LINE_OF_SIGHT
@@ -289,7 +326,7 @@ class Mob(pg.sprite.Sprite):
         :return: True if on the screen, False otherwise
         """
         location = vec(self.hit_rect.x + self.game.camera.camera.x, self.hit_rect.y + self.game.camera.camera.y)
-        if location.x <= WIDTH + TILESIZE and location.y <= HEIGHT + TILESIZE:
+        if location.x <= WIDTH + 4 * TILESIZE and location.y <= HEIGHT + 4 * TILESIZE:
             if self.pos.distance_to(self.game.player.pos) < DETECT_RADIUS:
                 self.can_pursue = True
             else:
@@ -310,6 +347,10 @@ class Mob(pg.sprite.Sprite):
             MiscPickup(self.game, self.pos)
 
     def follow_path(self):
+        """
+        Path following algorithm.
+        :return:
+        """
         if self.current_path_target >= 0:
             target = self.path[self.current_path_target]
             if self.pos.distance_to(target) <= DETECT_RADIUS:
@@ -331,12 +372,10 @@ class Mob(pg.sprite.Sprite):
                 self.drop_item()
             self.kill()
         if self.is_onscreen:
-            print("On screen!")
             self.track_prey(self.game.player)
             if self.pos.distance_to(self.game.player.pos) < DETECT_RADIUS:
                 self.apply_pursuing_behaviour()
             elif self.path != None:
-                print("On screen!")
                 self.acc += self.follow_path()
                 self.apply_flocking_behaviour()
             else:

@@ -166,6 +166,9 @@ class Item(pg.sprite.Sprite):
 
 
 class WeaponPickup(Item):
+    """
+    Blueprint for weapon items.
+    """
     def __init__(self, game, pos):
         types = ['rifle', 'shotgun', 'handgun']
         self.type = choice(types)
@@ -182,9 +185,11 @@ class WeaponPickup(Item):
 
 
 class MiscPickup(Item):
+    """
+    Blueprint for ammo and health kit items
+    """
     AMMO_BOOST = randint(2, 5)
     HEALTH_BOOST = randint(15, 25)
-
     def __init__(self, game, pos):
         types = ['ammo', 'health']
         self.type = choice(types)
@@ -237,10 +242,8 @@ class SwingArea(pg.sprite.Sprite):
         Updates the state of this swing area
         :return:
         """
-
         if pg.time.get_ticks() - self.spawn_time > WEAPONS['animation times'][self.game.player.weapon]['melee']:
             self.kill()
-
         if self.direction == 'E':
             self.rect.midleft = self.game.player.pos
         elif self.direction == 'NE':

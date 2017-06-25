@@ -18,7 +18,7 @@ from mobs import Mob
 from tilemap import Map, Camera
 from sprites import Obstacle, WeaponPickup, MiscPickup
 from core_functions import collide_hit_rect
-from pathfinding import Pathfinder, WeightedGrid
+from pathfinding import Pathfinder, WeightedGraph
 
 vec = pg.math.Vector2
 
@@ -173,7 +173,7 @@ class Game:
         self.paused = False
         self.running = True
         self.pathfinder = Pathfinder()
-        self.game_graph = WeightedGrid()
+        self.game_graph = WeightedGraph()
         mob_positions = []
         wall_positions = []
 
