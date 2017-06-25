@@ -193,9 +193,7 @@ ITEM_IMAGES = {'rifle': 'rifle.png',
                }
 
 # Blood colors
-BLOOD_SHADES = [(114, 47, 55), (165, 42, 42), (255, 56, 0), (226, 88, 34), (178, 34, 34), (252, 40, 71), (125, 17, 12),
-                (192, 64, 0), (139, 0, 0), (89, 0, 0), (65, 32, 32), (70, 0, 0), (124, 0, 0), (102, 0, 0)]
-
+BLOOD_SHADES = [(value, 0, 0) for value in range(255, 40, -8)]
 # Player Animations
 HANDGUN_ANIMATIONS = {}
 KNIFE_ANIMATIONS = {}

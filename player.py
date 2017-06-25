@@ -3,13 +3,11 @@
 '''
 import pygame as pg
 from core_functions import collide_with_obstacles
-from settings import *
+from settings import PLAYER_LAYER, PLAYER_HEALTH, PLAYER_STAMINA, PLAYER_HIT_RECT, vec, WEAPONS, PLAYER_SPEED
 from random import uniform
 from sprites import Bullet, MuzzleFlash
 from sprites import WeaponPickup, SwingArea
 from random import choice
-
-vec = pg.math.Vector2
 
 
 class Player(pg.sprite.Sprite):

@@ -3,7 +3,15 @@
 '''
 import pygame as pg
 from os import path
-from settings import *
+from settings import WIDTH, HEIGHT, TITLE, TILESIZE, CLIP_IMG, CROSSHAIRS, \
+                    ITEM_IMAGES, WEAPONS, RIFLE_BULLET_IMG, \
+                    HANDGUN_BULLET_IMG, SHOTGUN_BULLET_IMG, \
+                    MUZZLE_FLASHES, ENEMY_IMGS, HANDGUN_ANIMATIONS, \
+                    KNIFE_ANIMATIONS, RIFLE_ANIMATIONS, SHOTGUN_ANIMATIONS, \
+                    FPS, LIGHTGREY, WHITE, DARKGREY, RED, PLAYER_HEALTH, \
+                    PLAYER_STAMINA, BAR_LENGTH, BAR_HEIGHT, GOLD, LIMEGREEN, \
+                    DODGERBLUE, GREEN, DEEPSKYBLUE, BLOOD_SHADES
+
 from random import choice, randrange
 from player import Player
 from mobs import Mob

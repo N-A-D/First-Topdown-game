@@ -5,7 +5,9 @@
 import pygame as pg
 from random import choice, uniform, randint
 from core_functions import collide_with_obstacles
-from settings import *
+from settings import MOB_LAYER, ENEMY_HIT_RECT, ENEMY_SPEEDS, ENEMY_HEALTH, ENEMY_DAMAGE, WANDER_RING_RADIUS, \
+    SEEK_FORCE, WIDTH, HEIGHT, TILESIZE, DETECT_RADIUS, GREEN, RED, YELLOW, vec, WANDER_RING_DISTANCE, \
+    ENEMY_LINE_OF_SIGHT, AVOID_RADIUS
 from sprites import WeaponPickup, MiscPickup
 from math import sqrt
 from pathfinding import Pathfinder, WeightedGrid

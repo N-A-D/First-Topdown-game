@@ -3,7 +3,8 @@
 '''
 import pygame as pg
 from random import uniform, choice, randint
-from settings import *
+from settings import WALL_LAYER, TILESIZE, LIGHTGREY, BULLET_LAYER, WEAPONS, EFFECTS_LAYER, \
+    FLASH_DURATION, ITEMS_LAYER, BOB_RANGE, BOB_SPEED, PLAYER_MELEE_RECT
 from core_functions import collide_hit_rect
 import pytweening as tween
 from math import sqrt
@@ -43,6 +44,7 @@ class Bullet(pg.sprite.Sprite):
     """
     This class represents bullets in the game
     """
+
     def __init__(self, game, pos, dir, damage):
         """
         Bullet initialization
@@ -198,6 +200,7 @@ class SwingArea(pg.sprite.Sprite):
     This class represents the area that the player swings their weapon.
     Any enemy caught in this area is dealt damage.
     """
+
     def __init__(self, game, pos, direction):
         """
         Damage area effect constuctor
@@ -254,4 +257,3 @@ class SwingArea(pg.sprite.Sprite):
             self.rect.midtop = self.game.player.pos
         elif self.direction == 'SE':
             self.rect.topleft = self.game.player.pos
-
