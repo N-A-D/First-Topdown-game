@@ -168,24 +168,24 @@ class Game:
         self.game_graph = WeightedGrid()
         mob_positions = []
         wall_positions = []
-        self.curr_player_pos = None
+
         for row, tiles in enumerate(self.map.data):
             for col, tile in enumerate(tiles):
                 if tile == '1':
-                    # Obstacle(self, col, row, TILESIZE, TILESIZE)
                     wall_positions.append((col * TILESIZE, row * TILESIZE))
                 if tile == 'P':
                     self.player = Player(self, col * TILESIZE, row * TILESIZE)
-                    self.curr_player_pos = vec(col * TILESIZE, row * TILESIZE)
                 if tile == 'E':
-                    # Mob(self, col, row)
                     mob_positions.append((col * TILESIZE, row * TILESIZE))
                 if tile == 'W':
                     WeaponPickup(self, (col * TILESIZE, row * TILESIZE))
+
         for position in wall_positions:
             Obstacle(self, position[0], position[1])
+
         for position in mob_positions:
             Mob(self, position[0], position[1])
+
         self.game_graph.walls = [(int(wall[0] // TILESIZE), int(wall[1] // TILESIZE)) for wall in wall_positions]
         g.run()
 
@@ -205,8 +205,6 @@ class Game:
                                              vec(prey.pos.x // TILESIZE, prey.pos.y // TILESIZE))
         return path
 
-    def canUpdatePath(self):
-        return (self.player.pos - self.curr_player_pos).length_squared() > 200000
 
     def run(self):
         """

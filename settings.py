@@ -84,7 +84,7 @@ BOB_SPEED = .5
 
 # Player settings
 DEFAULT_WEAPON = 'knife'
-PLAYER_SPEED = 125
+PLAYER_SPEED = 110
 PLAYER_HIT_RECT = pg.Rect(0, 0, 50, 50)
 PLAYER_MELEE_RECT = pg.Rect(0, 0, 64, 64)
 PLAYER_HEALTH = 100
@@ -122,10 +122,10 @@ ENEMY_IMGS = [
 # Weapon settings
 WEAPONS = {}
 
-WEAPONS['animation times'] = {'handgun': {'idle': 100, 'melee': 35, 'move': 100, 'reload': 40, 'shoot': 125},
+WEAPONS['animation times'] = {'handgun': {'idle': 100, 'melee': 35, 'move': 100, 'reload': 70, 'shoot': 125},
                               'knife': {'idle': 100, 'melee': 35, 'move': 75, 'reload': 0, 'shoot': 0},
-                              'rifle': {'idle': 100, 'melee': 35, 'move': 125, 'reload': 40, 'shoot': 55},
-                              'shotgun': {'idle': 100, 'melee': 35, 'move': 125, 'reload': 40, 'shoot': 175}}
+                              'rifle': {'idle': 100, 'melee': 35, 'move': 125, 'reload': 70, 'shoot': 55},
+                              'shotgun': {'idle': 100, 'melee': 35, 'move': 125, 'reload': 70, 'shoot': 175}}
 
 WEAPONS['sound'] = {'handgun': {'attack': 'pistol.wav', 'pickup': 'gun_pickup.wav'},
                     'shotgun': {'attack': 'shotgun.wav', 'pickup': 'gun_pickup.wav'},

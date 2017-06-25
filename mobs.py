@@ -73,9 +73,13 @@ class Mob(pg.sprite.Sprite):
         self.current_path_target = 0
 
     def track_prey(self, target):
-        if (self.path == None or self.game.canUpdatePath()) and randint(1, 10) == randint(1, 10):
+        now = pg.time.get_ticks()
+        dist = self.pos.distance_to(self.game.player.pos)
+        if dist > 750 and now - self.last_attack_time > 10000:
+            print("Found path")
             self.path = self.game.find_path(self, target)
             self.current_path_target = len(self.path) - 2
+            self.last_attack_time = now
 
     def pause(self):
         """
@@ -305,14 +309,15 @@ class Mob(pg.sprite.Sprite):
             MiscPickup(self.game, self.pos)
 
     def follow_path(self):
-        target = vec(0, 0)
         if self.current_path_target >= 0:
             target = self.path[self.current_path_target]
-            if self.pos.distance_squared_to(target) <= DETECT_RADIUS ** 2:
+            if self.pos.distance_to(target) <= DETECT_RADIUS:
                 self.current_path_target -= 1
+            return self.seek(target)
         else:
             self.current_path_target = 0
-        return self.seek(target)
+            self.path = None
+            return vec(0, 0)
 
     def update(self):
         """
@@ -326,14 +331,14 @@ class Mob(pg.sprite.Sprite):
             self.kill()
 
         self.track_prey(self.game.player)
-        if (self.pos - self.game.player.pos).length_squared() < DETECT_RADIUS ** 2:
+        if self.pos.distance_to(self.game.player.pos) < DETECT_RADIUS:
             self.apply_pursuing_behaviour()
         elif self.path != None:
             self.acc += self.follow_path()
             self.apply_flocking_behaviour()
         else:
             if self.is_onscreen:
-                self.apply_wandering_behaviour()
+               self.apply_wandering_behaviour()
         self.vel += self.acc * self.game.dt
         self.vel.scale_to_length(self.speed)
         if self.can_attack:
