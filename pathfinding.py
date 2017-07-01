@@ -136,8 +136,7 @@ class Pathfinder:
 
     def a_star_search(self, graph, start, end):
         """
-        Finds a path from start to end using the A* search
-        algorithm.
+        A* search implementation.
         :param graph: The graph under consideration.
         :param start: The starting node in the graph
         :param end: The ending node in the graph.
@@ -160,24 +159,24 @@ class Pathfinder:
             :param v: The vector to convert
             :return: A tuple of the vector's x and y (x, y)
             """
-            return int(v.x), int(v.y)
+            return (int(v.x), int(v.y))
 
-        def construct_path(came_from, A, B):
+        def construct_path(came_from, start, goal):
             """
             Constructs the path by adding onto start, all vectors
             that belong on the path.
             :param came_from: The dictionary of traversed nodes.
-            :param A: The initial node.
-            :param B: The final node.
+            :param start: The initial node.
+            :param goal: The final node.
             :return: A list of Vector2 objects representing the path
                     from start to goal.
             """
-            curr = A
-            path = [vec(curr.x * TILESIZE, curr.y * TILESIZE)]
-            while curr != B:
-                nxt = came_from[(curr.x, curr.y)]
-                curr = current + nxt
-                path.append(vec(curr.x * TILESIZE, curr.y * TILESIZE))
+            current = start
+            path = [vec(current.x * TILESIZE, current.y * TILESIZE)]
+            while current != goal:
+                next = came_from[(current.x, current.y)]
+                current = current + next
+                path.append(vec(current.x * TILESIZE, current.y * TILESIZE))
             return path
 
         self.frontier = PriorityQueue()

@@ -169,6 +169,7 @@ class WeaponPickup(Item):
     """
     Blueprint for weapon items.
     """
+
     def __init__(self, game, pos):
         types = ['rifle', 'shotgun', 'handgun']
         self.type = choice(types)
@@ -176,9 +177,9 @@ class WeaponPickup(Item):
         super().__init__(game, pos, img)
         self.ammo_boost = 1
         if self.type == 'rifle' or self.type == 'shotgun':
-            self.ammo_boost = randint(2, 4)
+            self.ammo_boost = randint(4, 8)
         elif self.type == 'handgun':
-            self.ammo_boost = randint(2, 6)
+            self.ammo_boost = randint(5, 12)
 
     def update(self):
         super().update()
@@ -190,6 +191,7 @@ class MiscPickup(Item):
     """
     AMMO_BOOST = randint(2, 5)
     HEALTH_BOOST = randint(15, 25)
+
     def __init__(self, game, pos):
         types = ['ammo', 'health']
         self.type = choice(types)

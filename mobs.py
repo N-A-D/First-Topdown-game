@@ -3,13 +3,14 @@
 '''
 
 import pygame as pg
-from random import choice, uniform, randint
+from random import choice, uniform
 from core_functions import collide_with_obstacles
 from settings import MOB_LAYER, ENEMY_HIT_RECT, ENEMY_SPEEDS, ENEMY_HEALTH, ENEMY_DAMAGE, WANDER_RING_RADIUS, \
     SEEK_FORCE, WIDTH, HEIGHT, TILESIZE, DETECT_RADIUS, GREEN, RED, YELLOW, vec, WANDER_RING_DISTANCE, \
     ENEMY_LINE_OF_SIGHT, AVOID_RADIUS, APPROACH_RADIUS
 from sprites import WeaponPickup, MiscPickup
 from math import sqrt
+
 
 class Mob(pg.sprite.Sprite):
     """
@@ -72,6 +73,7 @@ class Mob(pg.sprite.Sprite):
             self.is_onscreen = False
         self.path = None
         self.current_path_target = 0
+        self.can_find_path = False
 
     def track_prey(self, target):
         """
@@ -79,12 +81,13 @@ class Mob(pg.sprite.Sprite):
         :param target: The mob's prey.
         :return:
         """
-        now = pg.time.get_ticks()
-        dist = self.pos.distance_to(self.game.player.pos)
-        if dist > DETECT_RADIUS * 2 and now - self.last_attack_time > 60000 and uniform(0, 1) <= .25:
-            self.path = self.game.find_path(self, target)
-            self.current_path_target = len(self.path) - 2
-            self.last_attack_time = now
+        if self.can_find_path:
+            now = pg.time.get_ticks()
+            dist = self.pos.distance_to(self.game.player.pos)
+            if dist > DETECT_RADIUS * 2.5 and uniform(0, 1) <= .5:
+                self.path = self.game.find_path(self, target)
+                self.current_path_target = len(self.path) - 2
+                self.last_attack_time = now
 
     def pause(self):
         """
@@ -218,7 +221,7 @@ class Mob(pg.sprite.Sprite):
         for mob in self.game.mobs:
             if mob != self:
                 dist = self.pos.distance_to(mob.pos)
-                if 0 < dist < self.radius * 2:
+                if 0 < dist < self.radius * 1.5:
                     diff = self.pos - mob.pos
                     diff.normalize()
                     diff /= dist
@@ -282,10 +285,10 @@ class Mob(pg.sprite.Sprite):
         ahead = self.pos + self.vel.normalize() * ENEMY_LINE_OF_SIGHT / 2
         most_threatening = self.find_most_threatening_obstacle(ahead, further_ahead, self.pos)
         avoidance_force = vec(0, 0)
-        if most_threatening != None:
+        if most_threatening:
             avoidance_force = further_ahead - most_threatening
             avoidance_force.normalize()
-            avoidance_force.scale_to_length(50)
+            avoidance_force.scale_to_length(self.speed)
         return avoidance_force
 
     def apply_flocking_behaviour(self):
@@ -375,12 +378,12 @@ class Mob(pg.sprite.Sprite):
             self.track_prey(self.game.player)
             if self.pos.distance_to(self.game.player.pos) < DETECT_RADIUS:
                 self.apply_pursuing_behaviour()
-            elif self.path != None:
+            elif self.path:
                 self.acc += self.follow_path()
                 self.apply_flocking_behaviour()
             else:
                 if self.is_onscreen:
-                   self.apply_wandering_behaviour()
+                    self.apply_wandering_behaviour()
             self.vel += self.acc * self.game.dt
             self.vel.scale_to_length(self.speed)
             if self.can_attack:

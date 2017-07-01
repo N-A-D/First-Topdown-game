@@ -195,6 +195,7 @@ class Game:
             Mob(self, position[0], position[1])
 
         self.game_graph.walls = [(int(wall[0] // TILESIZE), int(wall[1] // TILESIZE)) for wall in wall_positions]
+        self.current_mob_idx = 0
         g.run()
 
     def find_path(self, predator, prey):
@@ -212,7 +213,6 @@ class Game:
                                              vec(predator.pos.x // TILESIZE, predator.pos.y // TILESIZE),
                                              vec(prey.pos.x // TILESIZE, prey.pos.y // TILESIZE))
         return path
-
 
     def run(self):
         """
@@ -241,6 +241,7 @@ class Game:
                 sprite.update()
         self.camera.update(self.player)
         self.swingAreas.update()
+        self.update_pathfinding_queue()
 
         # Player hits mobs
         hit_melee_box = pg.sprite.groupcollide(self.mobs, self.swingAreas, False, True, collide_hit_rect)
@@ -483,6 +484,25 @@ class Game:
                                    randrange(1, 5))
                 impact = False
         self.impact_positions.clear()
+
+    def update_pathfinding_queue(self):
+        """
+        Gives each mob on the level the opportunity to find a path
+        to its prey (the player). Each mob will be given this
+        opportunity in order according to their list position into
+        the mobs group.
+        :return: None
+        """
+        if self.current_mob_idx == len(self.mobs) - 1:
+            self.current_mob_idx = 0
+        else:
+            count = 0
+            for mob in self.mobs:
+                mob.can_find_path = False
+                if count == self.current_mob_idx:
+                    mob.can_find_path = True
+                count += 1
+            self.current_mob_idx += 1
 
     def show_start_screen(self):
         """
