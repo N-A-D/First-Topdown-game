@@ -10,7 +10,7 @@ from settings import WIDTH, HEIGHT, TITLE, TILESIZE, CLIP_IMG, CROSSHAIRS, \
                     KNIFE_ANIMATIONS, RIFLE_ANIMATIONS, SHOTGUN_ANIMATIONS, \
                     FPS, LIGHTGREY, WHITE, DARKGREY, RED, PLAYER_HEALTH, \
                     PLAYER_STAMINA, BAR_LENGTH, BAR_HEIGHT, GOLD, LIMEGREEN, \
-                    DODGERBLUE, GREEN, DEEPSKYBLUE, BLOOD_SHADES, ENEMY_KNOCKBACK
+                    DODGERBLUE, GREEN, DEEPSKYBLUE, BLOOD_SHADES, ENEMY_KNOCKBACK, vec
 
 from random import choice, randrange
 from player import Player
@@ -19,8 +19,6 @@ from tilemap import Map, Camera
 from sprites import Obstacle, WeaponPickup, MiscPickup
 from core_functions import collide_hit_rect
 from pathfinding import Pathfinder, WeightedGraph
-
-vec = pg.math.Vector2
 
 
 class Game:
@@ -195,7 +193,8 @@ class Game:
             Mob(self, position[0], position[1])
 
         self.game_graph.walls = [(int(wall[0] // TILESIZE), int(wall[1] // TILESIZE)) for wall in wall_positions]
-        self.current_mob_idx = 0
+        self.mob_idx = 0
+        self.last_queue_update = 0
         g.run()
 
     def find_path(self, predator, prey):
@@ -207,8 +206,6 @@ class Game:
         """
         # Update enemy locations in the graph so as to avoid finding
         # paths that will collide with other enemies
-        self.game_graph.enemies = [(int(enemy.pos.x // TILESIZE), int(enemy.pos.y // TILESIZE))
-                                   for enemy in self.mobs if enemy != predator]
         path = self.pathfinder.a_star_search(self.game_graph,
                                              vec(predator.pos.x // TILESIZE, predator.pos.y // TILESIZE),
                                              vec(prey.pos.x // TILESIZE, prey.pos.y // TILESIZE))
@@ -392,7 +389,8 @@ class Game:
                 pg.draw.rect(surface, GOLD, bullet)
                 temp += 2 * bullet_length
 
-    def draw_player_health(self, surface, x, y, pct):
+    @staticmethod
+    def draw_player_health(surface, x, y, pct):
         """
         Draws the player's health bar
         :param surface: The surface on which to draw the health bar
@@ -414,7 +412,8 @@ class Game:
         pg.draw.rect(surface, GREEN, filled_rect)
         pg.draw.rect(surface, WHITE, outline_rect, 2)
 
-    def draw_player_stamina(self, surface, x, y, pct):
+    @staticmethod
+    def draw_player_stamina(surface, x, y, pct):
         """
         Draws the player's stamina bar
         :param surface: The surface to draw on
@@ -493,16 +492,18 @@ class Game:
         the mobs group.
         :return: None
         """
-        if self.current_mob_idx == len(self.mobs) - 1:
-            self.current_mob_idx = 0
-        else:
+        now = pg.time.get_ticks()
+        if now - self.last_queue_update > 5000:
+            self.last_queue_update = now
+            if self.mob_idx == len(self.mobs):
+                self.mob_idx = 0
             count = 0
             for mob in self.mobs:
                 mob.can_find_path = False
-                if count == self.current_mob_idx:
+                if count == self.mob_idx:
                     mob.can_find_path = True
                 count += 1
-            self.current_mob_idx += 1
+            self.mob_idx += 1
 
     def show_start_screen(self):
         """

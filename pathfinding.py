@@ -174,8 +174,7 @@ class Pathfinder:
             current = start
             path = [vec(current.x * TILESIZE, current.y * TILESIZE)]
             while current != goal:
-                next = came_from[(current.x, current.y)]
-                current = current + next
+                current = current + came_from[vector_to_tuple(current)]
                 path.append(vec(current.x * TILESIZE, current.y * TILESIZE))
             return path
 
@@ -199,4 +198,9 @@ class Pathfinder:
                     priority = next_cost + heuristic(end, vec(next))
                     self.frontier.put(next, priority)
                     self.path[next] = vec(current) - vec(next)
-        return construct_path(self.path, end, start)
+
+        # Checks to see if there is actually a path from start to end
+        # and builds the path if there is.
+        if vector_to_tuple(end) in self.path:
+            return construct_path(self.path, end, start)
+        return None

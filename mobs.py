@@ -67,10 +67,7 @@ class Mob(pg.sprite.Sprite):
 
         # How often this mob will change targets while wondering
         self.last_target_time = 0
-        if self.rect.x < WIDTH + TILESIZE and self.rect.y <= HEIGHT + TILESIZE:
-            self.is_onscreen = True
-        else:
-            self.is_onscreen = False
+        self.is_onscreen = False
         self.path = None
         self.current_path_target = 0
         self.can_find_path = False
@@ -81,13 +78,13 @@ class Mob(pg.sprite.Sprite):
         :param target: The mob's prey.
         :return:
         """
-        if self.can_find_path:
+        if self.can_find_path and not self.path:
             now = pg.time.get_ticks()
             dist = self.pos.distance_to(self.game.player.pos)
-            if dist > DETECT_RADIUS * 2.5 and uniform(0, 1) <= .5:
+            if dist > DETECT_RADIUS * 2 and uniform(0, 1) <= .75:
                 self.path = self.game.find_path(self, target)
-                self.current_path_target = len(self.path) - 2
-                self.last_attack_time = now
+                if self.path:
+                    self.current_path_target = len(self.path) - 2
 
     def pause(self):
         """
@@ -329,7 +326,7 @@ class Mob(pg.sprite.Sprite):
         :return: True if on the screen, False otherwise
         """
         location = vec(self.hit_rect.x + self.game.camera.camera.x, self.hit_rect.y + self.game.camera.camera.y)
-        if location.x <= WIDTH + 4 * TILESIZE and location.y <= HEIGHT + 4 * TILESIZE:
+        if location.x <= WIDTH + 2 * TILESIZE and location.y <= HEIGHT + 2 * TILESIZE:
             if self.pos.distance_to(self.game.player.pos) < DETECT_RADIUS:
                 self.can_pursue = True
             else:
@@ -395,8 +392,10 @@ class Mob(pg.sprite.Sprite):
             self.rot = self.vel.angle_to(vec(1, 0))
             self.image = pg.transform.rotozoom(self.original_image, self.rot - 90, 1).copy()
             self.rect.center = self.hit_rect.center
-            if pg.time.get_ticks() - self.last_attack_time > 750:
+            now = pg.time.get_ticks()
+            if now - self.last_attack_time > 750:
                 self.can_attack = True
+                self.last_attack_time = now
 
     def draw_health(self):
         """

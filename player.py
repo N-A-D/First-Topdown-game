@@ -61,10 +61,6 @@ class Player(pg.sprite.Sprite):
         self.hit_rect = PLAYER_HIT_RECT
         self.hit_rect.center = self.rect.center
 
-        # Butt stroking area
-        # self.melee_box = None
-        # self.melee_box_spawn_time = 0
-
         # Paces the player's shots
         self.last_shot = 0
 
@@ -151,10 +147,10 @@ class Player(pg.sprite.Sprite):
         self.current_frame = 0
         self.play_static_animation = True
 
-    def process_input(self, input):
+    def process_input(self, _input):
         """
         Processes keyboard inputs relevant to the player's character
-        :param input: The list of input keys
+        :param _input: The list of input keys
         :return:
         """
         self.rot = 0
@@ -162,15 +158,14 @@ class Player(pg.sprite.Sprite):
         self.action = 'idle'
         self.aim_wobble = 0
         self.update_rotation()
-        self.handle_player_movement(keys=input)
+        self.handle_player_movement(keys=_input)
         if not self.play_static_animation:
-            self.handle_weapon_selection(keys=input)
-            self.handle_combat_controls(keys=input)
+            self.handle_weapon_selection(keys=_input)
+            self.handle_combat_controls(keys=_input)
 
         # Accommodates for diagonal movement being slightly faster than pure horizontal or vertical movement
         if self.vel.x != 0 and self.vel.y != 0:
             self.vel *= 0.7071
-
         if self.action == 'idle':
             self.aim_wobble = WEAPONS[self.weapon]['wobble']['idle']
             self.increase_stamina(1 / WEAPONS[self.weapon]['weight'])
@@ -365,15 +360,6 @@ class Player(pg.sprite.Sprite):
                 else:
                     self.health += item.HEALTH_BOOST
 
-    def update_melee_box(self):
-        """
-        Removes the melee box the player creates after a certain amount of time
-        :return: None
-        """
-        now = pg.time.get_ticks()
-        if now - self.melee_box_spawn_time > 100:
-            self.melee_box = None
-
     def update_rotation(self):
         """
         Finds the angle to rotate the player sprite by
@@ -431,7 +417,6 @@ class Player(pg.sprite.Sprite):
         """
         self.process_input(keyboard_input)
         self.animate()
-        # self.update_melee_box()
         self.rect.center = self.pos
         self.pos += self.vel * self.game.dt
         self.hit_rect.centerx = self.pos.x
