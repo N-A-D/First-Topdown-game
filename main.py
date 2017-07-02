@@ -4,14 +4,14 @@
 import pygame as pg
 from os import path
 from settings import WIDTH, HEIGHT, TITLE, TILESIZE, CLIP_IMG, CROSSHAIRS, \
-                    ITEM_IMAGES, WEAPONS, RIFLE_BULLET_IMG, \
-                    HANDGUN_BULLET_IMG, SHOTGUN_BULLET_IMG, \
-                    MUZZLE_FLASHES, ENEMY_IMGS, HANDGUN_ANIMATIONS, \
-                    KNIFE_ANIMATIONS, RIFLE_ANIMATIONS, SHOTGUN_ANIMATIONS, \
-                    FPS, LIGHTGREY, WHITE, DARKGREY, RED, PLAYER_HEALTH, \
-                    PLAYER_STAMINA, BAR_LENGTH, BAR_HEIGHT, GOLD, LIMEGREEN, \
-                    DODGERBLUE, GREEN, DEEPSKYBLUE, BLOOD_SHADES, ENEMY_KNOCKBACK, vec, \
-                    PLAYER_HIT_SOUNDS, ZOMBIE_MOAN_SOUNDS, ENEMY_HIT_SOUNDS, PLAYER_FOOTSTEPS, DETECT_RADIUS
+    ITEM_IMAGES, WEAPONS, RIFLE_BULLET_IMG, \
+    HANDGUN_BULLET_IMG, SHOTGUN_BULLET_IMG, \
+    MUZZLE_FLASHES, ENEMY_IMGS, HANDGUN_ANIMATIONS, \
+    KNIFE_ANIMATIONS, RIFLE_ANIMATIONS, SHOTGUN_ANIMATIONS, \
+    FPS, LIGHTGREY, WHITE, DARKGREY, RED, PLAYER_HEALTH, \
+    PLAYER_STAMINA, BAR_LENGTH, BAR_HEIGHT, GOLD, LIMEGREEN, \
+    DODGERBLUE, GREEN, DEEPSKYBLUE, BLOOD_SHADES, ENEMY_KNOCKBACK, vec, \
+    PLAYER_HIT_SOUNDS, ZOMBIE_MOAN_SOUNDS, ENEMY_HIT_SOUNDS, PLAYER_FOOTSTEPS
 
 from random import choice, randrange, random
 from player import Player
@@ -102,7 +102,7 @@ class Game:
         self.zombie_moan_sounds = []
         for snd in ZOMBIE_MOAN_SOUNDS:
             noise = pg.mixer.Sound(path.join(self.snd_folder, snd))
-            noise.set_volume(.15)
+            noise.set_volume(.25)
             self.zombie_moan_sounds.append(noise)
 
         # Sounds each mob makes when its hit by something
@@ -111,7 +111,7 @@ class Game:
             self.zombie_hit_sounds[type] = []
             for snd in ENEMY_HIT_SOUNDS[type]:
                 snd = pg.mixer.Sound(path.join(self.snd_folder, snd))
-                snd.set_volume(.75)
+                snd.set_volume(.25)
                 self.zombie_hit_sounds[type].append(snd)
 
         # Sounds the player's feet make on some given terrain
@@ -303,12 +303,11 @@ class Game:
                 mob.health -= bullet.damage
                 mob.pos += vec(WEAPONS[self.player.weapon]['damage'] // 10, 0).rotate(-self.player.rot)
             dist = self.player.pos.distance_to(mob.pos)
+            ratio = 1
             if dist > 0:
-                ratio = round(DETECT_RADIUS / dist, 2)
+                ratio = round(200 / dist, 2)
                 if ratio > 1:
                     ratio = 1
-            else:
-                ratio = 1
             snd = choice(self.zombie_hit_sounds['bullet'])
             snd.set_volume(ratio)
             if snd.get_num_channels() > 2:

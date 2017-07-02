@@ -3,9 +3,7 @@
 '''
 import heap
 import pygame as pg
-from settings import GRIDWIDTH, GRIDHEIGHT, TILESIZE
-
-vec = pg.math.Vector2
+from settings import GRIDWIDTH, GRIDHEIGHT, TILESIZE, vec
 
 
 class Graph:
@@ -64,6 +62,7 @@ class WeightedGraph(Graph):
     Weighted graph representation.
     Gives weights to the edges among neighbouring nodes.
     """
+
     def __init__(self):
         """
         Creates a weighted graph.
@@ -91,6 +90,7 @@ class PriorityQueue:
     Priority Queue implementation.
     Uses a heap for efficiency.
     """
+
     def __init__(self):
         """
         Creates an empty priority queue

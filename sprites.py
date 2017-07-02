@@ -4,12 +4,10 @@
 import pygame as pg
 from random import uniform, choice, randint
 from settings import WALL_LAYER, TILESIZE, LIGHTGREY, BULLET_LAYER, WEAPONS, EFFECTS_LAYER, \
-    FLASH_DURATION, ITEMS_LAYER, BOB_RANGE, BOB_SPEED, PLAYER_MELEE_RECT
+    FLASH_DURATION, ITEMS_LAYER, BOB_RANGE, BOB_SPEED, PLAYER_MELEE_RECT, vec
 from core_functions import collide_hit_rect
 import pytweening as tween
 from math import sqrt
-
-vec = pg.math.Vector2
 
 
 class Obstacle(pg.sprite.Sprite):
