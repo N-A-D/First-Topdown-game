@@ -10,9 +10,10 @@ from settings import WIDTH, HEIGHT, TITLE, TILESIZE, CLIP_IMG, CROSSHAIRS, \
                     KNIFE_ANIMATIONS, RIFLE_ANIMATIONS, SHOTGUN_ANIMATIONS, \
                     FPS, LIGHTGREY, WHITE, DARKGREY, RED, PLAYER_HEALTH, \
                     PLAYER_STAMINA, BAR_LENGTH, BAR_HEIGHT, GOLD, LIMEGREEN, \
-                    DODGERBLUE, GREEN, DEEPSKYBLUE, BLOOD_SHADES, ENEMY_KNOCKBACK, vec
+                    DODGERBLUE, GREEN, DEEPSKYBLUE, BLOOD_SHADES, ENEMY_KNOCKBACK, vec, \
+                    PLAYER_HIT_SOUNDS, ZOMBIE_MOAN_SOUNDS, ENEMY_HIT_SOUNDS, PLAYER_FOOTSTEPS, DETECT_RADIUS
 
-from random import choice, randrange
+from random import choice, randrange, random
 from player import Player
 from mobs import Mob
 from tilemap import Map, Camera
@@ -80,15 +81,47 @@ class Game:
         self.hud_font = path.join(self.img_folder, 'Fonts\Impacted2.0.ttf')
 
         # Sound loading
+
+        # Sounds the player makes when he/she is damaged
+        self.player_hit_sounds = []
+        for snd in PLAYER_HIT_SOUNDS:
+            self.player_hit_sounds.append(pg.mixer.Sound(path.join(self.snd_folder, snd)))
+
+        # Sounds each weapon main when they are fired
         self.weapon_sounds = {}
         for weapon in WEAPONS['sound']:
             self.weapon_sounds[weapon] = {}
             sound_list = {}
             for snd in WEAPONS['sound'][weapon]:
                 noise = pg.mixer.Sound(path.join(self.snd_folder, WEAPONS['sound'][weapon][snd]))
-                noise.set_volume(.25)
+                noise.set_volume(.9)
                 sound_list[snd] = noise
             self.weapon_sounds[weapon] = sound_list
+
+        # Sounds each mob could make while doing what mobs do
+        self.zombie_moan_sounds = []
+        for snd in ZOMBIE_MOAN_SOUNDS:
+            noise = pg.mixer.Sound(path.join(self.snd_folder, snd))
+            noise.set_volume(.15)
+            self.zombie_moan_sounds.append(noise)
+
+        # Sounds each mob makes when its hit by something
+        self.zombie_hit_sounds = {}
+        for type in ENEMY_HIT_SOUNDS:
+            self.zombie_hit_sounds[type] = []
+            for snd in ENEMY_HIT_SOUNDS[type]:
+                snd = pg.mixer.Sound(path.join(self.snd_folder, snd))
+                snd.set_volume(.75)
+                self.zombie_hit_sounds[type].append(snd)
+
+        # Sounds the player's feet make on some given terrain
+        self.player_foot_steps = {}
+        for terrain in PLAYER_FOOTSTEPS:
+            self.player_foot_steps[terrain] = []
+            for snd in PLAYER_FOOTSTEPS[terrain]:
+                snd = pg.mixer.Sound(path.join(self.snd_folder, snd))
+                snd.set_volume(.3)
+                self.player_foot_steps[terrain].append(snd)
 
         # Bullets
         self.bullet_images = {}
@@ -243,12 +276,15 @@ class Game:
         # Player hits mobs
         hit_melee_box = pg.sprite.groupcollide(self.mobs, self.swingAreas, False, True, collide_hit_rect)
         for hit in hit_melee_box:
+            choice(self.zombie_hit_sounds['bash']).play()
             hit.health -= hit.health
             self.impact_positions.append(hit.rect.center)
 
         # Enemy hits player
         hits = pg.sprite.spritecollide(self.player, self.mobs, False, collide_hit_rect)
         for hit in hits:
+            if random() < .7:
+                choice(self.player_hit_sounds).play()
             if hit.can_attack:
                 self.impact_positions.append(self.player.rect.center)
                 self.player.health -= hit.damage
@@ -266,6 +302,18 @@ class Game:
                 self.impact_positions.append(bullet.rect.center)
                 mob.health -= bullet.damage
                 mob.pos += vec(WEAPONS[self.player.weapon]['damage'] // 10, 0).rotate(-self.player.rot)
+            dist = self.player.pos.distance_to(mob.pos)
+            if dist > 0:
+                ratio = round(DETECT_RADIUS / dist, 2)
+                if ratio > 1:
+                    ratio = 1
+            else:
+                ratio = 1
+            snd = choice(self.zombie_hit_sounds['bullet'])
+            snd.set_volume(ratio)
+            if snd.get_num_channels() > 2:
+                snd.stop()
+            snd.play()
 
         # Item collisions
         hits = pg.sprite.spritecollide(self.player, self.items, True, collide_hit_rect)

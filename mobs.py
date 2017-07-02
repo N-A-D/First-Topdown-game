@@ -3,7 +3,7 @@
 '''
 
 import pygame as pg
-from random import choice, uniform
+from random import choice, uniform, random
 from core_functions import collide_with_obstacles
 from settings import MOB_LAYER, ENEMY_HIT_RECT, ENEMY_SPEEDS, ENEMY_HEALTH, ENEMY_DAMAGE, WANDER_RING_RADIUS, \
     SEEK_FORCE, WIDTH, HEIGHT, TILESIZE, DETECT_RADIUS, GREEN, RED, YELLOW, vec, WANDER_RING_DISTANCE, \
@@ -236,7 +236,8 @@ class Mob(pg.sprite.Sprite):
         else:
             return vec(0, 0)
 
-    def find_collision(self, obs, ahead, further_ahead, pos):
+    @staticmethod
+    def find_collision(obs, ahead, further_ahead, pos):
         """
         Checks to see if there is potential for a collision with
         the observered object.
@@ -374,6 +375,8 @@ class Mob(pg.sprite.Sprite):
         if self.is_onscreen:
             self.track_prey(self.game.player)
             if self.pos.distance_to(self.game.player.pos) < DETECT_RADIUS:
+                if random() < 0.009:
+                    choice(self.game.zombie_moan_sounds).play()
                 self.apply_pursuing_behaviour()
             elif self.path:
                 self.acc += self.follow_path()

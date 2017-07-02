@@ -84,6 +84,10 @@ class Player(pg.sprite.Sprite):
         # The direction the player is facing
         self.direction = 'E'
 
+        self.step_sounds = None
+        self.current_step_sound = 0
+        self.last_step_time = 0
+
     def decrease_stamina(self, decrease_rate):
         """
         Decreases the player's stamina
@@ -229,6 +233,34 @@ class Player(pg.sprite.Sprite):
             self.weapon = 'knife'
             self.game.weapon_sounds[self.weapon]['draw'].play()
 
+    def play_foot_step_sounds(self, sprinting, terrain='dirt'):
+        """
+        Plays the sound a foot step would make on a given terrain
+        :param sprinting: If the player is sprinting, the step sounds are more frequent.
+        :param terrain: The type of surface the player is moving on.
+        :return: None
+        """
+        now = pg.time.get_ticks()
+        self.step_sounds = self.game.player_foot_steps[terrain]
+        if sprinting:
+            self.current_step_sound %= len(self.step_sounds)
+            if now - self.last_step_time > 300:
+                self.last_step_time = now
+                self.current_step_sound = (self.current_step_sound + 1) % len(self.step_sounds)
+                snd = self.step_sounds[self.current_step_sound]
+                if snd.get_num_channels() > 2:
+                    snd.stop()
+                snd.play()
+        else:
+            self.current_step_sound %= len(self.step_sounds)
+            if now - self.last_step_time > 750:
+                self.last_step_time = now
+                self.current_step_sound = (self.current_step_sound + 1) % len(self.step_sounds)
+                snd = self.step_sounds[self.current_step_sound]
+                if snd.get_num_channels() > 2:
+                    snd.stop()
+                snd.play()
+
     def handle_player_movement(self, keys):
         """
         Updates the player's velocity such that the player
@@ -236,7 +268,9 @@ class Player(pg.sprite.Sprite):
         :param keys: The list of keys pressed
         :return: None
         """
+        is_sprinting = False
         if keys[pg.K_SPACE] and self.stamina > 0:
+            is_sprinting = True
             if keys[pg.K_a]:
                 self.vel.x = -PLAYER_SPEED * 2
                 self.action = 'move'
@@ -278,6 +312,9 @@ class Player(pg.sprite.Sprite):
                 self.action = 'move'
                 self.aim_wobble = WEAPONS[self.weapon]['wobble']['walk']
                 self.increase_stamina(1 / WEAPONS[self.weapon]['weight'])
+
+        if self.vel.length() > 0:
+            self.play_foot_step_sounds(sprinting=is_sprinting)
 
     def swing_weapon(self):
         """

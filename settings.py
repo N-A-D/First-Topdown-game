@@ -90,6 +90,40 @@ PLAYER_MELEE_RECT = pg.Rect(0, 0, 64, 64)
 PLAYER_HEALTH = 100
 PLAYER_STAMINA = 100
 PLAYER_MELEE_STUMBLE = 100
+PLAYER_HIT_SOUNDS = ['Player/Pain/8.wav', 'Player/Pain/9.wav', 'Player/Pain/10.wav',
+                     'Player/Pain/11.wav', 'Player/Pain/12.wav', 'Player/Pain/13.wav',
+                     'Player/Pain/14.wav']
+PLAYER_FOOTSTEPS = {'dirt': [
+    'Player/Footsteps/Dirt/stepdirt_1.ogg',
+    'Player/Footsteps/Dirt/stepdirt_2.ogg',
+    'Player/Footsteps/Dirt/stepdirt_3.ogg',
+    'Player/Footsteps/Dirt/stepdirt_4.ogg',
+    'Player/Footsteps/Dirt/stepdirt_5.ogg',
+    'Player/Footsteps/Dirt/stepdirt_6.ogg',
+    'Player/Footsteps/Dirt/stepdirt_7.ogg',
+    'Player/Footsteps/Dirt/stepdirt_8.ogg',
+],
+    'snow': [
+        'Player/Footsteps/Snow/stepsnow_1.ogg',
+        'Player/Footsteps/Snow/stepsnow_2.ogg'
+    ],
+    'stone': [
+        'Player/Footsteps/Stone/stepstone_1.ogg',
+        'Player/Footsteps/Stone/stepstone_2.ogg',
+        'Player/Footsteps/Stone/stepstone_3.ogg',
+        'Player/Footsteps/Stone/stepstone_4.ogg',
+        'Player/Footsteps/Stone/stepstone_5.ogg',
+        'Player/Footsteps/Stone/stepstone_6.ogg',
+        'Player/Footsteps/Stone/stepstone_7.ogg',
+        'Player/Footsteps/Stone/stepstone_8.ogg',
+    ],
+    'water': ['Player/Footsteps/Water/stepwater_1.ogg',
+              'Player/Footsteps/Water/stepwater_2.ogg'
+              ],
+    'wood': ['Player/Footsteps/Wood/stepwood_1.ogg',
+             'Player/Footsteps/Wood/stepwood_2.ogg'
+             ],
+}
 
 # Enemy settings
 ENEMY_DAMAGE = [10]
@@ -103,8 +137,38 @@ APPROACH_RADIUS = 150
 AVOID_RADIUS = 10
 SEEK_FORCE = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 WANDER_RING_DISTANCE = 100
-WANDER_RING_RADIUS = [40, 50, 60]
-
+WANDER_RING_RADIUS = [x for x in range(40, 100, 10)]
+ENEMY_HIT_SOUNDS = {'bash': ['zombies/Hit sounds/Bash/Bash hit 1.ogg', 'zombies/Hit sounds/Bash/Bash hit 2.ogg'],
+                    'bullet': ['zombies/Hit sounds/Bullet/Bullet hit 1.ogg',
+                               'zombies/Hit sounds/Bullet/Bullet hit 2.ogg',
+                               'zombies/Hit sounds/Bullet/Bullet hit 3.ogg']
+                    }
+ZOMBIE_MOAN_SOUNDS = [
+    'zombies/Moans/zombie-1.ogg',
+    'zombies/Moans/zombie-2.ogg',
+    'zombies/Moans/zombie-3.ogg',
+    'zombies/Moans/zombie-4.ogg',
+    'zombies/Moans/zombie-5.ogg',
+    'zombies/Moans/zombie-6.ogg',
+    'zombies/Moans/zombie-7.ogg',
+    'zombies/Moans/zombie-8.ogg',
+    'zombies/Moans/zombie-9.ogg',
+    'zombies/Moans/zombie-10.ogg',
+    'zombies/Moans/zombie-11.ogg',
+    'zombies/Moans/zombie-12.ogg',
+    'zombies/Moans/zombie-13.ogg',
+    'zombies/Moans/zombie-14.ogg',
+    'zombies/Moans/zombie-15.ogg',
+    'zombies/Moans/zombie-16.ogg',
+    'zombies/Moans/zombie-17.ogg',
+    'zombies/Moans/zombie-18.ogg',
+    'zombies/Moans/zombie-19.ogg',
+    'zombies/Moans/zombie-20.ogg',
+    'zombies/Moans/zombie-21.ogg',
+    'zombies/Moans/zombie-22.ogg',
+    'zombies/Moans/zombie-23.ogg',
+    'zombies/Moans/zombie-24.ogg',
+]
 # Enemy Animations
 ENEMY_IMGS = [
     'img/Enemies/citizenzombie1.png',
@@ -127,10 +191,10 @@ WEAPONS['animation times'] = {'handgun': {'idle': 100, 'melee': 35, 'move': 100,
                               'rifle': {'idle': 100, 'melee': 35, 'move': 125, 'reload': 70, 'shoot': 55},
                               'shotgun': {'idle': 100, 'melee': 35, 'move': 125, 'reload': 70, 'shoot': 175}}
 
-WEAPONS['sound'] = {'handgun': {'attack': 'pistol.wav', 'pickup': 'gun_pickup.wav'},
-                    'shotgun': {'attack': 'shotgun.wav', 'pickup': 'gun_pickup.wav'},
-                    'rifle': {'attack': 'Futuristic SMG Single Shot.wav', 'pickup': 'gun_pickup.wav'},
-                    'knife': {'draw': 'knifedraw.wav'}
+WEAPONS['sound'] = {'handgun': {'attack': 'Weapons/Attack/pistol.wav', 'pickup': 'Weapons/Pickup/gun_pickup.wav'},
+                    'shotgun': {'attack': 'Weapons/Attack/shotgun.wav', 'pickup': 'Weapons/Pickup/gun_pickup.wav'},
+                    'rifle': {'attack': 'Weapons/Attack/rifle.wav', 'pickup': 'Weapons/Pickup/gun_pickup.wav'},
+                    'knife': {'draw': 'Weapons/Draw/knifedraw.wav'}
                     }
 
 WEAPONS['handgun'] = {'bullet_speed': 4000,
