@@ -375,7 +375,7 @@ class Mob(pg.sprite.Sprite):
         if self.is_onscreen:
             self.track_prey(self.game.player)
             if self.pos.distance_to(self.game.player.pos) < DETECT_RADIUS:
-                if random() < 0.009:
+                if random() < 0.005:
                     choice(self.game.zombie_moan_sounds).play()
                 self.apply_pursuing_behaviour()
             elif self.path:

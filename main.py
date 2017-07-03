@@ -9,7 +9,8 @@ from settings import WIDTH, HEIGHT, TITLE, TILESIZE, CLIP_IMG, CROSSHAIRS, \
     SHOTGUN_ANIMATIONS, FPS, LIGHTGREY, WHITE, DARKGREY, RED, PLAYER_HEALTH, PLAYER_STAMINA, \
     BAR_LENGTH, BAR_HEIGHT, GOLD, LIMEGREEN, DODGERBLUE, GREEN, DEEPSKYBLUE, BLOOD_SHADES, \
     ENEMY_KNOCKBACK, vec, PLAYER_HIT_SOUNDS, ZOMBIE_MOAN_SOUNDS, ENEMY_HIT_SOUNDS, \
-    PLAYER_FOOTSTEPS, NIGHT_COLOR, LIGHT_MASK, LIGHT_RADIUS, PLAYER_SWING_NOISES
+    PLAYER_FOOTSTEPS, NIGHT_COLOR, LIGHT_MASK, LIGHT_RADIUS, PLAYER_SWING_NOISES, BG_MUSIC, \
+    GAME_OVER_MUSIC, MAIN_MENU_MUSIC
 from random import choice, randrange, random
 from player import Player
 from mobs import Mob
@@ -18,7 +19,7 @@ from sprites import Obstacle, WeaponPickup, MiscPickup
 from core_functions import collide_hit_rect
 from pathfinding import Pathfinder, WeightedGraph
 
-import time
+
 class Game:
     """
     Blueprint for game objects
@@ -40,6 +41,7 @@ class Game:
         self.game_folder = path.dirname(__file__)
         self.img_folder = path.join(self.game_folder, 'img')
         self.snd_folder = path.join(self.game_folder, 'snd')
+        self.music_folder = path.join(self.snd_folder, 'Music')
         self.crosshair_folder = path.join(self.img_folder, 'Crosshairs')
         self.item_folder = path.join(self.img_folder, 'Items')
         # Loads game assets
@@ -59,7 +61,7 @@ class Game:
         self.pause_screen_effect = pg.Surface(self.screen.get_size()).convert()
         self.pause_screen_effect.fill((0, 0, 0, 225))
 
-        self.fog = pg.Surface(self.screen.get_size(), pg.HWSURFACE).convert()
+        self.fog = pg.Surface(self.screen.get_size(), pg.HWSURFACE | pg.DOUBLEBUF).convert()
         self.fog.fill(NIGHT_COLOR)
         self.light_mask = pg.image.load(path.join(self.img_folder, LIGHT_MASK)).convert_alpha()
         self.light_mask = pg.transform.smoothscale(self.light_mask, (LIGHT_RADIUS, LIGHT_RADIUS))
@@ -86,21 +88,19 @@ class Game:
         self.hud_font = path.join(self.img_folder, 'Fonts\Impacted2.0.ttf')
 
         # Sound loading
-
-        # Sounds a player makes when he/she swings their weapon.
-        # Each sound is specific to the current weapon
+        self.music_tracks = {"main menu": MAIN_MENU_MUSIC, 'Game over': GAME_OVER_MUSIC, 'background music': BG_MUSIC}
+        pg.mixer.music.load(path.join(self.music_folder, self.music_tracks['background music']))
+        pg.mixer.music.set_volume(.5)
         self.swing_noises = {}
         for weapon in PLAYER_SWING_NOISES:
             noise = pg.mixer.Sound(path.join(self.snd_folder, PLAYER_SWING_NOISES[weapon]))
             noise.set_volume(.25)
             self.swing_noises[weapon] = noise
 
-        # Sounds the player makes when he/she is damaged
         self.player_hit_sounds = []
         for snd in PLAYER_HIT_SOUNDS:
             self.player_hit_sounds.append(pg.mixer.Sound(path.join(self.snd_folder, snd)))
 
-        # Sounds each weapon main when they are fired
         self.weapon_sounds = {}
         for weapon in WEAPONS['sound']:
             self.weapon_sounds[weapon] = {}
@@ -111,14 +111,12 @@ class Game:
                 sound_list[snd] = noise
             self.weapon_sounds[weapon] = sound_list
 
-        # Sounds each mob could make while doing what mobs do
         self.zombie_moan_sounds = []
         for snd in ZOMBIE_MOAN_SOUNDS:
             noise = pg.mixer.Sound(path.join(self.snd_folder, snd))
             noise.set_volume(.25)
             self.zombie_moan_sounds.append(noise)
 
-        # Sounds each mob makes when its hit by something
         self.zombie_hit_sounds = {}
         for type in ENEMY_HIT_SOUNDS:
             self.zombie_hit_sounds[type] = []
@@ -127,7 +125,6 @@ class Game:
                 snd.set_volume(.75)
                 self.zombie_hit_sounds[type].append(snd)
 
-        # Sounds the player's feet make on some given terrain
         self.player_foot_steps = {}
         for terrain in PLAYER_FOOTSTEPS:
             self.player_foot_steps[terrain] = []
@@ -263,6 +260,7 @@ class Game:
         :return: None
         """
         self.playing = True
+        pg.mixer.music.play(loops=-1)
         while self.playing:
             pg.display.set_caption("{:.1f}".format(self.clock.get_fps()))
             self.dt = self.clock.tick(FPS) / 1000
@@ -380,8 +378,8 @@ class Game:
         self.draw_blood_splatters()
         # Draw all sprites to the screen
         for sprite in self.all_sprites:
-            # if isinstance(sprite, Mob):
-            #     sprite.draw_health()
+            if isinstance(sprite, Mob):
+                sprite.draw_health()
             self.screen.blit(sprite.image, self.camera.apply(sprite))
             if self.debug:
                 pg.draw.rect(self.screen, (0, 255, 255), self.camera.apply_rect(sprite.hit_rect), 1)
