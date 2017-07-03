@@ -2,7 +2,6 @@
 @author: Ned Austin Datiles
 '''
 import heap
-import pygame as pg
 from settings import GRIDWIDTH, GRIDHEIGHT, TILESIZE, vec
 
 
@@ -185,7 +184,6 @@ class Pathfinder:
         self.path[vector_to_tuple(start)] = None
         self.cost[vector_to_tuple(start)] = 0
         goal = vector_to_tuple(end)
-
         while not self.frontier.empty():
             current = self.frontier.get()
             if current == goal:
@@ -198,7 +196,6 @@ class Pathfinder:
                     priority = next_cost + heuristic(end, vec(next))
                     self.frontier.put(next, priority)
                     self.path[next] = vec(current) - vec(next)
-
         # Checks to see if there is actually a path from start to end
         # and builds the path if there is.
         if vector_to_tuple(end) in self.path:
