@@ -4,15 +4,12 @@
 import pygame as pg
 from os import path
 from settings import WIDTH, HEIGHT, TITLE, TILESIZE, CLIP_IMG, CROSSHAIRS, \
-    ITEM_IMAGES, WEAPONS, RIFLE_BULLET_IMG, \
-    HANDGUN_BULLET_IMG, SHOTGUN_BULLET_IMG, \
-    MUZZLE_FLASHES, ENEMY_IMGS, HANDGUN_ANIMATIONS, \
-    KNIFE_ANIMATIONS, RIFLE_ANIMATIONS, SHOTGUN_ANIMATIONS, \
-    FPS, LIGHTGREY, WHITE, DARKGREY, RED, PLAYER_HEALTH, \
-    PLAYER_STAMINA, BAR_LENGTH, BAR_HEIGHT, GOLD, LIMEGREEN, \
-    DODGERBLUE, GREEN, DEEPSKYBLUE, BLOOD_SHADES, ENEMY_KNOCKBACK, vec, \
-    PLAYER_HIT_SOUNDS, ZOMBIE_MOAN_SOUNDS, ENEMY_HIT_SOUNDS, PLAYER_FOOTSTEPS
-
+    ITEM_IMAGES, WEAPONS, RIFLE_BULLET_IMG, HANDGUN_BULLET_IMG, SHOTGUN_BULLET_IMG, \
+    MUZZLE_FLASHES, ENEMY_IMGS, HANDGUN_ANIMATIONS, KNIFE_ANIMATIONS, RIFLE_ANIMATIONS, \
+    SHOTGUN_ANIMATIONS, FPS, LIGHTGREY, WHITE, DARKGREY, RED, PLAYER_HEALTH, PLAYER_STAMINA, \
+    BAR_LENGTH, BAR_HEIGHT, GOLD, LIMEGREEN, DODGERBLUE, GREEN, DEEPSKYBLUE, BLOOD_SHADES, \
+    ENEMY_KNOCKBACK, vec, PLAYER_HIT_SOUNDS, ZOMBIE_MOAN_SOUNDS, ENEMY_HIT_SOUNDS, \
+    PLAYER_FOOTSTEPS, NIGHT_COLOR, LIGHT_MASK, LIGHT_RADIUS, PLAYER_SWING_NOISES
 from random import choice, randrange, random
 from player import Player
 from mobs import Mob
@@ -21,7 +18,7 @@ from sprites import Obstacle, WeaponPickup, MiscPickup
 from core_functions import collide_hit_rect
 from pathfinding import Pathfinder, WeightedGraph
 
-
+import time
 class Game:
     """
     Blueprint for game objects
@@ -32,7 +29,8 @@ class Game:
         pg.init()
         pg.mixer.pre_init(44100, -16, 1, 1024)
         pg.mouse.set_visible(False)
-        self.screen = pg.display.set_mode((WIDTH, HEIGHT))
+        self.screen = pg.display.set_mode((WIDTH, HEIGHT), pg.HWSURFACE | pg.DOUBLEBUF)
+        self.screen.set_alpha(None)
         self.screen_width = WIDTH
         self.screen_height = HEIGHT
         pg.display.set_caption(TITLE)
@@ -58,8 +56,15 @@ class Game:
         # Game map
         self.map = Map(path.join(self.game_folder, 'map3.txt'))
 
-        self.screen_dimmer = pg.Surface(self.screen.get_size()).convert_alpha()
-        self.screen_dimmer.fill((0, 0, 0, 225))
+        self.pause_screen_effect = pg.Surface(self.screen.get_size()).convert()
+        self.pause_screen_effect.fill((0, 0, 0, 225))
+
+        self.fog = pg.Surface(self.screen.get_size(), pg.HWSURFACE).convert()
+        self.fog.fill(NIGHT_COLOR)
+        self.light_mask = pg.image.load(path.join(self.img_folder, LIGHT_MASK)).convert_alpha()
+        self.light_mask = pg.transform.smoothscale(self.light_mask, (LIGHT_RADIUS, LIGHT_RADIUS))
+        self.light_rect = self.light_mask.get_rect()
+
         # HUD Elements
         self.mag_img = pg.transform.smoothscale(pg.image.load(path.join(self.img_folder, CLIP_IMG)),
                                                 (40, 40)).convert_alpha()
@@ -81,6 +86,14 @@ class Game:
         self.hud_font = path.join(self.img_folder, 'Fonts\Impacted2.0.ttf')
 
         # Sound loading
+
+        # Sounds a player makes when he/she swings their weapon.
+        # Each sound is specific to the current weapon
+        self.swing_noises = {}
+        for weapon in PLAYER_SWING_NOISES:
+            noise = pg.mixer.Sound(path.join(self.snd_folder, PLAYER_SWING_NOISES[weapon]))
+            noise.set_volume(.25)
+            self.swing_noises[weapon] = noise
 
         # Sounds the player makes when he/she is damaged
         self.player_hit_sounds = []
@@ -111,7 +124,7 @@ class Game:
             self.zombie_hit_sounds[type] = []
             for snd in ENEMY_HIT_SOUNDS[type]:
                 snd = pg.mixer.Sound(path.join(self.snd_folder, snd))
-                snd.set_volume(.25)
+                snd.set_volume(.75)
                 self.zombie_hit_sounds[type].append(snd)
 
         # Sounds the player's feet make on some given terrain
@@ -350,15 +363,18 @@ class Game:
         for y in range(0, HEIGHT, TILESIZE):
             pg.draw.line(self.screen, LIGHTGREY, (0, y), (WIDTH, y))
 
+    def render_fog(self):
+        self.fog.fill(NIGHT_COLOR)
+        self.light_rect.center = self.camera.apply_rect(self.player.hit_rect.copy()).center
+        self.fog.blit(self.light_mask, self.light_rect)
+        self.screen.blit(self.fog, (0, 0), special_flags=pg.BLEND_RGBA_MULT)
+
     def draw(self):
         """
         Draws the updated game state onto the screen
         :return: None
         """
         self.screen.fill(DARKGREY)
-        x, y = pg.mouse.get_pos()
-        self.screen.blit(self.crosshair, (x - self.crosshair.get_rect().width // 2,
-                                          y - self.crosshair.get_rect().height // 2))
         if self.debug:
             self.draw_grid()
         self.draw_blood_splatters()
@@ -369,11 +385,14 @@ class Game:
             self.screen.blit(sprite.image, self.camera.apply(sprite))
             if self.debug:
                 pg.draw.rect(self.screen, (0, 255, 255), self.camera.apply_rect(sprite.hit_rect), 1)
-
+        self.render_fog()
+        x, y = pg.mouse.get_pos()
+        self.screen.blit(self.crosshair, (x - self.crosshair.get_rect().width // 2,
+                                          y - self.crosshair.get_rect().height // 2))
         # draw hud information
         self.update_hud()
         if self.paused:
-            self.screen.blit(self.screen_dimmer, (0, 0))
+            self.screen.blit(self.pause_screen_effect, (0, 0))
             self.draw_text('Paused', self.hud_font, 105, RED, WIDTH / 2, HEIGHT / 2, align='center')
         pg.display.flip()
 
