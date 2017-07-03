@@ -79,7 +79,6 @@ class Mob(pg.sprite.Sprite):
         :return:
         """
         if self.can_find_path and not self.path:
-            now = pg.time.get_ticks()
             dist = self.pos.distance_to(self.game.player.pos)
             if dist > DETECT_RADIUS * 2 and uniform(0, 1) <= .75:
                 self.path = self.game.find_path(self, target)
@@ -326,7 +325,8 @@ class Mob(pg.sprite.Sprite):
         Used to check if this mob is on the screen or not
         :return: True if on the screen, False otherwise
         """
-        location = vec(self.hit_rect.x + self.game.camera.camera.x, self.hit_rect.y + self.game.camera.camera.y)
+        location = vec(self.game.camera.apply_rect(self.hit_rect.copy()).center)
+        # location = vec(self.hit_rect.x + self.game.camera.camera.x, self.hit_rect.y + self.game.camera.camera.y)
         if location.x <= WIDTH + 2 * TILESIZE and location.y <= HEIGHT + 2 * TILESIZE:
             if self.pos.distance_to(self.game.player.pos) < DETECT_RADIUS:
                 self.can_pursue = True

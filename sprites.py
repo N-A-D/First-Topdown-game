@@ -175,9 +175,9 @@ class WeaponPickup(Item):
         super().__init__(game, pos, img)
         self.ammo_boost = 1
         if self.type == 'rifle' or self.type == 'shotgun':
-            self.ammo_boost = randint(4, 8)
+            self.ammo_boost = randint(3, 5)
         elif self.type == 'handgun':
-            self.ammo_boost = randint(5, 12)
+            self.ammo_boost = randint(4, 7)
 
     def update(self):
         super().update()
@@ -260,3 +260,16 @@ class SwingArea(pg.sprite.Sprite):
             self.rect.midtop = self.game.player.pos
         elif self.direction == 'SE':
             self.rect.topleft = self.game.player.pos
+
+class ShellCasing(pg.sprite.Sprite):
+    def __init__(self, game, pos, weapon):
+        self.groups = game.all_sprites
+        pg.sprite.Sprite.__init__(self.groups)
+        self.pos = pos
+
+
+    def fall(self):
+        pass
+
+    def update(self):
+        pass

@@ -150,6 +150,7 @@ class Player(pg.sprite.Sprite):
         self.canned_action = self.action
         self.current_frame = 0
         self.play_static_animation = True
+        self.game.weapon_sounds[self.weapon]['reload'].play()
 
     def process_input(self, _input):
         """
@@ -199,6 +200,7 @@ class Player(pg.sprite.Sprite):
                 self.reload()
 
         if rc and self.action != 'reload' and self.stamina > 0:
+            self.game.swing_noises[self.weapon].play()
             self.action = 'melee'
             self.current_frame = 0
             self.canned_action = self.action
@@ -313,8 +315,10 @@ class Player(pg.sprite.Sprite):
                 self.aim_wobble = WEAPONS[self.weapon]['wobble']['walk']
                 self.increase_stamina(1 / WEAPONS[self.weapon]['weight'])
 
-        if self.vel.length() > 0:
+        if self.vel.length() != 0:
             self.play_foot_step_sounds(sprinting=is_sprinting)
+        else:
+            self.current_step_sound = 0
 
     def swing_weapon(self):
         """

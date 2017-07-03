@@ -19,11 +19,13 @@ DEEPSKYBLUE = (0, 191, 255)
 DODGERBLUE = (30, 144, 255)
 LIMEGREEN = (50, 205, 50)
 GOLD = (255, 215, 0)
+NIGHT_COLOR = (20, 20, 20)
+
 # Game settings
 WIDTH = 1024  # 16 * 64 or 32 * 32 or 64 * 16
 HEIGHT = 640  # 16 * 48 or 32 * 24 or 64 * 12
 
-FPS = 60
+FPS = 59
 TITLE = "My game"
 BGCOLOR = DARKGREY
 
@@ -78,6 +80,9 @@ MUZZLE_FLASHES = ['smokeparticleassets/PNG/Flash/flash00.png',
 FLASH_DURATION = 60
 DAMAGE_ALPHA = [x for x in range(0, 255, 50)]
 LASER_SIGHT_COLORS = [(124, 252, 0), (50, 205, 50), (173, 255, 47), (152, 251, 152), (34, 139, 34)]
+LIGHT_MASK = 'light_350_soft.png'
+LIGHT_RADIUS = 500
+
 # Item settings
 BOB_RANGE = 20
 BOB_SPEED = .5
@@ -93,6 +98,11 @@ PLAYER_MELEE_STUMBLE = 100
 PLAYER_HIT_SOUNDS = ['Player/Pain/8.wav', 'Player/Pain/9.wav', 'Player/Pain/10.wav',
                      'Player/Pain/11.wav', 'Player/Pain/12.wav', 'Player/Pain/13.wav',
                      'Player/Pain/14.wav']
+PLAYER_SWING_NOISES = {
+    'handgun': 'Player/Bash/Handgun swing.ogg',
+    'rifle': 'Player/Bash/Temp Swing.ogg',
+    'shotgun': 'Player/Bash/Temp Swing.ogg',
+    'knife': 'Player/Bash/Knife swing.ogg'}
 PLAYER_FOOTSTEPS = {'dirt': [
     'Player/Footsteps/Dirt/stepdirt_1.ogg',
     'Player/Footsteps/Dirt/stepdirt_2.ogg',
@@ -138,10 +148,17 @@ AVOID_RADIUS = 10
 SEEK_FORCE = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 WANDER_RING_DISTANCE = 100
 WANDER_RING_RADIUS = [x for x in range(40, 100, 10)]
-ENEMY_HIT_SOUNDS = {'bash': ['zombies/Hit sounds/Bash/Bash hit 1.ogg', 'zombies/Hit sounds/Bash/Bash hit 2.ogg'],
+ENEMY_HIT_SOUNDS = {'bash': ['zombies/Hit sounds/Bash/Bash hit 1.ogg',
+                             'zombies/Hit sounds/Bash/Bash hit 2.ogg',
+                             'zombies/Hit sounds/Bash/Bash hit 3.ogg',
+                             'zombies/Hit sounds/Bash/Bash hit 4.ogg',
+                             'zombies/Hit sounds/Bash/Bash hit 5.ogg'
+                             ],
                     'bullet': ['zombies/Hit sounds/Bullet/Bullet hit 1.ogg',
                                'zombies/Hit sounds/Bullet/Bullet hit 2.ogg',
-                               'zombies/Hit sounds/Bullet/Bullet hit 3.ogg']
+                               'zombies/Hit sounds/Bullet/Bullet hit 3.ogg',
+                               'zombies/Hit sounds/Bullet/Bullet hit 4.ogg'
+                               ]
                     }
 ZOMBIE_MOAN_SOUNDS = [
     'zombies/Moans/zombie-1.ogg',
@@ -186,14 +203,17 @@ ENEMY_IMGS = [
 # Weapon settings
 WEAPONS = {}
 
-WEAPONS['animation times'] = {'handgun': {'idle': 100, 'melee': 35, 'move': 100, 'reload': 70, 'shoot': 125},
-                              'knife': {'idle': 100, 'melee': 35, 'move': 75, 'reload': 0, 'shoot': 0},
-                              'rifle': {'idle': 100, 'melee': 35, 'move': 125, 'reload': 70, 'shoot': 55},
-                              'shotgun': {'idle': 100, 'melee': 35, 'move': 125, 'reload': 70, 'shoot': 175}}
+WEAPONS['animation times'] = {'handgun': {'idle': 100, 'melee': 45, 'move': 100, 'reload': 75, 'shoot': 125},
+                              'knife': {'idle': 100, 'melee': 30, 'move': 75, 'reload': 0, 'shoot': 0},
+                              'rifle': {'idle': 100, 'melee': 45, 'move': 125, 'reload': 100, 'shoot': 55},
+                              'shotgun': {'idle': 100, 'melee': 45, 'move': 125, 'reload': 110, 'shoot': 175}}
 
-WEAPONS['sound'] = {'handgun': {'attack': 'Weapons/Attack/pistol.wav', 'pickup': 'Weapons/Pickup/gun_pickup.wav'},
-                    'shotgun': {'attack': 'Weapons/Attack/shotgun.wav', 'pickup': 'Weapons/Pickup/gun_pickup.wav'},
-                    'rifle': {'attack': 'Weapons/Attack/rifle.wav', 'pickup': 'Weapons/Pickup/gun_pickup.wav'},
+WEAPONS['sound'] = {'handgun': {'attack': 'Weapons/Attack/pistol.wav', 'pickup': 'Weapons/Pickup/gun_pickup.wav',
+                                'reload': 'Weapons/Reload/Handgun1.ogg'},
+                    'shotgun': {'attack': 'Weapons/Attack/shotgun.wav', 'pickup': 'Weapons/Pickup/gun_pickup.wav',
+                                'reload': 'Weapons/Reload/Shotgun1.ogg'},
+                    'rifle': {'attack': 'Weapons/Attack/rifle.wav', 'pickup': 'Weapons/Pickup/gun_pickup.wav',
+                              'reload': 'Weapons/Reload/Rifle1.ogg'},
                     'knife': {'draw': 'Weapons/Draw/knifedraw.wav'}
                     }
 
