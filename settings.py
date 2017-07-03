@@ -19,13 +19,13 @@ DEEPSKYBLUE = (0, 191, 255)
 DODGERBLUE = (30, 144, 255)
 LIMEGREEN = (50, 205, 50)
 GOLD = (255, 215, 0)
-NIGHT_COLOR = (20, 20, 20)
+NIGHT_COLOR = (10, 10, 10, 128)
 
 # Game settings
 WIDTH = 1024  # 16 * 64 or 32 * 32 or 64 * 16
 HEIGHT = 640  # 16 * 48 or 32 * 24 or 64 * 12
 
-FPS = 59
+FPS = 60
 TITLE = "My game"
 BGCOLOR = DARKGREY
 
@@ -81,11 +81,18 @@ FLASH_DURATION = 60
 DAMAGE_ALPHA = [x for x in range(0, 255, 50)]
 LASER_SIGHT_COLORS = [(124, 252, 0), (50, 205, 50), (173, 255, 47), (152, 251, 152), (34, 139, 34)]
 LIGHT_MASK = 'light_350_soft.png'
-LIGHT_RADIUS = 500
+LIGHT_RADIUS = 1500
+BLOOD_SHADES = [(value, 0, 0) for value in range(255, 16, -8)]
+
+BG_MUSIC = 'Infested City.ogg'
+GAME_OVER_MUSIC = 'Death is Just Another Path.ogg'
+MAIN_MENU_MUSIC = 'zombie main music.ogg'
 
 # Item settings
 BOB_RANGE = 20
 BOB_SPEED = .5
+
+
 
 # Player settings
 DEFAULT_WEAPON = 'knife'
@@ -276,8 +283,7 @@ ITEM_IMAGES = {'rifle': 'rifle.png',
                'health': 'health.png'
                }
 
-# Blood colors
-BLOOD_SHADES = [(value, 0, 0) for value in range(255, 16, -8)]
+
 # Player Animations
 HANDGUN_ANIMATIONS = {}
 KNIFE_ANIMATIONS = {}
