@@ -30,7 +30,7 @@ class Game:
         pg.init()
         pg.mixer.pre_init(44100, -16, 1, 1024)
         pg.mouse.set_visible(False)
-        self.screen = pg.display.set_mode((WIDTH, HEIGHT), pg.HWSURFACE | pg.DOUBLEBUF)
+        self.screen = pg.display.set_mode((WIDTH, HEIGHT))
         self.screen.set_alpha(None)
         self.screen_width = WIDTH
         self.screen_height = HEIGHT
@@ -49,6 +49,7 @@ class Game:
         self.running = True
         # Debugging flags
         self.debug = False
+        self.hardcore_mode = False
 
     def load_data(self):
         """
@@ -61,8 +62,11 @@ class Game:
         self.pause_screen_effect = pg.Surface(self.screen.get_size()).convert()
         self.pause_screen_effect.fill((0, 0, 0, 225))
 
-        self.fog = pg.Surface(self.screen.get_size(), pg.HWSURFACE | pg.DOUBLEBUF).convert()
+        # Fog of war
+        self.fog = pg.Surface(self.screen.get_size()).convert()
         self.fog.fill(NIGHT_COLOR)
+
+        # Light on the player
         self.light_mask = pg.image.load(path.join(self.img_folder, LIGHT_MASK)).convert_alpha()
         self.light_mask = pg.transform.smoothscale(self.light_mask, (LIGHT_RADIUS, LIGHT_RADIUS))
         self.light_rect = self.light_mask.get_rect()
@@ -91,6 +95,7 @@ class Game:
         self.music_tracks = {"main menu": MAIN_MENU_MUSIC, 'Game over': GAME_OVER_MUSIC, 'background music': BG_MUSIC}
         pg.mixer.music.load(path.join(self.music_folder, self.music_tracks['background music']))
         pg.mixer.music.set_volume(.5)
+
         self.swing_noises = {}
         for weapon in PLAYER_SWING_NOISES:
             noise = pg.mixer.Sound(path.join(self.snd_folder, PLAYER_SWING_NOISES[weapon]))
@@ -130,7 +135,7 @@ class Game:
             self.player_foot_steps[terrain] = []
             for snd in PLAYER_FOOTSTEPS[terrain]:
                 snd = pg.mixer.Sound(path.join(self.snd_folder, snd))
-                snd.set_volume(.3)
+                snd.set_volume(.5)
                 self.player_foot_steps[terrain].append(snd)
 
         # Bullets
@@ -247,12 +252,9 @@ class Game:
         :param prey: The unknowning target
         :return: A list of Vector2 objects to guide the predator
         """
-        # Update enemy locations in the graph so as to avoid finding
-        # paths that will collide with other enemies
-        path = self.pathfinder.a_star_search(self.game_graph,
+        return self.pathfinder.a_star_search(self.game_graph,
                                              vec(predator.pos.x // TILESIZE, predator.pos.y // TILESIZE),
                                              vec(prey.pos.x // TILESIZE, prey.pos.y // TILESIZE))
-        return path
 
     def run(self):
         """
@@ -313,6 +315,7 @@ class Game:
                 self.impact_positions.append(bullet.rect.center)
                 mob.health -= bullet.damage
                 mob.pos += vec(WEAPONS[self.player.weapon]['damage'] // 10, 0).rotate(-self.player.rot)
+            # Drowns out blood gushing noises the further the collision is from the player
             dist = self.player.pos.distance_to(mob.pos)
             ratio = 1
             if dist > 0:
@@ -350,6 +353,8 @@ class Game:
                     self.debug = not self.debug
                 if event.key == pg.K_p:
                     self.paused = not self.paused
+                if event.key == pg.K_h:
+                    self.hardcore_mode = not self.hardcore_mode
 
     def draw_grid(self):
         """
@@ -378,8 +383,8 @@ class Game:
         self.draw_blood_splatters()
         # Draw all sprites to the screen
         for sprite in self.all_sprites:
-            if isinstance(sprite, Mob):
-                sprite.draw_health()
+            # if isinstance(sprite, Mob):
+            #     sprite.draw_health()
             self.screen.blit(sprite.image, self.camera.apply(sprite))
             if self.debug:
                 pg.draw.rect(self.screen, (0, 255, 255), self.camera.apply_rect(sprite.hit_rect), 1)
@@ -388,7 +393,8 @@ class Game:
         self.screen.blit(self.crosshair, (x - self.crosshair.get_rect().width // 2,
                                           y - self.crosshair.get_rect().height // 2))
         # draw hud information
-        self.update_hud()
+        if not self.hardcore_mode:
+            self.update_hud()
         if self.paused:
             self.screen.blit(self.pause_screen_effect, (0, 0))
             self.draw_text('Paused', self.hud_font, 105, RED, WIDTH / 2, HEIGHT / 2, align='center')
@@ -400,7 +406,6 @@ class Game:
         :return: None
         """
         self.draw_player_stats()
-        self.draw_text(str(len(self.mobs)) + " zombies remain", self.hud_font, 30, WHITE, WIDTH // 2, 10)
         if self.player.weapon != 'knife':
             self.draw_current_clip(self.screen, 10, 70, self.player.arsenal[self.player.weapon]['clip'], 3, 15)
 
@@ -409,7 +414,7 @@ class Game:
         Gives the player visual indication of their health & stamina
         :return: None
         """
-        self.draw_player_health(self.screen, 10, 10, self.player.health / PLAYER_HEALTH)
+        self.draw_player_health(self.screen, 10, 10, self.player.health // PLAYER_HEALTH)
         self.draw_text(str(self.player.health) + "%", self.hud_font, 15, (119, 136, 153),
                        BAR_LENGTH // 2 - 5, 10)
         self.draw_player_stamina(self.screen, 10, 40, self.player.stamina / PLAYER_STAMINA)
@@ -430,28 +435,21 @@ class Game:
         """
         if self.player.weapon != 'knife':
             temp = x
-            # Draws a grey set of bullets onto the screen
-            # As the player fires their weapon, these grey bullet figures will be revealed
-            # to give the player a sense of the emptiness of their weapon's clip
+            # Draws how many bullets are in the player's magazine in GOLD with the difference between
+            # maximum mag capacity - current bullet count is in LIGHTGREY
             for j in range(0, WEAPONS[self.player.weapon]['clip size']):
-                bullet_outline = pg.Rect(temp, y, bullet_length, bullet_height)
-                pg.draw.rect(surface, LIGHTGREY, bullet_outline)
+                bullet_outline = pg.Surface((bullet_length, bullet_height)).convert()
+                if j < bullets:
+                    bullet_outline.fill(GOLD)
+                else:
+                    bullet_outline.fill(LIGHTGREY)
+                surface.blit(bullet_outline, (temp, y))
                 temp += 2 * bullet_length
-
-            self.screen.blit(self.mag_img, (temp, y - 10))
+            surface.blit(self.mag_img, (temp, y - 10))
             self.draw_text('x', self.hud_font, 15, WHITE,
                            temp + 32, y)
             self.draw_text(str(self.player.arsenal[self.player.weapon]['reloads']), self.hud_font, 20, WHITE,
                            temp + 40, y - 5)
-            temp = x
-
-            # Draws the bullets the actually remain in the clip as gold figures.
-            # These bullets will cover up the grey bullets drawn just above and
-            # are removed as the player shoots these bullets
-            for i in range(0, bullets):
-                bullet = pg.Rect(temp, y, bullet_length, bullet_height)
-                pg.draw.rect(surface, GOLD, bullet)
-                temp += 2 * bullet_length
 
     @staticmethod
     def draw_player_health(surface, x, y, pct):
@@ -536,17 +534,18 @@ class Game:
         self.screen.blit(text_surface, text_rect)
 
     def draw_blood_splatters(self):
-        for pos in self.impact_positions:
-            impact = True
-            while impact:
-                self.events()
-                for magnitude in range(1, randrange(35, 65)):
-                    exploding_bit_x = pos[0] + randrange(-1 * magnitude, magnitude) + self.camera.camera.x
-                    exploding_bit_y = pos[1] + randrange(-1 * magnitude, magnitude) + self.camera.camera.y
-                    pg.draw.circle(self.screen, choice(BLOOD_SHADES), (exploding_bit_x, exploding_bit_y),
-                                   randrange(1, 5))
-                impact = False
-        self.impact_positions.clear()
+        if self.impact_positions:
+            for pos in self.impact_positions:
+                impact = True
+                while impact:
+                    self.events()
+                    for magnitude in range(1, randrange(35, 65)):
+                        exploding_bit_x = pos[0] + randrange(-1 * magnitude, magnitude) + self.camera.camera.x
+                        exploding_bit_y = pos[1] + randrange(-1 * magnitude, magnitude) + self.camera.camera.y
+                        pg.draw.circle(self.screen, choice(BLOOD_SHADES), (exploding_bit_x, exploding_bit_y),
+                                       randrange(1, 5))
+                    impact = False
+            self.impact_positions.clear()
 
     def update_pathfinding_queue(self):
         """
