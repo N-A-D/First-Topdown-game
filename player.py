@@ -389,10 +389,12 @@ class Player(pg.sprite.Sprite):
         else:
             if item.type == 'ammo':
                 if self.weapon == 'knife':
-                    keys = ['rifle', 'shotgun', 'handgun']
-                    firearm = choice(keys)
-                    self.arsenal[firearm]['reloads'] += item.AMMO_BOOST
-
+                    # keys = ['rifle', 'shotgun', 'handgun']
+                    # firearm = choice(keys)
+                    # self.arsenal[firearm]['reloads'] += item.AMMO_BOOST
+                    for weapon in self.arsenal:
+                        if weapon != 'knife' and self.arsenal[weapon]['hasWeapon']:
+                            self.arsenal[weapon]['reloads'] += item.AMMO_BOOST
                 else:
                     self.arsenal[self.weapon]['reloads'] += item.AMMO_BOOST
             else:

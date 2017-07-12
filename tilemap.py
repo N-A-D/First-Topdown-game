@@ -57,15 +57,15 @@ class Camera:
         :return: None
         """
         # Get how much the target moved in the x & y 
-        # Objects the pass by the target move in the opposite
-        # direction of the target
+        # Objects that the pass by the target move in the opposite direction of the target
         x = -target.rect.centerx + (WIDTH // 2)
         y = -target.rect.centery + (HEIGHT // 2)
 
         # Limit the scrolling on all four sides of the screen
         x = min(0, x)  # left
-        y = min(0, y)  # right
+        y = min(0, y)  # top
         x = max(-(self.width - WIDTH), x)  # right
         y = max(-(self.height - HEIGHT), y)  # bottom
+
         # Update the camera
         self.camera = pg.Rect(x, y, self.width, self.height)

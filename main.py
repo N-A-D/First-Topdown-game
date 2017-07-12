@@ -44,12 +44,16 @@ class Game:
         self.music_folder = path.join(self.snd_folder, 'Music')
         self.crosshair_folder = path.join(self.img_folder, 'Crosshairs')
         self.item_folder = path.join(self.img_folder, 'Items')
+
         # Loads game assets
         self.load_data()
         self.running = True
+
         # Debugging flags
         self.debug = False
+
         self.hardcore_mode = False
+        self.paused = False
 
     def load_data(self):
         """

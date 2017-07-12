@@ -81,7 +81,7 @@ FLASH_DURATION = 60
 DAMAGE_ALPHA = [x for x in range(0, 255, 50)]
 LASER_SIGHT_COLORS = [(124, 252, 0), (50, 205, 50), (173, 255, 47), (152, 251, 152), (34, 139, 34)]
 LIGHT_MASK = 'light_350_soft.png'
-LIGHT_RADIUS = 1000
+LIGHT_RADIUS = 750
 BLOOD_SHADES = [(value, 0, 0) for value in range(255, 16, -8)]
 
 BG_MUSIC = 'Infested City.ogg'
@@ -91,8 +91,6 @@ MAIN_MENU_MUSIC = 'zombie main music.ogg'
 # Item settings
 BOB_RANGE = 20
 BOB_SPEED = .5
-
-
 
 # Player settings
 DEFAULT_WEAPON = 'knife'
@@ -146,7 +144,7 @@ PLAYER_FOOTSTEPS = {'dirt': [
 ENEMY_DAMAGE = [10]
 ENEMY_KNOCKBACK = 10
 ENEMY_LINE_OF_SIGHT = TILESIZE / 2
-ENEMY_HIT_RECT = pg.Rect(0, 0, 50, 50)
+ENEMY_HIT_RECT = pg.Rect(0, 0, 56, 56)
 ENEMY_SPEEDS = [speed for speed in range(40, 100, 10)]
 ENEMY_HEALTH = [400]
 DETECT_RADIUS = 400
@@ -278,7 +276,6 @@ ITEM_IMAGES = {'rifle': 'rifle.png',
                'ammo': 'Ammo.png',
                'health': 'health.png'
                }
-
 
 # Player Animations
 HANDGUN_ANIMATIONS = {}

@@ -166,7 +166,8 @@ class Mob(pg.sprite.Sprite):
         """
         sum = vec(0, 0)
         count = 0
-        for mob in self.game.mobs:
+        mobs = [mob for mob in self.game.mobs if mob.is_onscreen]
+        for mob in mobs:
             if mob != self:
                 dist = self.pos.distance_to(mob.pos)
                 if 0 < dist < AVOID_RADIUS:
@@ -188,7 +189,8 @@ class Mob(pg.sprite.Sprite):
         """
         sum = vec(0, 0)
         count = 0
-        for mob in self.game.mobs:
+        mobs = [mob for mob in self.game.mobs if mob.is_onscreen]
+        for mob in mobs:
             if mob != self:
                 dist = self.pos.distance_to(mob.pos)
                 if 0 < dist < AVOID_RADIUS:
@@ -214,7 +216,8 @@ class Mob(pg.sprite.Sprite):
         """
         sum = vec(0, 0)
         count = 0
-        for mob in self.game.mobs:
+        mobs = [mob for mob in self.game.mobs if mob.is_onscreen]
+        for mob in mobs:
             if mob != self:
                 dist = self.pos.distance_to(mob.pos)
                 if 0 < dist < self.radius * 1.5:
@@ -327,7 +330,7 @@ class Mob(pg.sprite.Sprite):
         """
         location = vec(self.game.camera.apply_rect(self.hit_rect.copy()).center)
         # location = vec(self.hit_rect.x + self.game.camera.camera.x, self.hit_rect.y + self.game.camera.camera.y)
-        if location.x <= WIDTH + 2 * TILESIZE and location.y <= HEIGHT + 2 * TILESIZE:
+        if location.x <= WIDTH + TILESIZE and location.y <= HEIGHT + TILESIZE:
             if self.pos.distance_to(self.game.player.pos) < DETECT_RADIUS:
                 self.can_pursue = True
             else:
