@@ -5,7 +5,7 @@ import heap
 from settings import GRIDWIDTH, GRIDHEIGHT, TILESIZE, vec
 
 
-class Graph:
+class Graph(object):
     """
     Graph representation of the game's tile map.
     The layout of the game is given by a two dimensional array of "tiles", where each tile is a
@@ -66,7 +66,7 @@ class WeightedGraph(Graph):
         """
         Creates a weighted graph.
         """
-        super().__init__()
+        super(WeightedGraph, self).__init__()
         self.weights = {}
 
     def cost(self, start, end):

@@ -19,19 +19,23 @@ DEEPSKYBLUE = (0, 191, 255)
 DODGERBLUE = (30, 144, 255)
 LIMEGREEN = (50, 205, 50)
 GOLD = (255, 215, 0)
-NIGHT_COLOR = (5, 5, 5)
+NIGHT_COLOR = (10, 10, 10)
 
 # Game settings
 WIDTH = 1024  # 16 * 64 or 32 * 32 or 64 * 16
 HEIGHT = 640  # 16 * 48 or 32 * 24 or 64 * 12
 
-FPS = 60
-TITLE = "My game"
+FPS = 90
+TITLE = "The Undead"
 BGCOLOR = DARKGREY
 
 TILESIZE = 64
 GRIDWIDTH = 32
 GRIDHEIGHT = 24
+
+# Fonts
+HUD_FONT = 'ZOMBIE.TTF'
+TITLE_FONT = 'Impacted2.0.ttf'
 
 # HUD settings
 BAR_LENGTH = 300
@@ -81,7 +85,7 @@ FLASH_DURATION = 60
 DAMAGE_ALPHA = [x for x in range(0, 255, 50)]
 LASER_SIGHT_COLORS = [(124, 252, 0), (50, 205, 50), (173, 255, 47), (152, 251, 152), (34, 139, 34)]
 LIGHT_MASK = 'light_350_soft.png'
-LIGHT_RADIUS = 750
+LIGHT_RADIUS = 500
 BLOOD_SHADES = [(value, 0, 0) for value in range(255, 16, -8)]
 
 BG_MUSIC = 'Infested City.ogg'
@@ -108,6 +112,7 @@ PLAYER_SWING_NOISES = {
     'rifle': 'Player/Bash/Temp Swing.ogg',
     'shotgun': 'Player/Bash/Temp Swing.ogg',
     'knife': 'Player/Bash/Knife swing.ogg'}
+
 PLAYER_FOOTSTEPS = {'dirt': [
     'Player/Footsteps/Dirt/stepdirt_1.ogg',
     'Player/Footsteps/Dirt/stepdirt_2.ogg',
@@ -141,7 +146,7 @@ PLAYER_FOOTSTEPS = {'dirt': [
 }
 
 # Enemy settings
-ENEMY_DAMAGE = [10]
+ENEMY_DAMAGE = [x for x in range(1, 10)]
 ENEMY_KNOCKBACK = 10
 ENEMY_LINE_OF_SIGHT = TILESIZE / 2
 ENEMY_HIT_RECT = pg.Rect(0, 0, 56, 56)
@@ -191,19 +196,6 @@ ZOMBIE_MOAN_SOUNDS = [
     'zombies/Moans/zombie-23.ogg',
     'zombies/Moans/zombie-24.ogg',
 ]
-# Enemy Animations
-ENEMY_IMGS = [
-    'img/Enemies/citizenzombie1.png',
-    'img/Enemies/citizenzombie2.png',
-    'img/Enemies/citizenzombie3.png',
-    'img/Enemies/citizenzombie4.png',
-    'img/Enemies/citizenzombie5.png',
-    'img/Enemies/citizenzombie6.png',
-    'img/Enemies/citizenzombie7.png',
-    'img/Enemies/citizenzombie8.png',
-    'img/Enemies/citizenzombie9.png',
-    'img/Enemies/citizenzombie10.png',
-]
 
 # Weapon settings
 WEAPONS = {}
@@ -233,7 +225,7 @@ WEAPONS['handgun'] = {'bullet_speed': 4000,
                       'weight': 3,
                       'wobble': {'sprint': 10, 'walk': 4, 'idle': 1},
                       'muzzle flash range': [25, 35],
-                      'barrel offset': vec(50, 20),
+                      'barrel offset': vec(45, 22),
                       'bullet_count': 1}
 
 WEAPONS['rifle'] = {'bullet_speed': 4000,
@@ -247,7 +239,7 @@ WEAPONS['rifle'] = {'bullet_speed': 4000,
                     'weight': 6,
                     'wobble': {'sprint': 14, 'walk': 7, 'idle': 2},
                     'muzzle flash range': [35, 60],
-                    'barrel offset': vec(72, 20),
+                    'barrel offset': vec(60, 22),
                     'bullet_count': 1}
 WEAPONS['shotgun'] = {'bullet_speed': 4000,
                       'bullet_lifetime': 20000,
@@ -260,7 +252,7 @@ WEAPONS['shotgun'] = {'bullet_speed': 4000,
                       'weight': 7,
                       'wobble': {'sprint': 15, 'walk': 8, 'idle': 2},
                       'muzzle flash range': [50, 70],
-                      'barrel offset': vec(75, 20),
+                      'barrel offset': vec(67, 22),
                       'bullet_count': 11}
 WEAPONS['knife'] = {
     'damage': 50,
@@ -277,11 +269,26 @@ ITEM_IMAGES = {'rifle': 'rifle.png',
                'health': 'health.png'
                }
 
+# Enemy Animations
+ENEMY_IMGS = [
+    'img/Enemies/citizenzombie1.png',
+    'img/Enemies/citizenzombie2.png',
+    'img/Enemies/citizenzombie3.png',
+    'img/Enemies/citizenzombie4.png',
+    'img/Enemies/citizenzombie5.png',
+    'img/Enemies/citizenzombie6.png',
+    'img/Enemies/citizenzombie7.png',
+    'img/Enemies/citizenzombie8.png',
+    'img/Enemies/citizenzombie9.png',
+    'img/Enemies/citizenzombie10.png',
+]
+
 # Player Animations
 HANDGUN_ANIMATIONS = {}
 KNIFE_ANIMATIONS = {}
 RIFLE_ANIMATIONS = {}
 SHOTGUN_ANIMATIONS = {}
+FEET_ANIMATIONS = {}
 
 HANDGUN_ANIMATIONS['idle'] = get_image_names('img/Player animations/handgun/idle/')
 HANDGUN_ANIMATIONS['melee'] = get_image_names('img/Player animations/handgun/meleeattack/')

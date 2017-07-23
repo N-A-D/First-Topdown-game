@@ -61,7 +61,6 @@ class Mob(pg.sprite.Sprite):
         # the player
         self.seek_force = choice(SEEK_FORCE) * self.speed
         self.desired = vec(0, 0)
-        self.can_pursue = False
         self.can_attack = True
         self.last_attack_time = 0
 
@@ -329,12 +328,7 @@ class Mob(pg.sprite.Sprite):
         :return: True if on the screen, False otherwise
         """
         location = vec(self.game.camera.apply_rect(self.hit_rect.copy()).center)
-        # location = vec(self.hit_rect.x + self.game.camera.camera.x, self.hit_rect.y + self.game.camera.camera.y)
         if location.x <= WIDTH + TILESIZE and location.y <= HEIGHT + TILESIZE:
-            if self.pos.distance_to(self.game.player.pos) < DETECT_RADIUS:
-                self.can_pursue = True
-            else:
-                self.can_pursue = False
             self.is_onscreen = True
         else:
             self.is_onscreen = False
@@ -403,7 +397,7 @@ class Mob(pg.sprite.Sprite):
                 self.can_attack = True
                 self.last_attack_time = now
 
-    def draw_health(self):
+    def render_health(self):
         """
         Each mob will have their health bars superimposed
         onto their sprite images so as to give the player

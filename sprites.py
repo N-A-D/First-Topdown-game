@@ -4,7 +4,7 @@
 import pygame as pg
 from random import uniform, choice, randint
 from settings import WALL_LAYER, TILESIZE, LIGHTGREY, BULLET_LAYER, WEAPONS, EFFECTS_LAYER, \
-    FLASH_DURATION, ITEMS_LAYER, BOB_RANGE, BOB_SPEED, PLAYER_MELEE_RECT, vec
+    FLASH_DURATION, ITEMS_LAYER, BOB_RANGE, BOB_SPEED, PLAYER_MELEE_RECT, vec, YELLOW, WIDTH, HEIGHT
 from core_functions import collide_hit_rect
 import pytweening as tween
 from math import sqrt
@@ -32,10 +32,25 @@ class Obstacle(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-        self.hit_rect = pg.Rect(self.rect.x, self.rect.y, self.rect.width - 10, self.rect.height - 10)
+        self.hit_rect = pg.Rect(self.rect.x, self.rect.y, self.rect.width, self.rect.height)
         self.hit_rect.center = self.rect.center
         self.pos = vec(self.rect.center)
         self.radius = sqrt(self.hit_rect.width ** 2 + self.hit_rect.height ** 2)
+        self.check_if_is_on_screen()
+
+    def check_if_is_on_screen(self):
+        """
+        Used to check if this mob is on the screen or not
+        :return: True if on the screen, False otherwise
+        """
+        location = vec(self.game.camera.apply_rect(self.hit_rect.copy()).center)
+        if location.x <= WIDTH + TILESIZE and location.y <= HEIGHT + TILESIZE:
+            self.is_onscreen = True
+        else:
+            self.is_onscreen = False
+
+    def update(self):
+        self.check_if_is_on_screen()
 
 
 class Bullet(pg.sprite.Sprite):
@@ -266,10 +281,13 @@ class ShellCasing(pg.sprite.Sprite):
         self.groups = game.all_sprites
         pg.sprite.Sprite.__init__(self.groups)
         self.pos = pos
-
-
-    def fall(self):
-        pass
+        self.image = pg.Surface((5, 5)).convert()
+        self.image.fill(YELLOW)
+        self.rect = self.image.get_rect()
+        self.rect.pos = pos
+        self.hit_rect = pg.Rect(self.rect.x, self.rect.y, self.rect.width, self.rect.height)
+        self.hit_rect.center = self.rect.center
+        self.pos = vec(self.rect.center)
 
     def update(self):
         pass

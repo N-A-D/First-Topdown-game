@@ -65,6 +65,6 @@ def collide_with_obstacles(sprite, group, direction):
     return collided
 
 
-def get_image_names(path):
+def get_image_names(path, index=2):
     files = [file for file in listdir(path) if isfile(join(path, file))]
-    return [path + file for file in sorted(files, key=lambda x: int(re.split(r'[_.]', x)[2]))]
+    return [path + file for file in sorted(files, key=lambda x: int(re.split(r'[_.]', x)[index]))]

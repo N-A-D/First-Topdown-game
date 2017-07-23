@@ -4,7 +4,7 @@ Created on Mar 15, 2017
 @author: Ned Austin Datiles
 '''
 import pygame as pg
-from settings import TILESIZE, WIDTH, HEIGHT
+from settings import TILESIZE, WIDTH, HEIGHT, vec
 
 
 class Map:
@@ -35,7 +35,7 @@ class Camera:
         """
         Applies the camera's focus on the target entity
         :param entity: The focus of the camera
-        :return: None
+        :return: The entity's rect moved according to the camera position
         """
         # Applies the camera offset to the entity
         return entity.rect.move(self.camera.topleft)
@@ -44,11 +44,15 @@ class Camera:
         """
         Applies the camera's focus on the target rectangle
         :param rect: The focus of the camera
-        :return: None
+        :return: The moved rectangle according to the camera's position
         """
         # Applies the camera offset to 
         # a rectangle
         return rect.move(self.camera.topleft)
+
+    def apply_vec(self, vector):
+        tl = vec(self.camera.topleft)
+        return vector + tl
 
     def update(self, target):
         """

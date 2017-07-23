@@ -3,6 +3,7 @@
 '''
 import pygame as pg
 import sys
+import math
 from os import path
 from settings import WIDTH, HEIGHT, TITLE, TILESIZE, CLIP_IMG, CROSSHAIRS, \
     ITEM_IMAGES, WEAPONS, RIFLE_BULLET_IMG, HANDGUN_BULLET_IMG, SHOTGUN_BULLET_IMG, \
@@ -11,7 +12,7 @@ from settings import WIDTH, HEIGHT, TITLE, TILESIZE, CLIP_IMG, CROSSHAIRS, \
     BAR_LENGTH, BAR_HEIGHT, GOLD, LIMEGREEN, DODGERBLUE, GREEN, DEEPSKYBLUE, BLOOD_SHADES, \
     ENEMY_KNOCKBACK, vec, PLAYER_HIT_SOUNDS, ZOMBIE_MOAN_SOUNDS, ENEMY_HIT_SOUNDS, \
     PLAYER_FOOTSTEPS, NIGHT_COLOR, LIGHT_MASK, LIGHT_RADIUS, PLAYER_SWING_NOISES, BG_MUSIC, \
-    GAME_OVER_MUSIC, MAIN_MENU_MUSIC, HUD_FONT, TITLE_FONT, BLACK
+    GAME_OVER_MUSIC, MAIN_MENU_MUSIC, HUD_FONT, TITLE_FONT, BLACK, FEET_ANIMATIONS
 from random import choice, randrange, random
 from player import Player
 from mobs import Mob
@@ -31,7 +32,7 @@ class Game:
         pg.init()
         pg.mixer.pre_init(44100, -16, 1, 1024)
         pg.mouse.set_visible(False)
-        self.screen = pg.display.set_mode((WIDTH, HEIGHT))
+        self.screen = pg.display.set_mode((WIDTH, HEIGHT), pg.HWSURFACE | pg.DOUBLEBUF)
         self.screen.set_alpha(None)
         self.screen_width = WIDTH
         self.screen_height = HEIGHT
@@ -167,7 +168,7 @@ class Game:
         # Load player animations
         self.default_player_weapon = 'knife'
         self.default_player_action = 'idle'
-        self.player_animations = {'handgun': {}, 'knife': {}, 'rifle': {}, 'shotgun': {}}
+        self.player_animations = {'handgun': {}, 'knife': {}, 'rifle': {}, 'shotgun': {}, 'feet': {}}
 
         # Create all hand gun animations
         self.player_animations['handgun']['idle'] = [pg.image.load(path.join(self.game_folder, name)).convert_alpha()
@@ -250,8 +251,11 @@ class Game:
             Mob(self, position[0], position[1])
 
         self.game_graph.walls = [(int(wall[0] // TILESIZE), int(wall[1] // TILESIZE)) for wall in wall_positions]
+        self.player_curr_pos = self.player.pos
         self.mob_idx = 0
         self.last_queue_update = 0
+        self.points = []
+        self.intersects = []
         g.run()
 
     def run(self):
@@ -327,11 +331,11 @@ class Game:
             snd.play()
 
         # Item collisions
-        hits = pg.sprite.spritecollide(self.player, self.items, True, collide_hit_rect)
-        for hit in hits:
-            self.player.pickup_item(hit)
-            if isinstance(hit, WeaponPickup):
-                snd = self.weapon_sounds[hit.type]['pickup']
+        item_collisions = pg.sprite.spritecollide(self.player, self.items, True, collide_hit_rect)
+        for item in item_collisions:
+            self.player.pickup_item(item)
+            if isinstance(item, WeaponPickup):
+                snd = self.weapon_sounds[item.type]['pickup']
                 snd.play()
             else:
                 pass
@@ -345,7 +349,7 @@ class Game:
             if event.type == pg.QUIT:
                 self.playing = not self.playing
                 self.running = False
-                self.quit()
+                quit()
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_b:
                     self.debug = not self.debug
@@ -400,21 +404,10 @@ class Game:
         Updates the HUD information for the player to see
         :return: None
         """
-        self.render_player_stats()
+        self.render_player_health(self.screen, 10, 10, self.player.health / PLAYER_HEALTH)
+        self.render_player_stamina(self.screen, 10, 40, self.player.stamina / PLAYER_STAMINA)
         if self.player.weapon != 'knife':
             self.render_current_clip(self.screen, 10, 70, self.player.arsenal[self.player.weapon]['clip'], 3, 15)
-
-    def render_player_stats(self):
-        """
-        Gives the player visual indication of their health & stamina
-        :return: None
-        """
-        self.render_player_health(self.screen, 10, 10, self.player.health // PLAYER_HEALTH)
-        self.render_text(str(self.player.health) + "%", self.hud_font, 15, (119, 136, 153),
-                       BAR_LENGTH // 2 - 5, 10)
-        self.render_player_stamina(self.screen, 10, 40, self.player.stamina / PLAYER_STAMINA)
-        self.render_text("{0:.0f}".format(self.player.stamina) + "%", self.hud_font, 15, (119, 136, 153),
-                       BAR_LENGTH // 2 - 5, 40)
 
     def render_current_clip(self, surface, x, y, bullets, bullet_length, bullet_height):
         """
@@ -440,11 +433,6 @@ class Game:
                     bullet_outline.fill(LIGHTGREY)
                 surface.blit(bullet_outline, (temp, y))
                 temp += 2 * bullet_length
-            surface.blit(self.mag_img, (temp, y - 10))
-            self.render_text('x', self.hud_font, 15, WHITE,
-                           temp + 32, y)
-            self.render_text(str(self.player.arsenal[self.player.weapon]['reloads']), self.hud_font, 20, WHITE,
-                           temp + 40, y - 5)
 
     @staticmethod
     def render_player_health(surface, x, y, pct):
@@ -542,20 +530,6 @@ class Game:
                     impact = False
             self.impact_positions.clear()
 
-    def render_line_of_sight(self):
-
-        if self.player.weapon != 'knife' and self.player.canned_action != 'melee':
-            mouse_vec = vec(pg.mouse.get_pos())
-            # Mouse location is relative to the top left
-            # corner of the window. This method modifies
-            # the mouse's location so that its relative
-            # to the top-left of the camera
-
-            pos = self.player.pos + WEAPONS[self.player.weapon]['barrel offset'].rotate(-(self.player.rot + 3))
-            pos.x += self.camera.camera.x
-            pos.y += self.camera.camera.y
-            pg.draw.line(self.screen, LIMEGREEN, pos, mouse_vec)
-
     def find_path(self, predator, prey):
         """
         Finds a path for the predator to reach its prey
@@ -602,21 +576,22 @@ class Game:
         self.wait_for_key()
 
     def control_screen(self):
+        """ Displays the controls to the player. """
         self.screen.fill(BLACK)
         self.render_text('CONTROLS', self.title_font, 50, WHITE, WIDTH / 2, 20, align='center')
         self.render_text('MOVEMENT:', self.title_font, 30, WHITE, WIDTH / 2, 65, align='center')
-        self.render_text('Forward: W', self.title_font, 20, WHITE, WIDTH / 2 + 5, 105, align='center')
+        self.render_text('Forwards: W', self.title_font, 20, WHITE, WIDTH / 2 + 5, 105, align='center')
         self.render_text('Left: A', self.title_font, 20, WHITE, WIDTH / 2 + 5, 135, align='center')
         self.render_text('Right: S', self.title_font, 20, WHITE, WIDTH / 2 + 5, 165, align='center')
-        self.render_text('Backward: D', self.title_font, 20, WHITE, WIDTH / 2 + 5, 195, align='center')
+        self.render_text('Backwards: D', self.title_font, 20, WHITE, WIDTH / 2 + 5, 195, align='center')
         self.render_text('Sprint: SPACE', self.title_font, 20, WHITE, WIDTH / 2 + 5, 225, align='center')
 
         self.render_text('COMBAT:', self.title_font, 30, WHITE, WIDTH / 2, 260, align='center')
-        self.render_text('Use weapon: LMB', self.title_font, 20, WHITE, WIDTH / 2 + 5, 300, align='center')
+        self.render_text('Fire: LMB', self.title_font, 20, WHITE, WIDTH / 2 + 5, 300, align='center')
         self.render_text('Melee: RMB', self.title_font, 20, WHITE, WIDTH / 2 + 5, 330, align='center')
         self.render_text('Reload: R', self.title_font, 20, WHITE, WIDTH / 2 + 5, 360, align='center')
 
-        self.render_text('WRAPON SELECTION:', self.title_font, 30, WHITE, WIDTH / 2, 400, align='center')
+        self.render_text('WEAPON SELECTION:', self.title_font, 30, WHITE, WIDTH / 2, 400, align='center')
         self.render_text('1: Rifle', self.title_font, 20, WHITE, WIDTH / 2, 440, align='center')
         self.render_text('2: Shotgun', self.title_font, 20, WHITE, WIDTH / 2, 470, align='center')
         self.render_text('3: Hand gun', self.title_font, 20, WHITE, WIDTH / 2, 500, align='center')
@@ -624,8 +599,15 @@ class Game:
 
         pg.display.flip()
         self.wait_for_key()
+        self.screen.fill(BLACK)
+        self.render_text('GOODLUCK OUT THERE!', self.title_font, 60, WHITE, WIDTH / 2, HEIGHT / 2, align='center')
+        pg.display.flip()
+        self.wait_for_key()
 
     def intro_screen(self):
+        """
+        Gives an introduction to the game
+        """
         pass
 
     def gameover_screen(self):
@@ -635,35 +617,42 @@ class Game:
         """
         self.play_music('Game over')
         self.screen.fill(BLACK)
-        self.render_text("You died", self.title_font, 125, RED, WIDTH / 2, HEIGHT * 1/4, align='center')
+        self.render_text("You died", self.title_font, 125, RED, WIDTH / 2, HEIGHT * 1 / 4, align='center')
         self.render_text("Better luck next time!", self.title_font, 80, RED, WIDTH / 2, HEIGHT * 2 / 4, align='center')
-        self.render_text('Press any key to start', self.title_font, 65, WHITE, WIDTH / 2, HEIGHT * 3 / 4, align='center')
+        self.render_text('Press any key to restart', self.title_font, 65, WHITE, WIDTH / 2, HEIGHT * 3 / 4,
+                         align='center')
         pg.display.flip()
         self.wait_for_key()
 
     def credit_screen(self):
+        """Displays the credits"""
         pass
 
     def wait_for_key(self):
+        """ Used for transitions between screens"""
         waiting = True
         while waiting:
             self.clock.tick(FPS)
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     waiting = False
-                    self.quit()
+                    quit()
                 if event.type == pg.KEYUP:
                     waiting = False
 
     def play_music(self, track):
+        """
+        Plays the given track
+        """
         pg.mixer.music.load(path.join(self.music_folder, self.music_tracks[track]))
         pg.mixer.music.set_volume(.5)
         pg.mixer.music.play(loops=-1)
 
-    @ staticmethod
-    def quit():
-        pg.quit()
-        sys.exit()
+
+def quit():
+    pg.quit()
+    sys.exit()
+
 
 if __name__ == '__main__':
     g = Game()
@@ -673,5 +662,4 @@ if __name__ == '__main__':
     while g.running:
         g.new()
         g.gameover_screen()
-    pg.quit()
-    sys.exit()
+    quit()

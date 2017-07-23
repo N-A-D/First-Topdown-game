@@ -15,11 +15,11 @@ def resize_images(directory):
             
     print('finished resizing all png files')
     
-def resize(name, base_width=128):
+def resize(name, base_width=64):
     image = Image.open(name)
     width_percent = (base_width/float(image.size[0]))
     h_size = int(float(image.size[1]) * float(width_percent))
     image = image.resize((base_width, h_size), PIL.Image.ANTIALIAS)
     image.save(name)
 
-resize('health.png', 48)
+resize_images('./feet/idle/')
