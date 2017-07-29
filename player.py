@@ -1,13 +1,10 @@
-'''
-@author: Ned Austin Datiles
-'''
 import pygame as pg
 from core_functions import collide_with_obstacles
-from settings import PLAYER_LAYER, PLAYER_HEALTH, PLAYER_STAMINA, PLAYER_HIT_RECT, vec, WEAPONS, PLAYER_SPEED
+from settings import PLAYER_LAYER, PLAYER_HEALTH, PLAYER_STAMINA, PLAYER_HIT_RECT, vec, WEAPONS, PLAYER_SPEED, \
+    SPRINT_BOOST
 from random import uniform
 from sprites import Bullet, MuzzleFlash
 from sprites import WeaponPickup, SwingArea
-from random import choice
 
 
 class Player(pg.sprite.Sprite):
@@ -32,6 +29,8 @@ class Player(pg.sprite.Sprite):
         # Player's physical attributes
         self.health = PLAYER_HEALTH
         self.stamina = PLAYER_STAMINA
+        self.armour = 0
+        self.has_armour = True
 
         # Used to identify when to decrease the player's stamina
         self.stamina_decrease_time = 0
@@ -87,6 +86,11 @@ class Player(pg.sprite.Sprite):
         self.step_sounds = None
         self.current_step_sound = 0
         self.last_step_time = 0
+
+    def check_armour_status(self):
+        if self.has_armour:
+            if self.armour <= 0:
+                self.has_armour = False
 
     def decrease_stamina(self, decrease_rate):
         """
@@ -211,7 +215,7 @@ class Player(pg.sprite.Sprite):
             # swinging their weapon and create
             # a hit box to collide with any
             # enemy in the vicinity
-            self.swing_weapon()
+            self._melee()
 
     def handle_weapon_selection(self, keys):
         """
@@ -274,22 +278,22 @@ class Player(pg.sprite.Sprite):
         if keys[pg.K_SPACE] and self.stamina > 0:
             is_sprinting = True
             if keys[pg.K_a]:
-                self.vel.x = -PLAYER_SPEED * 2
+                self.vel.x = -PLAYER_SPEED * SPRINT_BOOST
                 self.action = 'move'
                 self.aim_wobble = WEAPONS[self.weapon]['wobble']['sprint']
                 self.decrease_stamina(WEAPONS[self.weapon]['weight'] / 2)
             if keys[pg.K_d]:
-                self.vel.x = PLAYER_SPEED * 2
+                self.vel.x = PLAYER_SPEED * SPRINT_BOOST
                 self.action = 'move'
                 self.aim_wobble = WEAPONS[self.weapon]['wobble']['sprint']
                 self.decrease_stamina(WEAPONS[self.weapon]['weight'] / 2)
             if keys[pg.K_w]:
-                self.vel.y = -PLAYER_SPEED * 2
+                self.vel.y = -PLAYER_SPEED * SPRINT_BOOST
                 self.action = 'move'
                 self.aim_wobble = WEAPONS[self.weapon]['wobble']['sprint']
                 self.decrease_stamina(WEAPONS[self.weapon]['weight'] / 2)
             if keys[pg.K_s]:
-                self.vel.y = PLAYER_SPEED * 2
+                self.vel.y = PLAYER_SPEED * SPRINT_BOOST
                 self.action = 'move'
                 self.aim_wobble = WEAPONS[self.weapon]['wobble']['sprint']
                 self.decrease_stamina(WEAPONS[self.weapon]['weight'] / 2)
@@ -320,27 +324,27 @@ class Player(pg.sprite.Sprite):
         else:
             self.current_step_sound = 0
 
-    def swing_weapon(self):
+    def _melee(self):
         """
         Creates a zone which damages any enemy caught in it
         :return: None
         """
         if self.direction == 'E':
-            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.midright, self.direction))
+            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.midright, self.direction, self.weapon))
         elif self.direction == 'NE':
-            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.topright, self.direction))
+            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.topright, self.direction, self.weapon))
         elif self.direction == 'N':
-            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.midtop, self.direction))
+            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.midtop, self.direction, self.weapon))
         elif self.direction == 'NW':
-            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.topleft, self.direction))
+            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.topleft, self.direction, self.weapon))
         elif self.direction == 'W':
-            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.midleft, self.direction))
+            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.midleft, self.direction, self.weapon))
         elif self.direction == 'SW':
-            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.bottomleft, self.direction))
+            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.bottomleft, self.direction, self.weapon))
         elif self.direction == 'S':
-            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.midbottom, self.direction))
+            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.midbottom, self.direction, self.weapon))
         elif self.direction == 'SE':
-            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.bottomright, self.direction))
+            self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.bottomright, self.direction, self.weapon))
 
     def animate(self):
         """
@@ -460,6 +464,7 @@ class Player(pg.sprite.Sprite):
         """
         self.process_input(keyboard_input)
         self.animate()
+        self.check_armour_status()
         self.rect.center = self.pos
         self.pos += self.vel * self.game.dt
         self.hit_rect.centerx = self.pos.x

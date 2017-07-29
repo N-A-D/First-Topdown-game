@@ -1,6 +1,3 @@
-'''
-@author: Ned Austin Datiles
-'''
 import pygame as pg
 from core_functions import get_image_names
 
@@ -19,7 +16,9 @@ DEEPSKYBLUE = (0, 191, 255)
 DODGERBLUE = (30, 144, 255)
 LIMEGREEN = (50, 205, 50)
 GOLD = (255, 215, 0)
-NIGHT_COLOR = (10, 10, 10)
+NIGHT_COLOR = (5, 5, 5)
+LIGHTSLATEGREY = (119, 136, 153, 127)
+ORANGE = (255,165,0)
 
 # Game settings
 WIDTH = 1024  # 16 * 64 or 32 * 32 or 64 * 16
@@ -34,28 +33,14 @@ GRIDWIDTH = 32
 GRIDHEIGHT = 24
 
 # Fonts
-HUD_FONT = 'ZOMBIE.TTF'
-TITLE_FONT = 'Impacted2.0.ttf'
+HUD_FONT = 'kenpixel_high_square.ttf'
+TITLE_FONT = 'kenpixel_high.ttf'
 
-# HUD settings
-BAR_LENGTH = 300
-BAR_HEIGHT = 20
-
-# HUD element images
-CROSSHAIR = 'crosshair.png'
-CROSSHAIRS = ['simple_ch_1.png',
-              'simple_ch_2.png',
-              'simple_ch_2.png',
-              'simple_ch_4.png',
-              'simple_ch_5.png',
-              'simple_ch_6.png',
-              'simple_ch_7.png',
-              'simple_ch_8.png',
-              'simple_ch_9.png',
-              'simple_ch_10.png',
-              'simple_ch_11.png'
-              ]
-CLIP_IMG = 'UI/clip_0001.png'
+# HUD Images
+RIFLE_HUD_IMG = 'rifle.png'
+SHOTGUN_HUD_IMG = 'shotgun.png'
+PISTOL_HUD_IMG = 'pistol.png'
+KNIFE_HUD_IMG = 'knife.png'
 
 # Bullet images
 RIFLE_BULLET_IMG = 'Bullets/rifle_bullet.png'
@@ -82,7 +67,6 @@ MUZZLE_FLASHES = ['smokeparticleassets/PNG/Flash/flash00.png',
                   'smokeparticleassets/PNG/Flash/flash08.png',
                   ]
 FLASH_DURATION = 60
-DAMAGE_ALPHA = [x for x in range(0, 255, 50)]
 LASER_SIGHT_COLORS = [(124, 252, 0), (50, 205, 50), (173, 255, 47), (152, 251, 152), (34, 139, 34)]
 LIGHT_MASK = 'light_350_soft.png'
 LIGHT_RADIUS = 500
@@ -97,10 +81,16 @@ BOB_RANGE = 20
 BOB_SPEED = .5
 
 # Player settings
+SPRINT_BOOST = 2.25
 DEFAULT_WEAPON = 'knife'
-PLAYER_SPEED = 110
+PLAYER_SPEED = 125
 PLAYER_HIT_RECT = pg.Rect(0, 0, 50, 50)
-PLAYER_MELEE_RECT = pg.Rect(0, 0, 64, 64)
+PLAYER_MELEE_RECTS = {
+    'knife': pg.Rect(0, 0, 50, 50),
+    'handgun': pg.Rect(0, 0, 50, 50),
+    'rifle': pg.Rect(0, 0, 64, 64),
+    'shotgun': pg.Rect(0, 0, 64, 64)
+}
 PLAYER_HEALTH = 100
 PLAYER_STAMINA = 100
 PLAYER_MELEE_STUMBLE = 100
@@ -146,10 +136,11 @@ PLAYER_FOOTSTEPS = {'dirt': [
 }
 
 # Enemy settings
+ENEMY_ATTACK_RATE = 500
 ENEMY_DAMAGE = [x for x in range(1, 10)]
 ENEMY_KNOCKBACK = 10
 ENEMY_LINE_OF_SIGHT = TILESIZE / 2
-ENEMY_HIT_RECT = pg.Rect(0, 0, 56, 56)
+ENEMY_HIT_RECT = pg.Rect(0, 0, TILESIZE, TILESIZE)
 ENEMY_SPEEDS = [speed for speed in range(40, 100, 10)]
 ENEMY_HEALTH = [400]
 DETECT_RADIUS = 400
@@ -218,46 +209,51 @@ WEAPONS['handgun'] = {'bullet_speed': 4000,
                       'bullet_lifetime': 20000,
                       'rate': 200,
                       'kickback': 125,
-                      'spread': 1,
+                      'spread': 4,
                       'damage': 100,
                       'bullet_size': 'med',
                       'clip size': 15,
-                      'weight': 3,
-                      'wobble': {'sprint': 10, 'walk': 4, 'idle': 1},
+                      'weight': 2,
+                      'wobble': {'sprint': 4, 'walk': 2, 'idle': 1},
                       'muzzle flash range': [25, 35],
                       'barrel offset': vec(45, 22),
+                      'crosshair radius': 10,
                       'bullet_count': 1}
 
 WEAPONS['rifle'] = {'bullet_speed': 4000,
                     'bullet_lifetime': 20000,
                     'rate': 150,
                     'kickback': 200,
-                    'spread': 2,
+                    'spread': 8,
                     'damage': 125,
                     'bullet_size': 'lg',
                     'clip size': 30,
-                    'weight': 6,
-                    'wobble': {'sprint': 14, 'walk': 7, 'idle': 2},
+                    'weight': 3,
+                    'wobble': {'sprint': 7, 'walk': 3, 'idle': 2},
                     'muzzle flash range': [35, 60],
                     'barrel offset': vec(60, 22),
+                    'crosshair radius': 15,
                     'bullet_count': 1}
 WEAPONS['shotgun'] = {'bullet_speed': 4000,
                       'bullet_lifetime': 20000,
                       'rate': 600,
                       'kickback': 300,
-                      'spread': 12,
+                      'spread': 15,
                       'damage': 135,
                       'bullet_size': 'sm',
                       'clip size': 8,
-                      'weight': 7,
-                      'wobble': {'sprint': 15, 'walk': 8, 'idle': 2},
+                      'weight': 3,
+                      'wobble': {'sprint': 8, 'walk': 4, 'idle': 2},
                       'muzzle flash range': [50, 70],
                       'barrel offset': vec(67, 22),
+                      'crosshair radius': 20,
                       'bullet_count': 11}
 WEAPONS['knife'] = {
     'damage': 50,
     'weight': 1,
     'knockback': 20,
+    'crosshair radius': 5,
+    'spread': 1,
     'wobble': {'sprint': 0, 'walk': 0, 'idle': 0}
 }
 

@@ -1,9 +1,5 @@
-'''
-Created on Mar 15, 2017
-
-@author: Ned Austin Datiles
-'''
 import pygame as pg
+import pytmx
 from settings import TILESIZE, WIDTH, HEIGHT, vec
 
 
@@ -18,6 +14,27 @@ class Map:
         self.tileheight = len(self.data)
         self.width = self.tilewidth * TILESIZE
         self.height = self.tileheight * TILESIZE
+
+
+class TiledMap:
+    def __init__(self, filename):
+        self.tmxdata = pytmx.load_pygame(filename, pixelalpha=True)
+        self.width = self.tmxdata.width * self.tmxdata.tilewidth
+        self.height = self.tmxdata.height * self.tmxdata.tileheight
+
+    def render(self, surface):
+        ti = self.tmxdata.get_tile_image_by_gid
+        for layer in self.tmxdata.visible_layers:
+            if isinstance(layer, pytmx.TiledTileLayer):
+                for x, y, gid, in layer:
+                    tile = ti(gid)
+                    if tile:
+                        surface.blit(tile, (x * self.tmxdata.tilewidth, y * self.tmxdata.tileheight))
+
+    def make_map(self):
+        temp_surface = pg.Surface((self.width, self.height))
+        self.render(temp_surface)
+        return temp_surface
 
 
 class Camera:
@@ -49,10 +66,6 @@ class Camera:
         # Applies the camera offset to 
         # a rectangle
         return rect.move(self.camera.topleft)
-
-    def apply_vec(self, vector):
-        tl = vec(self.camera.topleft)
-        return vector + tl
 
     def update(self, target):
         """

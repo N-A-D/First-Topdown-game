@@ -1,6 +1,3 @@
-'''
-@author: Ned Austin Datiles
-'''
 import pygame as pg
 import re
 from os import listdir

@@ -1,7 +1,3 @@
-"""
-
-"""
-
 def min_heap_push(heap, item, cost):
     """
     Inserts an item into the heap
@@ -13,6 +9,7 @@ def min_heap_push(heap, item, cost):
     """
     heap.append((cost, item))
     min_heap(heap)
+
 
 def min_heap_pop(heap):
     """
@@ -29,6 +26,7 @@ def min_heap_pop(heap):
         min_heap(heap)
         return returnitem
     return last_item
+
 
 def min_heap(heap):
     """
@@ -52,6 +50,7 @@ def min_heap(heap):
                 key = child
         heap[key - 1] = current
 
+
 def max_heap_push(heap, item, cost):
     """
     Pushes an item into the list and reheapifies that list
@@ -62,6 +61,7 @@ def max_heap_push(heap, item, cost):
     """
     heap.append((cost, item))
     max_heap(heap)
+
 
 def max_heap_pop(heap):
     """
@@ -100,5 +100,3 @@ def max_heap(heap):
                 heap[key - 1] = heap[child - 1]
                 key = child
         heap[key - 1] = current
-
-

@@ -1,10 +1,7 @@
-'''
-@author: Ned Austin Datiles
-'''
 import pygame as pg
 from random import uniform, choice, randint
 from settings import WALL_LAYER, TILESIZE, LIGHTGREY, BULLET_LAYER, WEAPONS, EFFECTS_LAYER, \
-    FLASH_DURATION, ITEMS_LAYER, BOB_RANGE, BOB_SPEED, PLAYER_MELEE_RECT, vec, YELLOW, WIDTH, HEIGHT
+    FLASH_DURATION, ITEMS_LAYER, BOB_RANGE, BOB_SPEED, PLAYER_MELEE_RECTS, vec, YELLOW, WIDTH, HEIGHT
 from core_functions import collide_hit_rect
 import pytweening as tween
 from math import sqrt
@@ -221,7 +218,7 @@ class SwingArea(pg.sprite.Sprite):
     Any enemy caught in this area is dealt damage.
     """
 
-    def __init__(self, game, pos, direction):
+    def __init__(self, game, pos, direction, weapon):
         """
         Damage area effect constuctor
         :param game: The game object
@@ -231,7 +228,7 @@ class SwingArea(pg.sprite.Sprite):
         self.groups = game.swingAreas
         self.game = game
         pg.sprite.Sprite.__init__(self, self.groups)
-        self.rect = PLAYER_MELEE_RECT.copy()
+        self.rect = PLAYER_MELEE_RECTS[weapon]
         self.hit_rect = self.rect.copy()
         self.direction = direction
         if self.direction == 'E':
@@ -250,6 +247,7 @@ class SwingArea(pg.sprite.Sprite):
             self.rect.midtop = pos
         elif self.direction == 'SE':
             self.rect.topleft = pos
+        self.hit_rect.center = self.rect.center
         self.spawn_time = pg.time.get_ticks()
 
     def update(self):
@@ -260,21 +258,22 @@ class SwingArea(pg.sprite.Sprite):
         if pg.time.get_ticks() - self.spawn_time > WEAPONS['animation times'][self.game.player.weapon]['melee']:
             self.kill()
         if self.direction == 'E':
-            self.rect.midleft = self.game.player.pos
+            self.rect.midleft = self.game.player.hit_rect.midright
         elif self.direction == 'NE':
-            self.rect.bottomleft = self.game.player.pos
+            self.rect.bottomleft = self.game.player.hit_rect.topright
         elif self.direction == 'N':
-            self.rect.midbottom = self.game.player.pos
+            self.rect.midbottom = self.game.player.hit_rect.midtop
         elif self.direction == 'NW':
-            self.rect.bottomright = self.game.player.pos
+            self.rect.bottomright = self.game.player.hit_rect.topleft
         elif self.direction == 'W':
-            self.rect.midright = self.game.player.pos
+            self.rect.midright = self.game.player.hit_rect.midleft
         elif self.direction == 'SW':
-            self.rect.topright = self.game.player.pos
+            self.rect.topright = self.game.player.hit_rect.bottomleft
         elif self.direction == 'S':
-            self.rect.midtop = self.game.player.pos
+            self.rect.midtop = self.game.player.hit_rect.midbottom
         elif self.direction == 'SE':
-            self.rect.topleft = self.game.player.pos
+            self.rect.topleft = self.game.player.hit_rect.bottomright
+
 
 class ShellCasing(pg.sprite.Sprite):
     def __init__(self, game, pos, weapon):

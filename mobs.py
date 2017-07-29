@@ -1,13 +1,9 @@
-'''
-@author: Ned Austin Datiles
-'''
-
 import pygame as pg
 from random import choice, uniform, random
 from core_functions import collide_with_obstacles
 from settings import MOB_LAYER, ENEMY_HIT_RECT, ENEMY_SPEEDS, ENEMY_HEALTH, ENEMY_DAMAGE, WANDER_RING_RADIUS, \
     SEEK_FORCE, WIDTH, HEIGHT, TILESIZE, DETECT_RADIUS, GREEN, RED, YELLOW, vec, WANDER_RING_DISTANCE, \
-    ENEMY_LINE_OF_SIGHT, AVOID_RADIUS, APPROACH_RADIUS
+    ENEMY_LINE_OF_SIGHT, AVOID_RADIUS, APPROACH_RADIUS, ENEMY_ATTACK_RATE
 from sprites import WeaponPickup, MiscPickup
 from math import sqrt
 
@@ -393,7 +389,7 @@ class Mob(pg.sprite.Sprite):
             self.image = pg.transform.rotozoom(self.original_image, self.rot - 90, 1).copy()
             self.rect.center = self.hit_rect.center
             now = pg.time.get_ticks()
-            if now - self.last_attack_time > 750:
+            if now - self.last_attack_time > ENEMY_ATTACK_RATE:
                 self.can_attack = True
                 self.last_attack_time = now
 

@@ -1,6 +1,3 @@
-'''
-@author: Ned Austin Datiles
-'''
 import heap
 from settings import GRIDWIDTH, GRIDHEIGHT, TILESIZE, vec
 
