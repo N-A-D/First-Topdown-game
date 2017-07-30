@@ -9,7 +9,8 @@ from settings import WIDTH, HEIGHT, TITLE, TILESIZE, \
     vec, PLAYER_HIT_SOUNDS, ZOMBIE_MOAN_SOUNDS, ENEMY_HIT_SOUNDS, PLAYER_FOOTSTEPS, \
     NIGHT_COLOR, LIGHT_MASK, LIGHT_RADIUS, PLAYER_SWING_NOISES, BG_MUSIC, \
     GAME_OVER_MUSIC, MAIN_MENU_MUSIC, HUD_FONT, TITLE_FONT, BLACK, YELLOW, ORANGE, \
-    RIFLE_HUD_IMG, SHOTGUN_HUD_IMG, PISTOL_HUD_IMG, KNIFE_HUD_IMG, DEEPSKYBLUE, ENEMY_KNOCKBACK
+    RIFLE_HUD_IMG, SHOTGUN_HUD_IMG, PISTOL_HUD_IMG, KNIFE_HUD_IMG, DEEPSKYBLUE, \
+    ENEMY_KNOCKBACK
 from random import choice, randrange, random
 from player import Player
 from mobs import Mob
@@ -268,9 +269,9 @@ class GameEngine:
         self.play_music('background music')
         self.playing = True
         while self.playing:
-            pg.display.set_caption("{:.1f}".format(self.clock.get_fps()))
+            pg.display.set_caption("{:.0f}".format(self.clock.get_fps()))
             # Time taken in between frames
-            self.dt = self.clock.tick(FPS) / 1000
+            self.dt = self.clock.tick_busy_loop(FPS) / 1000
             self.events()
             if not self.paused:
                 self.update()
@@ -282,6 +283,8 @@ class GameEngine:
         :return: None
         """
         self.impact_positions = []
+        if self.player.weapon != 'knife':
+            print(self.player.arsenal[self.player.weapon]['reloads'])
         for sprite in self.all_sprites:
             if sprite == self.player:
                 sprite.update(pg.key.get_pressed())
@@ -379,8 +382,10 @@ class GameEngine:
             self.screen.blit(sprite.image, self.camera.apply(sprite))
             if self.debug:
                 pg.draw.rect(self.screen, (0, 255, 255), self.camera.apply_rect(sprite.hit_rect), 1)
+                if isinstance(sprite, Player):
+                    pg.draw.rect(self.screen, (255, 0, 0), self.camera.apply_rect(sprite.rect), 1)
         self.render_blood_splatters()
-        self.render_fog()
+        # self.render_fog()
         # render hud information
         if not self.hardcore_mode:
             self.render_hud()
@@ -416,8 +421,7 @@ class GameEngine:
         pygame.gfxdraw.aacircle(self.screen, x, y,
                                 WEAPONS[self.player.weapon]['crosshair radius'], WHITE)
         pygame.gfxdraw.circle(self.screen, x, y, 2, WHITE)
-        pg.draw.rect(self.screen, WHITE, pg.Rect(45, HEIGHT - 155, 100, 100), 3)
-
+        pg.draw.rect(self.screen, WHITE, pg.Rect(45, HEIGHT - 155, 110, 100), 3)
         if not self.player.has_armour:
             if self.player.health > 75:
                 color = GREEN
@@ -429,8 +433,8 @@ class GameEngine:
                 color = RED
         else:
             color = DEEPSKYBLUE
-        self.render_text(str(self.player.health) + "%", self.hud_font, 30, color, 50, HEIGHT - 150, align='nw')
-
+        self.render_text(str(self.player.health) + "%", self.hud_font, 30, color, 110, HEIGHT - 150, align='nw')
+        self.render_text("HEALTH", self.hud_font, 20, WHITE, 50, HEIGHT - 145, align='nw')
         if self.player.stamina > 75:
             color = GREEN
         elif 50 < self.player.stamina <= 75:
@@ -440,16 +444,17 @@ class GameEngine:
         else:
             color = RED
 
-        self.render_text("{:.0f}".format(self.player.stamina) + "%", self.hud_font, 30, color, 50, HEIGHT - 125,
+        self.render_text("{:.0f}".format(self.player.stamina) + "%", self.hud_font, 30, color, 110, HEIGHT - 125,
                          align='nw')
+        self.render_text("STAMINA", self.hud_font, 20, WHITE, 50, HEIGHT - 120, align='nw')
         if self.player.weapon != 'knife':
-            self.render_text(str(self.player.arsenal[self.player.weapon]['clip']) + " - " + \
-                             str(self.player.arsenal[self.player.weapon]['reloads'] * \
-                                 WEAPONS[self.player.weapon]['clip size']), self.hud_font, 30, WHITE, 50, HEIGHT - 100,
+            self.render_text(str(self.player.arsenal[self.player.weapon]['clip']) + " / " + \
+                             str(self.player.arsenal[self.player.weapon]['total ammunition']),
+                             self.hud_font, 30, WHITE, 50, HEIGHT - 100,
                              'nw')
         else:
-            self.render_text("---", self.hud_font, 40, WHITE, 60, HEIGHT - 100)
-        self.screen.blit(self.hud_images[self.player.weapon], (120, HEIGHT - 90))
+            self.render_text("-/-", self.hud_font, 40, WHITE, 55, HEIGHT - 100)
+        self.screen.blit(self.hud_images[self.player.weapon], (125, HEIGHT - 90))
 
     def render_text(self, text, font_name, size, color, x, y, align='nw'):
         """

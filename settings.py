@@ -18,13 +18,13 @@ LIMEGREEN = (50, 205, 50)
 GOLD = (255, 215, 0)
 NIGHT_COLOR = (5, 5, 5)
 LIGHTSLATEGREY = (119, 136, 153, 127)
-ORANGE = (255,165,0)
+ORANGE = (255, 165, 0)
 
 # Game settings
 WIDTH = 1024  # 16 * 64 or 32 * 32 or 64 * 16
 HEIGHT = 640  # 16 * 48 or 32 * 24 or 64 * 12
 
-FPS = 90
+FPS = 58
 TITLE = "The Undead"
 BGCOLOR = DARKGREY
 
@@ -133,6 +133,11 @@ PLAYER_FOOTSTEPS = {'dirt': [
     'wood': ['Player/Footsteps/Wood/stepwood_1.ogg',
              'Player/Footsteps/Wood/stepwood_2.ogg'
              ],
+}
+
+PLAYER_FOOTSTEP_INTERVAL_TIMES = {
+    'run': 350,
+    'walk': 750
 }
 
 # Enemy settings
