@@ -1,10 +1,11 @@
 import pygame as pg
 from core_functions import collide_with_obstacles
 from settings import PLAYER_LAYER, PLAYER_HEALTH, PLAYER_STAMINA, PLAYER_HIT_RECT, vec, WEAPONS, PLAYER_SPEED, \
-    SPRINT_BOOST
+    SPRINT_BOOST, PLAYER_FOOTSTEP_INTERVAL_TIMES
 from random import uniform
 from sprites import Bullet, MuzzleFlash
 from sprites import WeaponPickup, SwingArea
+from math import ceil
 
 
 class Player(pg.sprite.Sprite):
@@ -42,9 +43,9 @@ class Player(pg.sprite.Sprite):
         self.action = self.game.default_player_action
 
         # Houses the player's arsenal characteristics
-        self.arsenal = {'handgun': {'clip': 0, 'reloads': 0, 'hasWeapon': False},
-                        'rifle': {'clip': 0, 'reloads': 0, 'hasWeapon': False},
-                        'shotgun': {'clip': 0, 'reloads': 0, 'hasWeapon': False},
+        self.arsenal = {'handgun': {'clip': 0, 'reloads': 0, 'hasWeapon': False, 'total ammunition': 0},
+                        'rifle': {'clip': 0, 'reloads': 0, 'hasWeapon': False, 'total ammunition': 0},
+                        'shotgun': {'clip': 0, 'reloads': 0, 'hasWeapon': False, 'total ammunition': 0},
                         'knife': {'hasWeapon': True}
                         }
 
@@ -145,11 +146,28 @@ class Player(pg.sprite.Sprite):
 
     def reload(self):
         """
-        Reload's the player's weapon magazine
+        Reload's the player's weapon
         :return: 
         """
-        self.arsenal[self.weapon]['reloads'] -= 1
-        self.arsenal[self.weapon]['clip'] = WEAPONS[self.weapon]['clip size']
+        if self.arsenal[self.weapon]['clip'] == 0:
+            if self.arsenal[self.weapon]['total ammunition'] < WEAPONS[self.weapon]['clip size']:
+                self.arsenal[self.weapon]['clip'] = self.arsenal[self.weapon]['total ammunition']
+                self.arsenal[self.weapon]['total ammunition'] = 0
+            else:
+                self.arsenal[self.weapon]['clip'] = WEAPONS[self.weapon]['clip size']
+                self.arsenal[self.weapon]['total ammunition'] -= WEAPONS[self.weapon]['clip size']
+        else:
+            remaining = self.arsenal[self.weapon]['clip']
+            self.arsenal[self.weapon]['total ammunition'] += remaining
+            if self.arsenal[self.weapon]['total ammunition'] < WEAPONS[self.weapon]['clip size']:
+                self.arsenal[self.weapon]['clip'] = self.arsenal[self.weapon]['total ammunition']
+                self.arsenal[self.weapon]['total ammunition'] = 0
+            else:
+                self.arsenal[self.weapon]['clip'] = WEAPONS[self.weapon]['clip size']
+                self.arsenal[self.weapon]['total ammunition'] -= WEAPONS[self.weapon]['clip size']
+
+        self.arsenal[self.weapon]['reloads'] = ceil(
+            self.arsenal[self.weapon]['total ammunition'] / WEAPONS[self.weapon]['clip size'])
         self.action = 'reload'
         self.canned_action = self.action
         self.current_frame = 0
@@ -210,11 +228,6 @@ class Player(pg.sprite.Sprite):
             self.canned_action = self.action
             self.play_static_animation = True
             self.decrease_stamina(WEAPONS[self.weapon]['weight'])
-
-            # Find the area where the player is
-            # swinging their weapon and create
-            # a hit box to collide with any
-            # enemy in the vicinity
             self._melee()
 
     def handle_weapon_selection(self, keys):
@@ -250,7 +263,7 @@ class Player(pg.sprite.Sprite):
         self.step_sounds = self.game.player_foot_steps[terrain]
         if sprinting:
             self.current_step_sound %= len(self.step_sounds)
-            if now - self.last_step_time > 300:
+            if now - self.last_step_time > PLAYER_FOOTSTEP_INTERVAL_TIMES['run']:
                 self.last_step_time = now
                 self.current_step_sound = (self.current_step_sound + 1) % len(self.step_sounds)
                 snd = self.step_sounds[self.current_step_sound]
@@ -259,7 +272,7 @@ class Player(pg.sprite.Sprite):
                 snd.play()
         else:
             self.current_step_sound %= len(self.step_sounds)
-            if now - self.last_step_time > 750:
+            if now - self.last_step_time > PLAYER_FOOTSTEP_INTERVAL_TIMES['walk']:
                 self.last_step_time = now
                 self.current_step_sound = (self.current_step_sound + 1) % len(self.step_sounds)
                 snd = self.step_sounds[self.current_step_sound]
@@ -299,22 +312,22 @@ class Player(pg.sprite.Sprite):
                 self.decrease_stamina(WEAPONS[self.weapon]['weight'] / 2)
         else:
             if keys[pg.K_a]:
-                self.vel.x = -PLAYER_SPEED * 1
+                self.vel.x = -PLAYER_SPEED
                 self.action = 'move'
                 self.aim_wobble = WEAPONS[self.weapon]['wobble']['walk']
                 self.increase_stamina(1 / WEAPONS[self.weapon]['weight'])
             if keys[pg.K_d]:
-                self.vel.x = PLAYER_SPEED * 1
+                self.vel.x = PLAYER_SPEED
                 self.action = 'move'
                 self.aim_wobble = WEAPONS[self.weapon]['wobble']['walk']
                 self.increase_stamina(1 / WEAPONS[self.weapon]['weight'])
             if keys[pg.K_w]:
-                self.vel.y = -PLAYER_SPEED * 1
+                self.vel.y = -PLAYER_SPEED
                 self.action = 'move'
                 self.aim_wobble = WEAPONS[self.weapon]['wobble']['walk']
                 self.increase_stamina(1 / WEAPONS[self.weapon]['weight'])
             if keys[pg.K_s]:
-                self.vel.y = PLAYER_SPEED * 1
+                self.vel.y = PLAYER_SPEED
                 self.action = 'move'
                 self.aim_wobble = WEAPONS[self.weapon]['wobble']['walk']
                 self.increase_stamina(1 / WEAPONS[self.weapon]['weight'])
@@ -326,7 +339,10 @@ class Player(pg.sprite.Sprite):
 
     def _melee(self):
         """
-        Creates a zone which damages any enemy caught in it
+        Finds the area where the player is
+        swinging their weapon and creates
+        a hit box to collide with any
+        enemy in the vicinity
         :return: None
         """
         if self.direction == 'E':
@@ -386,16 +402,15 @@ class Player(pg.sprite.Sprite):
         if isinstance(item, WeaponPickup):
             if self.arsenal[item.type]['hasWeapon']:
                 self.arsenal[item.type]['reloads'] += item.ammo_boost
+                self.arsenal[item.type]['total ammunition'] = WEAPONS[self.weapon]['clip size'] * item.ammo_boost
             else:
                 self.arsenal[item.type]['hasWeapon'] = True
                 self.arsenal[item.type]['reloads'] = item.ammo_boost - 1
                 self.arsenal[item.type]['clip'] = WEAPONS[item.type]['clip size']
+                self.arsenal[item.type]['total ammunition'] = WEAPONS[item.type]['clip size'] * (item.ammo_boost - 1)
         else:
             if item.type == 'ammo':
                 if self.weapon == 'knife':
-                    # keys = ['rifle', 'shotgun', 'handgun']
-                    # firearm = choice(keys)
-                    # self.arsenal[firearm]['reloads'] += item.AMMO_BOOST
                     for weapon in self.arsenal:
                         if weapon != 'knife' and self.arsenal[weapon]['hasWeapon']:
                             self.arsenal[weapon]['reloads'] += item.AMMO_BOOST
