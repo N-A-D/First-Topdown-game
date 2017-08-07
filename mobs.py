@@ -291,7 +291,7 @@ class Mob(pg.sprite.Sprite):
         Applies flcoking steering behaviours to the mob
         :return: None
         """
-        self.acc += self.obstacle_avoidance() * 3
+        self.acc += self.obstacle_avoidance() * 1.5
         self.acc += self.separation() * 2
         self.acc += self.align()
         self.acc += self.cohesion()
@@ -302,7 +302,7 @@ class Mob(pg.sprite.Sprite):
         :return:
         """
         self.acc += self.pursue(self.game.player)
-        self.acc += self.obstacle_avoidance() * 3
+        self.acc += self.obstacle_avoidance() * 1.5
         self.acc += self.separation() * 2
         self.acc += self.align()
         self.acc += self.cohesion()
@@ -313,7 +313,7 @@ class Mob(pg.sprite.Sprite):
         :return:
         """
         self.acc += self.wander()
-        self.acc += self.obstacle_avoidance() * 3
+        self.acc += self.obstacle_avoidance() * 1.5
         self.acc += self.separation() * 2
         self.acc += self.align()
         self.acc += self.cohesion()
