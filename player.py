@@ -56,6 +56,7 @@ class Player(pg.sprite.Sprite):
         # Set the current frame to the first in the queue
         self.image = self.animations[self.current_frame]
         self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
 
         # Secondary rectangle is needed since rotating rectangles warps it.
         self.hit_rect = PLAYER_HIT_RECT
@@ -70,7 +71,6 @@ class Player(pg.sprite.Sprite):
         # Positional and velocity vectors
         self.vel = vec(0, 0)
         self.pos = vec(x, y)
-        self.rect.center = self.pos
 
         # Player rotation
         self.rot = 0
@@ -217,7 +217,8 @@ class Player(pg.sprite.Sprite):
                     if not self.play_static_animation:
                         self.reload()
 
-        if keys[pg.K_r] and self.weapon != 'knife' and self.action != 'reload':
+        if keys[pg.K_r] and self.weapon != 'knife' and self.action != 'reload' and self.arsenal[self.weapon]['clip'] < \
+                WEAPONS[self.weapon]['clip size']:
             if self.arsenal[self.weapon]['reloads'] > 0:
                 self.reload()
 
@@ -262,23 +263,16 @@ class Player(pg.sprite.Sprite):
         now = pg.time.get_ticks()
         self.step_sounds = self.game.player_foot_steps[terrain]
         if sprinting:
-            self.current_step_sound %= len(self.step_sounds)
             if now - self.last_step_time > PLAYER_FOOTSTEP_INTERVAL_TIMES['run']:
                 self.last_step_time = now
                 self.current_step_sound = (self.current_step_sound + 1) % len(self.step_sounds)
-                snd = self.step_sounds[self.current_step_sound]
-                if snd.get_num_channels() > 2:
-                    snd.stop()
-                snd.play()
+                self.step_sounds[self.current_step_sound].play()
         else:
-            self.current_step_sound %= len(self.step_sounds)
             if now - self.last_step_time > PLAYER_FOOTSTEP_INTERVAL_TIMES['walk']:
                 self.last_step_time = now
                 self.current_step_sound = (self.current_step_sound + 1) % len(self.step_sounds)
-                snd = self.step_sounds[self.current_step_sound]
-                if snd.get_num_channels() > 2:
-                    snd.stop()
-                snd.play()
+                self.step_sounds[self.current_step_sound].play()
+
 
     def handle_player_movement(self, keys):
         """
@@ -402,7 +396,7 @@ class Player(pg.sprite.Sprite):
         if isinstance(item, WeaponPickup):
             if self.arsenal[item.type]['hasWeapon']:
                 self.arsenal[item.type]['reloads'] += item.ammo_boost
-                self.arsenal[item.type]['total ammunition'] = WEAPONS[self.weapon]['clip size'] * item.ammo_boost
+                self.arsenal[item.type]['total ammunition'] = WEAPONS[item.type]['clip size'] * item.ammo_boost
             else:
                 self.arsenal[item.type]['hasWeapon'] = True
                 self.arsenal[item.type]['reloads'] = item.ammo_boost - 1
