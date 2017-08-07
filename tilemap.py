@@ -1,6 +1,6 @@
 import pygame as pg
 import pytmx
-from settings import TILESIZE, WIDTH, HEIGHT, vec
+from settings import TILESIZE, WIDTH, HEIGHT
 
 
 class Map:

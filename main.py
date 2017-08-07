@@ -5,12 +5,12 @@ from os import path
 from settings import WIDTH, HEIGHT, TITLE, TILESIZE, \
     ITEM_IMAGES, WEAPONS, RIFLE_BULLET_IMG, HANDGUN_BULLET_IMG, SHOTGUN_BULLET_IMG, \
     MUZZLE_FLASHES, ENEMY_IMGS, HANDGUN_ANIMATIONS, KNIFE_ANIMATIONS, RIFLE_ANIMATIONS, \
-    SHOTGUN_ANIMATIONS, FPS, LIGHTGREY, WHITE, DARKGREY, RED, GREEN, BLOOD_SHADES, \
+    SHOTGUN_ANIMATIONS, FPS, LIGHTGREY, WHITE, RED, GREEN, BLOOD_SHADES, \
     vec, PLAYER_HIT_SOUNDS, ZOMBIE_MOAN_SOUNDS, ENEMY_HIT_SOUNDS, PLAYER_FOOTSTEPS, \
     NIGHT_COLOR, LIGHT_MASK, LIGHT_RADIUS, PLAYER_SWING_NOISES, BG_MUSIC, \
     GAME_OVER_MUSIC, MAIN_MENU_MUSIC, HUD_FONT, TITLE_FONT, BLACK, YELLOW, ORANGE, \
     RIFLE_HUD_IMG, SHOTGUN_HUD_IMG, PISTOL_HUD_IMG, KNIFE_HUD_IMG, DEEPSKYBLUE, \
-    ENEMY_KNOCKBACK
+    ENEMY_KNOCKBACK, LIMEGREEN, DARKRED
 from random import choice, randrange, random
 from player import Player
 from mobs import Mob
@@ -22,7 +22,7 @@ from pathfinding import Pathfinder, WeightedGraph
 
 class GameEngine:
     """
-    Game objects
+    Game engine
     """
 
     def __init__(self):
@@ -46,6 +46,8 @@ class GameEngine:
         self.item_folder = path.join(self.img_folder, 'Items')
         self.font_folder = path.join(self.img_folder, 'Fonts')
         self.hud_folder = path.join(self.img_folder, 'HUD')
+        self.levels = []
+
         # Loads game assets
         self.load_data()
 
@@ -57,7 +59,6 @@ class GameEngine:
         self.debug = False
 
         # Gameplay flags
-        self.hardcore_mode = False
         self.paused = False
 
         # Menu Flags
@@ -65,14 +66,14 @@ class GameEngine:
 
     def load_data(self):
         """
-        Loads the necessary assets for the game. 
+        Loads the game assets.
         :return: None
         """
         # Game map
-        # self.map = TiledMap(path.join(self.img_folder, 'level1.tmx'))
-        # self.map_img = self.map.make_map()
-        # self.map_rect = self.map_img.get_rect()
-        self.map = Map(path.join(self.game_folder, 'map3.txt'))
+        self.map = TiledMap(path.join(self.maps_folder, 'Apartments1.tmx'))
+        self.map_img = self.map.make_map()
+        self.map_rect = self.map_img.get_rect()
+        # self.map = Map(path.join(self.game_folder, 'map3.txt'))
 
         # Dims the pause screen!
         self.pause_screen_effect = pg.Surface(self.screen.get_size()).convert()
@@ -103,6 +104,20 @@ class GameEngine:
                            'handgun': pg.image.load(path.join(self.hud_folder, PISTOL_HUD_IMG)).convert_alpha(),
                            'knife': pg.image.load(path.join(self.hud_folder, KNIFE_HUD_IMG)).convert_alpha()
                            }
+        font = pg.font.Font(self.hud_font, 20)
+        self._hud_hp = font.render('HEALTH', True, WHITE)
+        self._hud_hp.convert()
+        self._hud_hp_rect = self._hud_hp.get_rect()
+
+        font = pg.font.Font(self.hud_font, 20)
+        self._hud_stamina = font.render('STAMINA', True, WHITE)
+        self._hud_stamina.convert()
+        self._hud_stamina_rect = self._hud_stamina.get_rect()
+
+        font = pg.font.Font(self.hud_font, 40)
+        self._hud_knife_ammo = font.render('-/-', True, WHITE)
+        self._hud_knife_ammo.convert()
+        self._hud_knife_ammo_rect = self._hud_knife_ammo.get_rect()
 
         # Sound loading
         self.music_tracks = {"main menu": MAIN_MENU_MUSIC, 'Game over': GAME_OVER_MUSIC, 'background music': BG_MUSIC}
@@ -146,7 +161,7 @@ class GameEngine:
             self.player_foot_steps[terrain] = []
             for snd in PLAYER_FOOTSTEPS[terrain]:
                 snd = pg.mixer.Sound(path.join(self.snd_folder, snd))
-                snd.set_volume(.5)
+                snd.set_volume(.75)
                 self.player_foot_steps[terrain].append(snd)
 
         # Bullets
@@ -231,30 +246,17 @@ class GameEngine:
         self.running = True
         self.pathfinder = Pathfinder()
         self.game_graph = WeightedGraph()
-        mob_positions = []
-        wall_positions = []
         self.game_graph.walls = []
-        for row, tiles in enumerate(self.map.data):
-            for col, tile in enumerate(tiles):
-                if tile == '1':
-                    wall_positions.append((col * TILESIZE, row * TILESIZE))
-                if tile == 'P':
-                    self.player = Player(self, col * TILESIZE, row * TILESIZE)
-                if tile == 'E':
-                    mob_positions.append((col * TILESIZE, row * TILESIZE))
-                if tile == 'W':
-                    WeaponPickup(self, (col * TILESIZE, row * TILESIZE))
 
-        # self.player = Player(self, 5, 5)
+        for tile_object in self.map.tmxdata.objects:
+            if tile_object.name == 'player':
+                self.player = Player(self, tile_object.x, tile_object.y)
+            if tile_object.name == 'wall':
+                Obstacle(self, tile_object.x, tile_object.y, tile_object.width, tile_object.height)
+            if tile_object.name == 'zombie':
+                Mob(self, tile_object.x, tile_object.y)
 
-        for position in wall_positions:
-            Obstacle(self, position[0], position[1])
-
-        for position in mob_positions:
-            Mob(self, position[0], position[1])
-
-        self.game_graph.walls = [(int(wall[0] // TILESIZE), int(wall[1] // TILESIZE)) for wall in wall_positions]
-        self.player_curr_pos = self.player.pos
+        self.get_wall_positions()
         self.mob_idx = 0
         self.last_queue_update = 0
         self.points = []
@@ -266,7 +268,7 @@ class GameEngine:
         Runs the game
         :return: None
         """
-        self.play_music('background music')
+        # self.play_music('background music')
         self.playing = True
         while self.playing:
             pg.display.set_caption("{:.0f}".format(self.clock.get_fps()))
@@ -283,8 +285,6 @@ class GameEngine:
         :return: None
         """
         self.impact_positions = []
-        if self.player.weapon != 'knife':
-            print(self.player.arsenal[self.player.weapon]['reloads'])
         for sprite in self.all_sprites:
             if sprite == self.player:
                 sprite.update(pg.key.get_pressed())
@@ -296,10 +296,11 @@ class GameEngine:
 
         # Player hits mobs
         hit_melee_box = pg.sprite.groupcollide(self.mobs, self.swingAreas, False, True, collide_hit_rect)
-        for hit in hit_melee_box:
-            choice(self.zombie_hit_sounds['bash']).play()
-            hit.health -= hit.health
-            self.impact_positions.append(hit.rect.center)
+        if hit_melee_box:
+            for hit in hit_melee_box:
+                choice(self.zombie_hit_sounds['bash']).play()
+                hit.health -= hit.health
+                self.impact_positions.append(hit.rect.center)
 
         # Enemy hits player
         hits = pg.sprite.spritecollide(self.player, self.mobs, False, collide_hit_rect)
@@ -321,37 +322,39 @@ class GameEngine:
 
         # Bullet collisions
         hits = pg.sprite.groupcollide(self.mobs, self.bullets, False, False, collide_hit_rect)
-        for mob in hits:
-            for bullet in hits[mob]:
-                self.impact_positions.append(bullet.rect.center)
-                mob.health -= bullet.damage
-                mob.pos += vec(WEAPONS[self.player.weapon]['damage'] // 10, 0).rotate(-self.player.rot)
-            # Drowns out blood gushing noises the further the collision is from the player
-            dist = self.player.pos.distance_to(mob.pos)
-            ratio = 1
-            if dist > 0:
-                ratio = round(200 / dist, 2)
-                if ratio > 1:
-                    ratio = 1
-            snd = choice(self.zombie_hit_sounds['bullet'])
-            snd.set_volume(ratio)
-            if snd.get_num_channels() > 2:
-                snd.stop()
-            snd.play()
+        if hits:
+            for mob in hits:
+                for bullet in hits[mob]:
+                    self.impact_positions.append(bullet.rect.center)
+                    mob.health -= bullet.damage
+                    mob.pos += vec(WEAPONS[self.player.weapon]['damage'] // 10, 0).rotate(-self.player.rot)
+                # Drowns out blood gushing noises the further the collision is from the player
+                dist = self.player.pos.distance_to(mob.pos)
+                ratio = 1
+                if dist > 0:
+                    ratio = round(200 / dist, 2)
+                    if ratio > 1:
+                        ratio = 1
+                snd = choice(self.zombie_hit_sounds['bullet'])
+                snd.set_volume(ratio)
+                if snd.get_num_channels() > 2:
+                    snd.stop()
+                snd.play()
 
         # Item collisions
         item_collisions = pg.sprite.spritecollide(self.player, self.items, True, collide_hit_rect)
-        for item in item_collisions:
-            self.player.pickup_item(item)
-            if isinstance(item, WeaponPickup):
-                snd = self.weapon_sounds[item.type]['pickup']
-                snd.play()
-            else:
-                pass
+        if item_collisions:
+            for item in item_collisions:
+                self.player.pickup_item(item)
+                if isinstance(item, WeaponPickup):
+                    snd = self.weapon_sounds[item.type]['pickup']
+                    snd.play()
+                else:
+                    pass
 
     def events(self):
         """
-        Game loop event handling
+        Event handling
         :return: None
         """
         for event in pg.event.get():
@@ -364,8 +367,6 @@ class GameEngine:
                     self.debug = not self.debug
                 if event.key == pg.K_p:
                     self.paused = not self.paused
-                if event.key == pg.K_h:
-                    self.hardcore_mode = not self.hardcore_mode
                 if event.key == pg.K_c:
                     self.on_control_screen = not self.on_control_screen
 
@@ -374,29 +375,30 @@ class GameEngine:
         renders the updated game state onto the screen
         :return: None
         """
-        self.screen.fill(DARKGREY)
-        # self.screen.blit(self.map_img, self.camera.apply_rect(self.map_rect))
-        if self.debug:
-            self.render_grid()
+        self.screen.blit(self.map_img, self.camera.apply_rect(self.map_rect))
         for sprite in self.all_sprites:
             self.screen.blit(sprite.image, self.camera.apply(sprite))
             if self.debug:
-                pg.draw.rect(self.screen, (0, 255, 255), self.camera.apply_rect(sprite.hit_rect), 1)
+                for wall in self.walls:
+                    pg.draw.rect(self.screen, (0, 255, 255), self.camera.apply_rect(wall.rect), 1)
                 if isinstance(sprite, Player):
                     pg.draw.rect(self.screen, (255, 0, 0), self.camera.apply_rect(sprite.rect), 1)
+                    pg.draw.rect(self.screen, (255, 0, 0), self.camera.apply_rect(sprite.hit_rect), 1)
+                elif isinstance(sprite, Obstacle):
+                    pg.draw.rect(self.screen, (255, 0, 0), self.camera.apply_rect(sprite.rect), 1)
+                else:
+                    pg.draw.rect(self.screen, (0, 255, 255), self.camera.apply_rect(sprite.hit_rect), 1)
         self.render_blood_splatters()
-        # self.render_fog()
-        # render hud information
-        if not self.hardcore_mode:
-            self.render_hud()
+        self._render_fog()
+        self._render_hud()
         if self.paused:
             self.screen.blit(self.pause_screen_effect, (0, 0))
-            self.render_text('Paused', self.title_font, 105, RED, WIDTH / 2, HEIGHT / 2, align='center')
+            self._render_text('Paused', self.title_font, 105, RED, WIDTH / 2, HEIGHT / 2, align='center')
         if self.on_control_screen:
             self.control_screen()
         pg.display.flip()
 
-    def render_grid(self):
+    def _render_grid(self):
         """
         Used for debugging
         :return: None
@@ -406,13 +408,13 @@ class GameEngine:
         for y in range(0, HEIGHT, TILESIZE):
             pg.draw.line(self.screen, LIGHTGREY, (0, y), (WIDTH, y))
 
-    def render_fog(self):
+    def _render_fog(self):
         self.fog.fill(NIGHT_COLOR)
         self.light_rect.center = self.camera.apply_rect(self.player.hit_rect.copy()).center
         self.fog.blit(self.light_mask, self.light_rect)
         self.screen.blit(self.fog, (0, 0), special_flags=pg.BLEND_RGB_MULT)
 
-    def render_hud(self):
+    def _render_hud(self):
         """
         Updates the HUD information for the player to see
         :return: None
@@ -422,43 +424,58 @@ class GameEngine:
                                 WEAPONS[self.player.weapon]['crosshair radius'], WHITE)
         pygame.gfxdraw.circle(self.screen, x, y, 2, WHITE)
         pg.draw.rect(self.screen, WHITE, pg.Rect(45, HEIGHT - 155, 110, 100), 3)
+
         if not self.player.has_armour:
-            if self.player.health > 75:
+            if self.player.health > 85:
                 color = GREEN
+            elif 75 < self.player.health <= 85:
+                color = LIMEGREEN
             elif 50 < self.player.health <= 75:
                 color = YELLOW
             elif 25 < self.player.health <= 50:
                 color = ORANGE
+            elif 12 < self.player.health <= 25:
+                color = DARKRED
             else:
                 color = RED
         else:
             color = DEEPSKYBLUE
-        self.render_text(str(self.player.health) + "%", self.hud_font, 30, color, 110, HEIGHT - 150, align='nw')
-        self.render_text("HEALTH", self.hud_font, 20, WHITE, 50, HEIGHT - 145, align='nw')
-        if self.player.stamina > 75:
+
+        self._render_text(str(self.player.health) + "%", self.hud_font, 30, color, 110, HEIGHT - 150, align='nw')
+        self._hud_hp_rect.topleft = (50, HEIGHT - 145)
+        self.screen.blit(self._hud_hp, self._hud_hp_rect)
+
+        if self.player.stamina > 85:
             color = GREEN
+        elif 75 < self.player.stamina <= 85:
+            color = LIMEGREEN
         elif 50 < self.player.stamina <= 75:
             color = YELLOW
         elif 25 < self.player.stamina <= 50:
             color = ORANGE
+        elif 12 < self.player.stamina <= 25:
+            color = DARKRED
         else:
             color = RED
 
-        self.render_text("{:.0f}".format(self.player.stamina) + "%", self.hud_font, 30, color, 110, HEIGHT - 125,
-                         align='nw')
-        self.render_text("STAMINA", self.hud_font, 20, WHITE, 50, HEIGHT - 120, align='nw')
+        self._render_text("{:.0f}".format(self.player.stamina) + "%", self.hud_font, 30, color, 110, HEIGHT - 125,
+                          align='nw')
+        self._hud_stamina_rect.topleft = (50, HEIGHT - 120)
+        self.screen.blit(self._hud_stamina, self._hud_stamina_rect)
+
         if self.player.weapon != 'knife':
-            self.render_text(str(self.player.arsenal[self.player.weapon]['clip']) + " / " + \
-                             str(self.player.arsenal[self.player.weapon]['total ammunition']),
-                             self.hud_font, 30, WHITE, 50, HEIGHT - 100,
-                             'nw')
+            self._render_text(str(self.player.arsenal[self.player.weapon]['clip']) + " / " + \
+                              str(self.player.arsenal[self.player.weapon]['total ammunition']),
+                              self.hud_font, 30, WHITE, 50, HEIGHT - 100,
+                              'nw')
         else:
-            self.render_text("-/-", self.hud_font, 40, WHITE, 55, HEIGHT - 100)
+            self._hud_knife_ammo_rect.topleft = (55, HEIGHT - 100)
+            self.screen.blit(self._hud_knife_ammo, self._hud_knife_ammo_rect)
         self.screen.blit(self.hud_images[self.player.weapon], (125, HEIGHT - 90))
 
-    def render_text(self, text, font_name, size, color, x, y, align='nw'):
+    def _render_text(self, text, font_name, size, color, x, y, align='nw'):
         """
-        renders informative text.
+        Renders informative text.
         :param text: The text to render.
         :param font_name: The font to use.
         :param size: The size of the font.
@@ -539,6 +556,31 @@ class GameEngine:
                 count += 1
             self.mob_idx += 1
 
+    def get_wall_positions(self):
+        """
+        Finds all grid positions where a wall resides
+        :return:
+        """
+
+        for wall in self.walls:
+            if wall.rect.width > TILESIZE and wall.rect.height > TILESIZE:
+                for x in range(wall.rect.x, wall.rect.x + wall.rect.width, TILESIZE):
+                    for y in range(wall.rect.y, wall.rect.y + wall.rect.height, TILESIZE):
+                        self.game_graph.walls.append((x // TILESIZE, y // TILESIZE))
+            elif wall.rect.width > TILESIZE and wall.rect.height == TILESIZE:
+                for x in range(wall.rect.x, wall.rect.x + wall.rect.width, TILESIZE):
+                    self.game_graph.walls.append((x // TILESIZE, wall.rect.y // TILESIZE))
+            elif wall.rect.height > TILESIZE and wall.rect.width == TILESIZE:
+                for y in range(wall.rect.y, wall.rect.y + wall.rect.height, TILESIZE):
+                    self.game_graph.walls.append((wall.rect.x // TILESIZE, y // TILESIZE))
+            else:
+                self.game_graph.walls.append((wall.rect.x // TILESIZE, wall.rect.y // TILESIZE))
+
+        self.walls.empty()
+        for position in self.game_graph.walls:
+            Obstacle(self, position[0] * TILESIZE, position[1] * TILESIZE)
+        print(len(self.game_graph.walls))
+
     def start_screen(self):
         """
         Displays the start screen for the game
@@ -546,38 +588,38 @@ class GameEngine:
         """
         # self.play_music('main menu')
         self.screen.fill(BLACK)
-        self.render_text('The Undead', self.title_font, 150, WHITE, WIDTH / 2, HEIGHT * 1 / 4, align='center')
-        self.render_text('Press any key to start', self.title_font, 65, WHITE, WIDTH / 2, HEIGHT * 3 / 4,
-                         align='center')
+        self._render_text('The Undead', self.title_font, 150, WHITE, WIDTH / 2, HEIGHT * 1 / 4, align='center')
+        self._render_text('Press any key to start', self.title_font, 65, WHITE, WIDTH / 2, HEIGHT * 3 / 4,
+                          align='center')
         pg.display.flip()
         self.wait_for_key()
 
     def control_screen(self, goodluck=False):
         """ Displays the controls to the player. """
         self.screen.fill(BLACK)
-        self.render_text('CONTROLS', self.title_font, 50, WHITE, WIDTH / 2, 20, align='center')
-        self.render_text('MOVEMENT:', self.title_font, 30, WHITE, WIDTH / 2, 65, align='center')
-        self.render_text('Forwards: W', self.title_font, 20, WHITE, WIDTH / 2 + 5, 105, align='center')
-        self.render_text('Left: A', self.title_font, 20, WHITE, WIDTH / 2 + 5, 135, align='center')
-        self.render_text('Right: S', self.title_font, 20, WHITE, WIDTH / 2 + 5, 165, align='center')
-        self.render_text('Backwards: D', self.title_font, 20, WHITE, WIDTH / 2 + 5, 195, align='center')
-        self.render_text('Sprint: SPACE', self.title_font, 20, WHITE, WIDTH / 2 + 5, 225, align='center')
+        self._render_text('CONTROLS', self.title_font, 50, WHITE, WIDTH / 2, 20, align='center')
+        self._render_text('MOVEMENT:', self.title_font, 30, WHITE, WIDTH / 2, 65, align='center')
+        self._render_text('Forwards: W', self.title_font, 20, WHITE, WIDTH / 2 + 5, 105, align='center')
+        self._render_text('Left: A', self.title_font, 20, WHITE, WIDTH / 2 + 5, 135, align='center')
+        self._render_text('Right: S', self.title_font, 20, WHITE, WIDTH / 2 + 5, 165, align='center')
+        self._render_text('Backwards: D', self.title_font, 20, WHITE, WIDTH / 2 + 5, 195, align='center')
+        self._render_text('Sprint: SPACE', self.title_font, 20, WHITE, WIDTH / 2 + 5, 225, align='center')
 
-        self.render_text('COMBAT:', self.title_font, 30, WHITE, WIDTH / 2, 260, align='center')
-        self.render_text('Fire: LMB', self.title_font, 20, WHITE, WIDTH / 2 + 5, 300, align='center')
-        self.render_text('Melee: RMB', self.title_font, 20, WHITE, WIDTH / 2 + 5, 330, align='center')
-        self.render_text('Reload: R', self.title_font, 20, WHITE, WIDTH / 2 + 5, 360, align='center')
+        self._render_text('COMBAT:', self.title_font, 30, WHITE, WIDTH / 2, 260, align='center')
+        self._render_text('Fire: LMB', self.title_font, 20, WHITE, WIDTH / 2 + 5, 300, align='center')
+        self._render_text('Melee: RMB', self.title_font, 20, WHITE, WIDTH / 2 + 5, 330, align='center')
+        self._render_text('Reload: R', self.title_font, 20, WHITE, WIDTH / 2 + 5, 360, align='center')
 
-        self.render_text('WEAPON SELECTION:', self.title_font, 30, WHITE, WIDTH / 2, 400, align='center')
-        self.render_text('1: Rifle', self.title_font, 20, WHITE, WIDTH / 2, 440, align='center')
-        self.render_text('2: Shotgun', self.title_font, 20, WHITE, WIDTH / 2, 470, align='center')
-        self.render_text('3: Hand gun', self.title_font, 20, WHITE, WIDTH / 2, 500, align='center')
-        self.render_text('4: Knife', self.title_font, 20, WHITE, WIDTH / 2, 530, align='center')
+        self._render_text('WEAPON SELECTION:', self.title_font, 30, WHITE, WIDTH / 2, 400, align='center')
+        self._render_text('1: Rifle', self.title_font, 20, WHITE, WIDTH / 2, 440, align='center')
+        self._render_text('2: Shotgun', self.title_font, 20, WHITE, WIDTH / 2, 470, align='center')
+        self._render_text('3: Hand gun', self.title_font, 20, WHITE, WIDTH / 2, 500, align='center')
+        self._render_text('4: Knife', self.title_font, 20, WHITE, WIDTH / 2, 530, align='center')
         if goodluck:
             pg.display.flip()
             self.wait_for_key()
             self.screen.fill(BLACK)
-            self.render_text('GOODLUCK OUT THERE!', self.title_font, 60, WHITE, WIDTH / 2, HEIGHT / 2, align='center')
+            self._render_text('GOODLUCK OUT THERE!', self.title_font, 60, WHITE, WIDTH / 2, HEIGHT / 2, align='center')
             pg.display.flip()
             self.wait_for_key()
 
@@ -594,10 +636,10 @@ class GameEngine:
         """
         self.play_music('Game over')
         self.screen.fill(BLACK)
-        self.render_text("You died", self.title_font, 125, RED, WIDTH / 2, HEIGHT * 1 / 4, align='center')
-        self.render_text("Better luck next time!", self.title_font, 80, RED, WIDTH / 2, HEIGHT * 2 / 4, align='center')
-        self.render_text('Press c key to restart', self.title_font, 65, WHITE, WIDTH / 2, HEIGHT * 3 / 4,
-                         align='center')
+        self._render_text("You died", self.title_font, 125, RED, WIDTH / 2, HEIGHT * 1 / 4, align='center')
+        self._render_text("Better luck next time!", self.title_font, 80, RED, WIDTH / 2, HEIGHT * 2 / 4, align='center')
+        self._render_text('Press c key to restart', self.title_font, 65, WHITE, WIDTH / 2, HEIGHT * 3 / 4,
+                          align='center')
         pg.display.flip()
         self.wait_for_key(pg.K_c)
 

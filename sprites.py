@@ -12,7 +12,7 @@ class Obstacle(pg.sprite.Sprite):
     This class represents obstacles in the game
     """
 
-    def __init__(self, game, x, y):
+    def __init__(self, game, x, y, width=TILESIZE, height=TILESIZE):
         """
         Obstacle initialization
         :param game: The game object to which this obstacle belongs
@@ -21,33 +21,19 @@ class Obstacle(pg.sprite.Sprite):
         """
         # When this obstacle will be drawn to the screen
         self._layer = WALL_LAYER
-        self.groups = game.walls, game.all_sprites
+        self.groups = game.walls#, game.all_sprites
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
-        self.image = pg.Surface((TILESIZE, TILESIZE))
-        self.image.fill(LIGHTGREY)
-        self.rect = self.image.get_rect()
-        self.rect.x = x
-        self.rect.y = y
-        self.hit_rect = pg.Rect(self.rect.x, self.rect.y, self.rect.width, self.rect.height)
+        # self.image = pg.Surface((TILESIZE, TILESIZE))
+        # self.image.fill(LIGHTGREY)
+        # self.rect = self.image.get_rect()
+        # self.rect.x = x
+        # self.rect.y = y
+        self.rect = pg.Rect(x, y, width, height)
+        self.hit_rect = self.rect.copy()
         self.hit_rect.center = self.rect.center
         self.pos = vec(self.rect.center)
         self.radius = sqrt(self.hit_rect.width ** 2 + self.hit_rect.height ** 2)
-        self.check_if_is_on_screen()
-
-    def check_if_is_on_screen(self):
-        """
-        Used to check if this mob is on the screen or not
-        :return: True if on the screen, False otherwise
-        """
-        location = vec(self.game.camera.apply_rect(self.hit_rect.copy()).center)
-        if location.x <= WIDTH + TILESIZE and location.y <= HEIGHT + TILESIZE:
-            self.is_onscreen = True
-        else:
-            self.is_onscreen = False
-
-    def update(self):
-        self.check_if_is_on_screen()
 
 
 class Bullet(pg.sprite.Sprite):

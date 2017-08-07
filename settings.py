@@ -8,15 +8,16 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 DARKGREY = (40, 40, 40)
 LIGHTGREY = (100, 100, 100)
-GREEN = (0, 255, 0)
+GREEN = (0, 128, 0)
 RED = (255, 0, 0)
+DARKRED = (139, 0, 0)
 YELLOW = (255, 255, 0)
 SANDYBROWN = (244, 164, 96)
 DEEPSKYBLUE = (0, 191, 255)
 DODGERBLUE = (30, 144, 255)
 LIMEGREEN = (50, 205, 50)
 GOLD = (255, 215, 0)
-NIGHT_COLOR = (5, 5, 5)
+NIGHT_COLOR = (10, 10, 10)
 LIGHTSLATEGREY = (119, 136, 153, 127)
 ORANGE = (255, 165, 0)
 
@@ -24,7 +25,7 @@ ORANGE = (255, 165, 0)
 WIDTH = 1024  # 16 * 64 or 32 * 32 or 64 * 16
 HEIGHT = 640  # 16 * 48 or 32 * 24 or 64 * 12
 
-FPS = 58
+FPS = 60
 TITLE = "The Undead"
 BGCOLOR = DARKGREY
 
@@ -69,7 +70,7 @@ MUZZLE_FLASHES = ['smokeparticleassets/PNG/Flash/flash00.png',
 FLASH_DURATION = 60
 LASER_SIGHT_COLORS = [(124, 252, 0), (50, 205, 50), (173, 255, 47), (152, 251, 152), (34, 139, 34)]
 LIGHT_MASK = 'light_350_soft.png'
-LIGHT_RADIUS = 500
+LIGHT_RADIUS = 750
 BLOOD_SHADES = [(value, 0, 0) for value in range(255, 16, -8)]
 
 BG_MUSIC = 'Infested City.ogg'
@@ -142,7 +143,7 @@ PLAYER_FOOTSTEP_INTERVAL_TIMES = {
 
 # Enemy settings
 ENEMY_ATTACK_RATE = 500
-ENEMY_DAMAGE = [x for x in range(1, 10)]
+ENEMY_DAMAGE = [x for x in range(10, 20)]
 ENEMY_KNOCKBACK = 10
 ENEMY_LINE_OF_SIGHT = TILESIZE / 2
 ENEMY_HIT_RECT = pg.Rect(0, 0, TILESIZE, TILESIZE)
@@ -214,11 +215,11 @@ WEAPONS['handgun'] = {'bullet_speed': 4000,
                       'bullet_lifetime': 20000,
                       'rate': 200,
                       'kickback': 125,
-                      'spread': 4,
+                      'spread': 1,
                       'damage': 100,
                       'bullet_size': 'med',
                       'clip size': 15,
-                      'weight': 2,
+                      'weight': 3,
                       'wobble': {'sprint': 4, 'walk': 2, 'idle': 1},
                       'muzzle flash range': [25, 35],
                       'barrel offset': vec(45, 22),
@@ -229,33 +230,34 @@ WEAPONS['rifle'] = {'bullet_speed': 4000,
                     'bullet_lifetime': 20000,
                     'rate': 150,
                     'kickback': 200,
-                    'spread': 8,
+                    'spread': 2,
                     'damage': 125,
                     'bullet_size': 'lg',
                     'clip size': 30,
-                    'weight': 3,
-                    'wobble': {'sprint': 7, 'walk': 3, 'idle': 2},
+                    'weight': 5,
+                    'wobble': {'sprint': 5, 'walk': 3, 'idle': 2},
                     'muzzle flash range': [35, 60],
                     'barrel offset': vec(60, 22),
                     'crosshair radius': 15,
                     'bullet_count': 1}
+
 WEAPONS['shotgun'] = {'bullet_speed': 4000,
                       'bullet_lifetime': 20000,
                       'rate': 600,
                       'kickback': 300,
-                      'spread': 15,
+                      'spread': 8,
                       'damage': 135,
                       'bullet_size': 'sm',
                       'clip size': 8,
-                      'weight': 3,
-                      'wobble': {'sprint': 8, 'walk': 4, 'idle': 2},
+                      'weight': 5,
+                      'wobble': {'sprint': 6, 'walk': 4, 'idle': 2},
                       'muzzle flash range': [50, 70],
                       'barrel offset': vec(67, 22),
                       'crosshair radius': 20,
                       'bullet_count': 11}
 WEAPONS['knife'] = {
     'damage': 50,
-    'weight': 1,
+    'weight': 2,
     'knockback': 20,
     'crosshair radius': 5,
     'spread': 1,
