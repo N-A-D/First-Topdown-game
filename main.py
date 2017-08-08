@@ -10,11 +10,11 @@ from settings import WIDTH, HEIGHT, TITLE, TILESIZE, \
     NIGHT_COLOR, LIGHT_MASK, LIGHT_RADIUS, PLAYER_SWING_NOISES, BG_MUSIC, \
     GAME_OVER_MUSIC, MAIN_MENU_MUSIC, HUD_FONT, TITLE_FONT, BLACK, YELLOW, ORANGE, \
     RIFLE_HUD_IMG, SHOTGUN_HUD_IMG, PISTOL_HUD_IMG, KNIFE_HUD_IMG, DEEPSKYBLUE, \
-    ENEMY_KNOCKBACK, LIMEGREEN, DARKRED
+    ENEMY_KNOCKBACK, LIMEGREEN, DARKRED, BLOOD_SPLAT
 from random import choice, randrange, random
 from player import Player
 from mobs import Mob
-from tilemap import Map, Camera, TiledMap
+from tilemap import Camera, TiledMap
 from sprites import Obstacle, WeaponPickup, MiscPickup
 from core_functions import collide_hit_rect
 from pathfinding import Pathfinder, WeightedGraph
@@ -71,7 +71,7 @@ class GameEngine:
         """
         # Game map
         self.map = TiledMap(path.join(self.maps_folder, 'Apartments1.tmx'))
-        self.map_img = self.map.make_map()
+        self.map_img = self.map.make_map().copy()
         self.map_rect = self.map_img.get_rect()
         # self.map = Map(path.join(self.game_folder, 'map3.txt'))
 
@@ -87,6 +87,9 @@ class GameEngine:
         self.light_mask = pg.image.load(path.join(self.img_folder, LIGHT_MASK)).convert_alpha()
         self.light_mask = pg.transform.smoothscale(self.light_mask, (LIGHT_RADIUS, LIGHT_RADIUS))
         self.light_rect = self.light_mask.get_rect()
+
+        # On death blood splat
+        self._death_splat = pg.image.load(path.join(self.img_folder, BLOOD_SPLAT)).convert_alpha()
 
         # Item pickups
         self.pickup_items = {}
@@ -167,11 +170,11 @@ class GameEngine:
         # Bullets
         self.bullet_images = {}
         self.bullet_images['lg'] = pg.transform.smoothscale(pg.image.load(path.join(self.img_folder, RIFLE_BULLET_IMG)),
-                                                            (10, 3)).convert_alpha()
+                                                            (8, 3)).convert_alpha()
         self.bullet_images['med'] = pg.transform.smoothscale(
             pg.image.load(path.join(self.img_folder, HANDGUN_BULLET_IMG)), (5, 3)).convert_alpha()
         self.bullet_images['sm'] = pg.transform.smoothscale(pg.image.load(
-            path.join(self.img_folder, SHOTGUN_BULLET_IMG)).convert_alpha(), (7, 7))
+            path.join(self.img_folder, SHOTGUN_BULLET_IMG)).convert_alpha(), (4, 4))
 
         # Effects
         self.gun_flashes = [pg.image.load(path.join(self.img_folder, flash)).convert_alpha() for flash in
@@ -255,6 +258,8 @@ class GameEngine:
                 Obstacle(self, tile_object.x, tile_object.y, tile_object.width, tile_object.height)
             if tile_object.name == 'zombie':
                 Mob(self, tile_object.x, tile_object.y)
+            if tile_object.name == 'weapon':
+                WeaponPickup(self, tile_object.x, tile_object.y)
 
         self.get_wall_positions()
         self.mob_idx = 0
@@ -268,12 +273,12 @@ class GameEngine:
         Runs the game
         :return: None
         """
-        # self.play_music('background music')
+        self.play_music('background music')
         self.playing = True
         while self.playing:
             pg.display.set_caption("{:.0f}".format(self.clock.get_fps()))
             # Time taken in between frames
-            self.dt = self.clock.tick_busy_loop(FPS) / 1000
+            self.dt = self.clock.tick(FPS) / 1000
             self.events()
             if not self.paused:
                 self.update()
@@ -299,7 +304,8 @@ class GameEngine:
         if hit_melee_box:
             for hit in hit_melee_box:
                 choice(self.zombie_hit_sounds['bash']).play()
-                hit.health -= hit.health
+                hit.health -= WEAPONS['melee'][self.player.weapon]
+                hit.pos += WEAPONS[self.player.weapon]['knockback'].rotate(-self.player.rot)
                 self.impact_positions.append(hit.rect.center)
 
         # Enemy hits player
@@ -307,7 +313,7 @@ class GameEngine:
         if hits:
             self.player.pos += vec(ENEMY_KNOCKBACK, 0).rotate(-hits[0].rot)
             for hit in hits:
-                if random() < .7:
+                if random() < .8:
                     choice(self.player_hit_sounds).play()
                 if hit.can_attack:
                     self.impact_positions.append(self.player.rect.center)
@@ -377,6 +383,8 @@ class GameEngine:
         """
         self.screen.blit(self.map_img, self.camera.apply_rect(self.map_rect))
         for sprite in self.all_sprites:
+            if isinstance(sprite, Mob):
+                sprite.render_health()
             self.screen.blit(sprite.image, self.camera.apply(sprite))
             if self.debug:
                 for wall in self.walls:
@@ -519,7 +527,7 @@ class GameEngine:
                         exploding_bit_x = pos[0] + randrange(-1 * magnitude, magnitude) + self.camera.camera.x
                         exploding_bit_y = pos[1] + randrange(-1 * magnitude, magnitude) + self.camera.camera.y
                         pg.draw.circle(self.screen, choice(BLOOD_SHADES), (exploding_bit_x, exploding_bit_y),
-                                       randrange(1, 5))
+                                       randrange(3, 8))
                     impact = False
             self.impact_positions.clear()
 
@@ -579,17 +587,16 @@ class GameEngine:
         self.walls.empty()
         for position in self.game_graph.walls:
             Obstacle(self, position[0] * TILESIZE, position[1] * TILESIZE)
-        print(len(self.game_graph.walls))
 
     def start_screen(self):
         """
         Displays the start screen for the game
         :return: None
         """
-        # self.play_music('main menu')
+        self.play_music('main menu')
         self.screen.fill(BLACK)
-        self._render_text('The Undead', self.title_font, 150, WHITE, WIDTH / 2, HEIGHT * 1 / 4, align='center')
-        self._render_text('Press any key to start', self.title_font, 65, WHITE, WIDTH / 2, HEIGHT * 3 / 4,
+        self._render_text(TITLE, self.title_font, 150, WHITE, WIDTH / 2, HEIGHT * 1 / 4, align='center')
+        self._render_text('Press [v] key to start', self.title_font, 65, WHITE, WIDTH / 2, HEIGHT * 3 / 4,
                           align='center')
         pg.display.flip()
         self.wait_for_key()
@@ -615,11 +622,16 @@ class GameEngine:
         self._render_text('2: Shotgun', self.title_font, 20, WHITE, WIDTH / 2, 470, align='center')
         self._render_text('3: Hand gun', self.title_font, 20, WHITE, WIDTH / 2, 500, align='center')
         self._render_text('4: Knife', self.title_font, 20, WHITE, WIDTH / 2, 530, align='center')
+
+        self._render_text('Press [v] key to continue', self.title_font, 50, WHITE, WIDTH / 2, 580,
+                          align='center')
         if goodluck:
             pg.display.flip()
             self.wait_for_key()
             self.screen.fill(BLACK)
             self._render_text('GOODLUCK OUT THERE!', self.title_font, 60, WHITE, WIDTH / 2, HEIGHT / 2, align='center')
+            self._render_text('Press [v] key to continue', self.title_font, 50, WHITE, WIDTH / 2, 580,
+                              align='center')
             pg.display.flip()
             self.wait_for_key()
 
@@ -636,18 +648,17 @@ class GameEngine:
         """
         self.play_music('Game over')
         self.screen.fill(BLACK)
-        self._render_text("You died", self.title_font, 125, RED, WIDTH / 2, HEIGHT * 1 / 4, align='center')
-        self._render_text("Better luck next time!", self.title_font, 80, RED, WIDTH / 2, HEIGHT * 2 / 4, align='center')
-        self._render_text('Press c key to restart', self.title_font, 65, WHITE, WIDTH / 2, HEIGHT * 3 / 4,
+        self._render_text("You died!", self.title_font, 125, RED, WIDTH / 2, HEIGHT * 1 / 4, align='center')
+        self._render_text('Press [v] key to restart', self.title_font, 65, WHITE, WIDTH / 2, HEIGHT * 2 / 4,
                           align='center')
         pg.display.flip()
-        self.wait_for_key(pg.K_c)
+        self.wait_for_key()
 
     def credit_screen(self):
         """Displays the credits"""
         pass
 
-    def wait_for_key(self, key=None):
+    def wait_for_key(self):
         """ Used for transitions between screens"""
         waiting = True
         while waiting:
@@ -657,9 +668,7 @@ class GameEngine:
                     waiting = False
                     _quit()
                 if event.type == pg.KEYUP:
-                    if key and event.key == key:
-                        waiting = False
-                    else:
+                    if event.key == pg.K_v:
                         waiting = False
 
     def play_music(self, track):
