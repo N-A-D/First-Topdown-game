@@ -44,6 +44,7 @@ class Mob(pg.sprite.Sprite):
 
         self.speed = choice(ENEMY_SPEEDS)
         self.health = choice(ENEMY_HEALTH)
+        self.MAX_HEALTH = self.health
         self.damage = choice(ENEMY_DAMAGE)
         self.wander_radius = choice(WANDER_RING_RADIUS)
 
@@ -52,7 +53,7 @@ class Mob(pg.sprite.Sprite):
         self.vel = vec(0, 0)
         self.acc = vec(self.speed, 0).rotate(uniform(0, 360))
         self.rot = 0
-        self.radius = sqrt(self.hit_rect.width ** 2 + self.hit_rect.height ** 2)
+        self.radius = sqrt(self.hit_rect.width ** 2 + self.hit_rect.height ** 2) / 2
         # How fast this mob is able to track
         # the player
         self.seek_force = choice(SEEK_FORCE) * self.speed
@@ -237,7 +238,7 @@ class Mob(pg.sprite.Sprite):
     def find_collision(obs, ahead, further_ahead, pos):
         """
         Checks to see if there is potential for a collision with
-        the observered object.
+        the observed object.
         :param obs: The object under consideration.
         :param ahead: Secondary line of sight.
         :param further_ahead: Main line of sight.
@@ -269,8 +270,7 @@ class Mob(pg.sprite.Sprite):
 
     def obstacle_avoidance(self):
         """
-        Gives a mob the ability to avoid obstacles in the path its
-        currently walking.
+        Gives a mob the ability to avoid obstacles in its path.
         :return: Vector2 object representing the force needed to avoid
                 a potential collision.
         """
@@ -336,9 +336,9 @@ class Mob(pg.sprite.Sprite):
         :return: None
         """
         if uniform(0, 1) <= .5:
-            WeaponPickup(self.game, self.pos)
+            WeaponPickup(self.game, int(self.pos.x), int(self.pos.y))
         else:
-            MiscPickup(self.game, self.pos)
+            MiscPickup(self.game, int(self.pos.x), int(self.pos.y))
 
     def follow_path(self):
         """
@@ -365,6 +365,7 @@ class Mob(pg.sprite.Sprite):
             if uniform(0, 1) < .015:
                 self.drop_item()
             self.kill()
+            self.game.map_img.blit(self.game._death_splat, self.hit_rect.topleft)
         if self.is_onscreen:
             self.track_prey(self.game.player)
             if self.pos.distance_to(self.game.player.pos) < DETECT_RADIUS:
@@ -400,15 +401,13 @@ class Mob(pg.sprite.Sprite):
         visual indication that they've damaged this sprite
         :return: None
         """
-        if self.health > 60:
+        if self.health > .6 * self.MAX_HEALTH:
             color = GREEN
-        elif self.health > 30:
+        elif self.health > .3 * self.MAX_HEALTH:
             color = YELLOW
         else:
             color = RED
-        width = int(self.hit_rect.width * self.health / ENEMY_HEALTH[0])
-
+        width = int(self.hit_rect.width * self.health / self.MAX_HEALTH)
         self.health_bar = pg.Rect(self.hit_rect.width // 3, 0, width, 7)
-
-        if self.health < ENEMY_HEALTH[0]:
+        if self.health < self.MAX_HEALTH:
             pg.draw.rect(self.image, color, self.health_bar)

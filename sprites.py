@@ -21,14 +21,9 @@ class Obstacle(pg.sprite.Sprite):
         """
         # When this obstacle will be drawn to the screen
         self._layer = WALL_LAYER
-        self.groups = game.walls#, game.all_sprites
+        self.groups = game.walls
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
-        # self.image = pg.Surface((TILESIZE, TILESIZE))
-        # self.image.fill(LIGHTGREY)
-        # self.rect = self.image.get_rect()
-        # self.rect.x = x
-        # self.rect.y = y
         self.rect = pg.Rect(x, y, width, height)
         self.hit_rect = self.rect.copy()
         self.hit_rect.center = self.rect.center
@@ -127,7 +122,7 @@ class MuzzleFlash(pg.sprite.Sprite):
 
 
 class Item(pg.sprite.Sprite):
-    def __init__(self, game, pos, img):
+    def __init__(self, game, x, y, img):
         """
         Initiliazes this Item object
         :param game: the game 
@@ -140,8 +135,9 @@ class Item(pg.sprite.Sprite):
         self.game = game
         self.image = img
         self.rect = self.image.get_rect()
-        self.pos = vec(pos)
-        self.rect.center = pos
+        self.pos = vec(x, y)
+        self.rect.x = x
+        self.rect.y = y
         self.hit_rect = pg.Rect(self.rect.x, self.rect.y, self.rect.width, self.rect.height)
         self.tween = tween.easeInOutSine
         self.step = 0
@@ -166,11 +162,11 @@ class WeaponPickup(Item):
     Blueprint for weapon items.
     """
 
-    def __init__(self, game, pos):
+    def __init__(self, game, x, y):
         types = ['rifle', 'shotgun', 'handgun']
         self.type = choice(types)
         img = game.pickup_items[self.type]
-        super().__init__(game, pos, img)
+        super().__init__(game, x, y, img)
         self.ammo_boost = 1
         if self.type == 'rifle' or self.type == 'shotgun':
             self.ammo_boost = randint(3, 5)
@@ -188,11 +184,11 @@ class MiscPickup(Item):
     AMMO_BOOST = randint(2, 5)
     HEALTH_BOOST = randint(15, 25)
 
-    def __init__(self, game, pos):
+    def __init__(self, game, x, y):
         types = ['ammo', 'health']
         self.type = choice(types)
         img = game.pickup_items[self.type]
-        super().__init__(game, pos, img)
+        super().__init__(game, x, y, img)
 
     def update(self):
         super().update()

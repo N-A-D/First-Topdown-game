@@ -146,7 +146,7 @@ class Player(pg.sprite.Sprite):
 
     def reload(self):
         """
-        Reload's the player's weapon
+        Reloads the player's weapon
         :return: 
         """
         if self.arsenal[self.weapon]['clip'] == 0:
@@ -228,7 +228,6 @@ class Player(pg.sprite.Sprite):
             self.current_frame = 0
             self.canned_action = self.action
             self.play_static_animation = True
-            self.decrease_stamina(WEAPONS[self.weapon]['weight'])
             self._melee()
 
     def handle_weapon_selection(self, keys):
@@ -253,7 +252,7 @@ class Player(pg.sprite.Sprite):
             self.weapon = 'knife'
             self.game.weapon_sounds[self.weapon]['draw'].play()
 
-    def play_foot_step_sounds(self, sprinting, terrain='dirt'):
+    def play_foot_step_sounds(self, sprinting, terrain='wood'):
         """
         Plays the sound a foot step would make on a given terrain
         :param sprinting: If the player is sprinting, the step sounds are more frequent.
@@ -272,7 +271,6 @@ class Player(pg.sprite.Sprite):
                 self.last_step_time = now
                 self.current_step_sound = (self.current_step_sound + 1) % len(self.step_sounds)
                 self.step_sounds[self.current_step_sound].play()
-
 
     def handle_player_movement(self, keys):
         """
