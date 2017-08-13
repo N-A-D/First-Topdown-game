@@ -10,12 +10,12 @@ from settings import WIDTH, HEIGHT, TITLE, TILESIZE, \
     NIGHT_COLOR, LIGHT_MASK, LIGHT_RADIUS, PLAYER_SWING_NOISES, BG_MUSIC, \
     GAME_OVER_MUSIC, MAIN_MENU_MUSIC, HUD_FONT, TITLE_FONT, BLACK, YELLOW, ORANGE, \
     RIFLE_HUD_IMG, SHOTGUN_HUD_IMG, PISTOL_HUD_IMG, KNIFE_HUD_IMG, DEEPSKYBLUE, \
-    ENEMY_KNOCKBACK, LIMEGREEN, DARKRED, BLOOD_SPLAT
+    ENEMY_KNOCKBACK, LIMEGREEN, DARKRED, BLOOD_SPLAT, GAME_LEVELS
 from random import choice, randrange, random
 from player import Player
 from mobs import Mob
 from tilemap import Camera, TiledMap
-from sprites import Obstacle, WeaponPickup, MiscPickup
+from sprites import Obstacle, Item
 from core_functions import collide_hit_rect
 from pathfinding import Pathfinder, WeightedGraph
 
@@ -70,7 +70,9 @@ class GameEngine:
         :return: None
         """
         # Game map
-        self.map = TiledMap(path.join(self.maps_folder, 'Apartments1.tmx'))
+        self.maps = [TiledMap(path.join(self.maps_folder, _map)) for _map in GAME_LEVELS]
+        self.map_idx = 0
+        self.map = self.maps[self.map_idx]  # TiledMap(path.join(self.maps_folder, 'Apartments1.tmx'))
         self.map_img = self.map.make_map().copy()
         self.map_rect = self.map_img.get_rect()
         # self.map = Map(path.join(self.game_folder, 'map3.txt'))
@@ -94,7 +96,6 @@ class GameEngine:
         # Item pickups
         self.pickup_items = {}
         for item in ITEM_IMAGES:
-            self.pickup_items[item] = []
             self.pickup_items[item] = pg.image.load(path.join(self.item_folder, ITEM_IMAGES[item])).convert_alpha()
 
         # Fonts
@@ -233,13 +234,55 @@ class GameEngine:
         self.player_animations['shotgun']['shoot'] = [pg.image.load(path.join(self.game_folder, name)).convert_alpha()
                                                       for name in SHOTGUN_ANIMATIONS['shoot']]
 
+    def _load_map_data(self):
+        """
+        Loads the objects on the level
+        """
+        for tile_object in self.map.tmxdata.objects:
+            if tile_object.name == 'player':
+                self.player = Player(self, tile_object.x, tile_object.y)
+            if tile_object.name == 'wall':
+                Obstacle(self, tile_object.x, tile_object.y, tile_object.width, tile_object.height)
+            if tile_object.name == 'zombie':
+                Mob(self, tile_object.x, tile_object.y)
+            if tile_object.name == 'weapon':
+                Item(self, tile_object.x, tile_object.y, choice(['rifle', 'shotgun', 'handgun']))
+
+    def _level_transition(self):
+        """
+        Transitions between game levels
+        :return:
+        """
+        self.map_idx += 1
+        self.map = self.maps[self.map_idx]
+        self.all_sprites = pg.sprite.LayeredUpdates()
+        self.all_sprites.add(self.player)
+        self.walls = pg.sprite.Group()
+        self.collidable_walls = pg.sprite.Group()
+        self.bullets = pg.sprite.Group()
+        self.mobs = pg.sprite.Group()
+        self.items = pg.sprite.Group()
+        self.swingAreas = pg.sprite.Group()
+        self.camera = Camera(self.map.width, self.map.height)
+        self.paused = False
+        self.running = True
+        self.pathfinder = Pathfinder()
+        self.game_graph = WeightedGraph()
+        self.game_graph.walls = []
+        self._load_map_data()
+        self.get_wall_positions()
+        self.mob_idx = 0
+        self.last_queue_update = 0
+        g.run()
+
     def new(self):
         """
         Creates a new game
         :return: None
         """
         self.all_sprites = pg.sprite.LayeredUpdates()
-        self.walls = pg.sprite.Group()
+        self.walls = pg.sprite.Group()  # walls used for obstacle avoidance
+        self.collidable_walls = pg.sprite.Group()  # walls the sprites actually collide with
         self.bullets = pg.sprite.Group()
         self.mobs = pg.sprite.Group()
         self.items = pg.sprite.Group()
@@ -251,21 +294,11 @@ class GameEngine:
         self.game_graph = WeightedGraph()
         self.game_graph.walls = []
 
-        for tile_object in self.map.tmxdata.objects:
-            if tile_object.name == 'player':
-                self.player = Player(self, tile_object.x, tile_object.y)
-            if tile_object.name == 'wall':
-                Obstacle(self, tile_object.x, tile_object.y, tile_object.width, tile_object.height)
-            if tile_object.name == 'zombie':
-                Mob(self, tile_object.x, tile_object.y)
-            if tile_object.name == 'weapon':
-                WeaponPickup(self, tile_object.x, tile_object.y)
+        self._load_map_data()
 
         self.get_wall_positions()
         self.mob_idx = 0
         self.last_queue_update = 0
-        self.points = []
-        self.intersects = []
         g.run()
 
     def run(self):
@@ -352,10 +385,9 @@ class GameEngine:
         if item_collisions:
             for item in item_collisions:
                 self.player.pickup_item(item)
-                if isinstance(item, WeaponPickup):
-                    snd = self.weapon_sounds[item.type]['pickup']
-                    snd.play()
-                else:
+                try:
+                    self.weapon_sounds[item._type]['pickup'].play()
+                except KeyError:
                     pass
 
     def events(self):
@@ -382,13 +414,13 @@ class GameEngine:
         :return: None
         """
         self.screen.blit(self.map_img, self.camera.apply_rect(self.map_rect))
+        if self.debug:
+            self._render_grid()
         for sprite in self.all_sprites:
             if isinstance(sprite, Mob):
                 sprite.render_health()
             self.screen.blit(sprite.image, self.camera.apply(sprite))
             if self.debug:
-                for wall in self.walls:
-                    pg.draw.rect(self.screen, (0, 255, 255), self.camera.apply_rect(wall.rect), 1)
                 if isinstance(sprite, Player):
                     pg.draw.rect(self.screen, (255, 0, 0), self.camera.apply_rect(sprite.rect), 1)
                     pg.draw.rect(self.screen, (255, 0, 0), self.camera.apply_rect(sprite.hit_rect), 1)

@@ -3,6 +3,11 @@ from core_functions import get_image_names
 
 vec = pg.math.Vector2
 
+# GAME LEVELS
+GAME_LEVELS = [
+    'Apartments1.tmx',
+]
+
 # Define some colors (R, G, B)
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -143,11 +148,11 @@ PLAYER_FOOTSTEP_INTERVAL_TIMES = {
 
 # Enemy settings
 ENEMY_ATTACK_RATE = 500
-ENEMY_DAMAGE = [x for x in range(10, 20)]
+ENEMY_DAMAGE = [x for x in range(5, 10)]
 ENEMY_KNOCKBACK = 10
-ENEMY_LINE_OF_SIGHT = TILESIZE / 2
+ENEMY_LINE_OF_SIGHT = TILESIZE / 2.5
 ENEMY_HIT_RECT = pg.Rect(0, 0, TILESIZE, TILESIZE)
-ENEMY_SPEEDS = [speed for speed in range(40, 100, 10)]
+ENEMY_SPEEDS = [speed for speed in range(70, 150, 10)]
 ENEMY_HEALTH = [dmg for dmg in range(400, 1000, 100)]
 DETECT_RADIUS = 400
 APPROACH_RADIUS = 150
@@ -216,11 +221,11 @@ WEAPONS['handgun'] = {'bullet_speed': 6000,
                       'rate': 200,
                       'kickback': 125,
                       'spread': 1,
-                      'damage': 60,
+                      'damage': 100,
                       'bullet_size': 'med',
                       'clip size': 15,
                       'weight': 3,
-                      'wobble': {'sprint': 4, 'walk': 2, 'idle': 1},
+                      'wobble': {'sprint': 3, 'walk': 2, 'idle': 1},
                       'muzzle flash range': [25, 35],
                       'barrel offset': vec(45, 22),
                       'crosshair radius': 10,
@@ -232,11 +237,11 @@ WEAPONS['rifle'] = {'bullet_speed': 6000,
                     'rate': 150,
                     'kickback': 200,
                     'spread': 2,
-                    'damage': 85,
+                    'damage': 175,
                     'bullet_size': 'lg',
                     'clip size': 30,
                     'weight': 5,
-                    'wobble': {'sprint': 5, 'walk': 3, 'idle': 2},
+                    'wobble': {'sprint': 5, 'walk': 4, 'idle': 3},
                     'muzzle flash range': [35, 60],
                     'barrel offset': vec(60, 22),
                     'crosshair radius': 15,
@@ -248,18 +253,18 @@ WEAPONS['shotgun'] = {'bullet_speed': 6000,
                       'rate': 600,
                       'kickback': 300,
                       'spread': 8,
-                      'damage': 50,
+                      'damage': 80,
                       'bullet_size': 'sm',
                       'clip size': 8,
                       'weight': 5,
-                      'wobble': {'sprint': 6, 'walk': 4, 'idle': 2},
+                      'wobble': {'sprint': 4, 'walk': 3, 'idle': 2},
                       'muzzle flash range': [50, 70],
                       'barrel offset': vec(67, 22),
                       'crosshair radius': 20,
                       'knockback': vec(25, 0),
-                      'bullet_count': 16}
+                      'bullet_count': 8}
 WEAPONS['knife'] = {
-    'damage': 150,
+    'damage': 205,
     'weight': 2,
     'knockback': 20,
     'crosshair radius': 5,
@@ -274,6 +279,10 @@ WEAPONS['melee'] = {
     'shotgun': 190,
     'knife': 140
 }
+
+ITEMS = {}
+ITEMS['weapon'] = {'rifle': [i for i in range(2, 5)], 'handgun': [i for i in range(2, 6)], 'shotgun': [i for i in range(2, 4)]}
+ITEMS['consumable'] = {'health': [i for i in range(10, 21)], 'ammo': [i for i in range(1, 5)]}
 
 # Item images
 ITEM_IMAGES = {'rifle': 'rifle.png',

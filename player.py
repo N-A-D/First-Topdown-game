@@ -1,12 +1,12 @@
 import pygame as pg
 from core_functions import collide_with_obstacles
 from settings import PLAYER_LAYER, PLAYER_HEALTH, PLAYER_STAMINA, PLAYER_HIT_RECT, vec, WEAPONS, PLAYER_SPEED, \
-    SPRINT_BOOST, PLAYER_FOOTSTEP_INTERVAL_TIMES
+    SPRINT_BOOST, PLAYER_FOOTSTEP_INTERVAL_TIMES, ITEMS
 from random import uniform
 from sprites import Bullet, MuzzleFlash
-from sprites import WeaponPickup, SwingArea
+from sprites import SwingArea
 from math import ceil
-
+from random import choice
 
 class Player(pg.sprite.Sprite):
     """
@@ -216,7 +216,6 @@ class Player(pg.sprite.Sprite):
                 if self.arsenal[self.weapon]['reloads'] > 0:
                     if not self.play_static_animation:
                         self.reload()
-
         if keys[pg.K_r] and self.weapon != 'knife' and self.action != 'reload' and self.arsenal[self.weapon]['clip'] < \
                 WEAPONS[self.weapon]['clip size']:
             if self.arsenal[self.weapon]['reloads'] > 0:
@@ -252,7 +251,7 @@ class Player(pg.sprite.Sprite):
             self.weapon = 'knife'
             self.game.weapon_sounds[self.weapon]['draw'].play()
 
-    def play_foot_step_sounds(self, sprinting, terrain='wood'):
+    def play_foot_step_sounds(self, sprinting, terrain='dirt'):
         """
         Plays the sound a foot step would make on a given terrain
         :param sprinting: If the player is sprinting, the step sounds are more frequent.
@@ -391,28 +390,32 @@ class Player(pg.sprite.Sprite):
         :param item: the item to add
         :return: None
         """
-        if isinstance(item, WeaponPickup):
-            if self.arsenal[item.type]['hasWeapon']:
-                self.arsenal[item.type]['reloads'] += item.ammo_boost
-                self.arsenal[item.type]['total ammunition'] = WEAPONS[item.type]['clip size'] * item.ammo_boost
+        if item._type in ['rifle', 'shotgun', 'handgun']:
+            boost = choice(ITEMS['weapon'][item._type])
+            if self.arsenal[item._type]['hasWeapon']:
+                self.arsenal[item._type]['reloads'] += boost
+                self.arsenal[item._type]['total ammunition'] += WEAPONS[item._type]['clip size'] * boost
             else:
-                self.arsenal[item.type]['hasWeapon'] = True
-                self.arsenal[item.type]['reloads'] = item.ammo_boost - 1
-                self.arsenal[item.type]['clip'] = WEAPONS[item.type]['clip size']
-                self.arsenal[item.type]['total ammunition'] = WEAPONS[item.type]['clip size'] * (item.ammo_boost - 1)
+                self.arsenal[item._type]['hasWeapon'] = True
+                self.arsenal[item._type]['reloads'] += boost
+                self.arsenal[item._type]['total ammunition'] += WEAPONS[item._type]['clip size'] * boost
         else:
-            if item.type == 'ammo':
+            boost = choice(ITEMS['consumable'][item._type])
+            if item._type == 'ammo':
                 if self.weapon == 'knife':
-                    for weapon in self.arsenal:
-                        if weapon != 'knife' and self.arsenal[weapon]['hasWeapon']:
-                            self.arsenal[weapon]['reloads'] += item.AMMO_BOOST
+                    weapon = choice(['rifle', 'shotgun', 'handgun'])
+                    self.arsenal[weapon]['reloads'] += boost
+                    self.arsenal[weapon]['total ammunition'] += boost * WEAPONS[weapon]['clip size']
                 else:
-                    self.arsenal[self.weapon]['reloads'] += item.AMMO_BOOST
+                    self.arsenal[self.weapon]['reloads'] += boost
+                    self.arsenal[self.weapon]['total ammunition'] += boost * WEAPONS[self.weapon]['clip size']
+            elif item._type == 'armour':
+                pass
             else:
-                if self.health + item.HEALTH_BOOST > PLAYER_HEALTH:
+                if self.health + boost > PLAYER_HEALTH:
                     self.health = PLAYER_HEALTH
                 else:
-                    self.health += item.HEALTH_BOOST
+                    self.health += boost
 
     def update_rotation(self):
         """

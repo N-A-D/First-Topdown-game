@@ -1,7 +1,7 @@
 import pygame as pg
 from random import uniform, choice, randint
-from settings import WALL_LAYER, TILESIZE, LIGHTGREY, BULLET_LAYER, WEAPONS, EFFECTS_LAYER, \
-    FLASH_DURATION, ITEMS_LAYER, BOB_RANGE, BOB_SPEED, PLAYER_MELEE_RECTS, vec, YELLOW, WIDTH, HEIGHT
+from settings import WALL_LAYER, TILESIZE, BULLET_LAYER, WEAPONS, EFFECTS_LAYER, \
+    FLASH_DURATION, ITEMS_LAYER, BOB_RANGE, BOB_SPEED, PLAYER_MELEE_RECTS, vec, YELLOW, ITEMS, ITEM_IMAGES
 from core_functions import collide_hit_rect
 import pytweening as tween
 from math import sqrt
@@ -21,7 +21,7 @@ class Obstacle(pg.sprite.Sprite):
         """
         # When this obstacle will be drawn to the screen
         self._layer = WALL_LAYER
-        self.groups = game.walls
+        self.groups = game.walls, game.collidable_walls
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
         self.rect = pg.Rect(x, y, width, height)
@@ -29,6 +29,20 @@ class Obstacle(pg.sprite.Sprite):
         self.hit_rect.center = self.rect.center
         self.pos = vec(self.rect.center)
         self.radius = sqrt(self.hit_rect.width ** 2 + self.hit_rect.height ** 2)
+
+
+class EndOfLevel(Obstacle):
+    """
+    This obstacle is passable when the player has completed the end of level requirements
+    """
+
+    def __init__(self, game, x, y, width=TILESIZE, height=TILESIZE):
+        super().__init__(game, x, y, width, height)
+        self.is_passable = False
+
+    def update(self):
+        if len(self.game.mobs) == 0:
+            self.is_passable = True
 
 
 class Bullet(pg.sprite.Sprite):
@@ -122,18 +136,19 @@ class MuzzleFlash(pg.sprite.Sprite):
 
 
 class Item(pg.sprite.Sprite):
-    def __init__(self, game, x, y, img):
+    def __init__(self, game, x, y, _type):
         """
         Initiliazes this Item object
         :param game: the game 
         :param pos: where on the level this item is located
         :param img: the item image
         """
+        self._type = _type  # Used to index into item info dictionary
         self.layer = ITEMS_LAYER
         self.groups = game.all_sprites, game.items
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
-        self.image = img
+        self.image = self.game.pickup_items[_type]
         self.rect = self.image.get_rect()
         self.pos = vec(x, y)
         self.rect.x = x
@@ -155,43 +170,6 @@ class Item(pg.sprite.Sprite):
         if self.step > BOB_RANGE:
             self.step = 0
             self.dir *= -1
-
-
-class WeaponPickup(Item):
-    """
-    Blueprint for weapon items.
-    """
-
-    def __init__(self, game, x, y):
-        types = ['rifle', 'shotgun', 'handgun']
-        self.type = choice(types)
-        img = game.pickup_items[self.type]
-        super().__init__(game, x, y, img)
-        self.ammo_boost = 1
-        if self.type == 'rifle' or self.type == 'shotgun':
-            self.ammo_boost = randint(3, 5)
-        elif self.type == 'handgun':
-            self.ammo_boost = randint(4, 7)
-
-    def update(self):
-        super().update()
-
-
-class MiscPickup(Item):
-    """
-    Blueprint for ammo and health kit items
-    """
-    AMMO_BOOST = randint(2, 5)
-    HEALTH_BOOST = randint(15, 25)
-
-    def __init__(self, game, x, y):
-        types = ['ammo', 'health']
-        self.type = choice(types)
-        img = game.pickup_items[self.type]
-        super().__init__(game, x, y, img)
-
-    def update(self):
-        super().update()
 
 
 class SwingArea(pg.sprite.Sprite):
