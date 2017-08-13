@@ -100,14 +100,14 @@ class PriorityQueue:
         :param cost: The cost to travel to that node.
         :return: None
         """
-        heap.min_heap_push(heap=self.nodes, item=node, cost=cost)
+        heap.min_heap_push(self.nodes, node, cost)
 
     def get(self):
         """
         Retrieves the node with the least cost to travel to.
         :return: Tuple containing the coordinates to travel to.
         """
-        return heap.min_heap_pop(heap=self.nodes)[1]
+        return heap.min_heap_pop(self.nodes)[1]
 
     def empty(self):
         """

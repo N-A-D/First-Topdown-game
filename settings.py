@@ -89,7 +89,7 @@ BOB_SPEED = .5
 # Player settings
 SPRINT_BOOST = 2.25
 DEFAULT_WEAPON = 'knife'
-PLAYER_SPEED = 125
+PLAYER_SPEED = 150
 PLAYER_HIT_RECT = pg.Rect(0, 0, 50, 50)
 PLAYER_MELEE_RECTS = {
     'knife': pg.Rect(0, 0, 50, 50),

@@ -273,7 +273,7 @@ class GameEngine:
         self.get_wall_positions()
         self.mob_idx = 0
         self.last_queue_update = 0
-        g.run()
+        self.run()
 
     def new(self):
         """
@@ -299,7 +299,7 @@ class GameEngine:
         self.get_wall_positions()
         self.mob_idx = 0
         self.last_queue_update = 0
-        g.run()
+        self.run()
 
     def run(self):
         """
@@ -570,7 +570,6 @@ class GameEngine:
         :param prey: The unknowning target
         :return: A list of Vector2 objects to guide the predator
         """
-        print("Finding path")
         return self.pathfinder.a_star_search(self.game_graph,
                                              vec(predator.pos.x // TILESIZE, predator.pos.y // TILESIZE),
                                              vec(prey.pos.x // TILESIZE, prey.pos.y // TILESIZE))
@@ -715,6 +714,16 @@ class GameEngine:
 def _quit():
     pg.quit()
     sys.exit()
+
+def play_game():
+    g = GameEngine()
+    g.start_screen()
+    g.control_screen(True)
+    g.intro_screen()
+    while g.running:
+        g.new()
+        g.game_over_screen()
+    _quit()
 
 
 if __name__ == '__main__':
