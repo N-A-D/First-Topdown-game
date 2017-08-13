@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" tiledversion="1.0.2" orientation="orthogonal" renderorder="right-down" width="32" height="24" tilewidth="64" tileheight="64" nextobjectid="424">
+<map version="1.0" tiledversion="1.0.2" orientation="orthogonal" renderorder="right-down" width="32" height="24" tilewidth="64" tileheight="64" nextobjectid="435">
  <tileset firstgid="1" source="Kenney_tds.tsx"/>
  <tileset firstgid="541" source="Blood Splatters.tsx"/>
  <layer name="Ground" width="32" height="24">
@@ -213,6 +213,17 @@
   <object id="421" name="weapon" x="470.667" y="149.333" width="24" height="25.3333"/>
   <object id="422" name="weapon" x="540" y="1429.33" width="20" height="17.3333"/>
   <object id="423" name="weapon" x="1629.33" y="1380" width="18.6667" height="18.6667"/>
+  <object id="424" name="zombie" x="596" y="849.333" width="32" height="33.3333"/>
+  <object id="425" name="zombie" x="722.667" y="649.333" width="42.6667" height="34.6667"/>
+  <object id="426" name="zombie" x="437.333" y="1288" width="49.3333" height="41.3333"/>
+  <object id="427" name="zombie" x="1158.67" y="790.667" width="34.6667" height="29.3333"/>
+  <object id="428" name="zombie" x="932" y="798.667" width="34.6667" height="38.6667"/>
+  <object id="429" name="zombie" x="941.333" y="468" width="37.3333" height="36"/>
+  <object id="430" name="zombie" x="820" y="302.667" width="30.6667" height="38.6667"/>
+  <object id="431" name="zombie" x="366.667" y="1078.67" width="45.3333" height="37.3333"/>
+  <object id="432" name="zombie" x="234.667" y="688" width="36" height="28"/>
+  <object id="433" name="zombie" x="225.333" y="840" width="44" height="49.3333"/>
+  <object id="434" name="zombie" x="494.667" y="866.667" width="38.6667" height="44"/>
  </objectgroup>
  <objectgroup name="Obstacles">
   <object id="298" name="wall" x="0" y="0" width="2048" height="64"/>

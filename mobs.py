@@ -3,8 +3,8 @@ from random import choice, uniform, random
 from core_functions import collide_with_obstacles
 from settings import MOB_LAYER, ENEMY_HIT_RECT, ENEMY_SPEEDS, ENEMY_HEALTH, ENEMY_DAMAGE, WANDER_RING_RADIUS, \
     SEEK_FORCE, WIDTH, HEIGHT, TILESIZE, DETECT_RADIUS, GREEN, RED, YELLOW, vec, WANDER_RING_DISTANCE, \
-    ENEMY_LINE_OF_SIGHT, AVOID_RADIUS, APPROACH_RADIUS, ENEMY_ATTACK_RATE
-from sprites import WeaponPickup, MiscPickup
+    ENEMY_LINE_OF_SIGHT, AVOID_RADIUS, APPROACH_RADIUS, ENEMY_ATTACK_RATE, WIDTH
+from sprites import Item
 from math import sqrt
 
 
@@ -301,9 +301,9 @@ class Mob(pg.sprite.Sprite):
         Allows the mob to pursue the target
         :return:
         """
-        self.acc += self.pursue(self.game.player)
-        self.acc += self.obstacle_avoidance() * 1.5
-        self.acc += self.separation() * 2
+        self.acc += self.pursue(self.game.player) * 2.5
+        self.acc += self.obstacle_avoidance() * 2.25
+        self.acc += self.separation() * 1.5
         self.acc += self.align()
         self.acc += self.cohesion()
 
@@ -324,7 +324,7 @@ class Mob(pg.sprite.Sprite):
         :return: True if on the screen, False otherwise
         """
         location = vec(self.game.camera.apply_rect(self.hit_rect.copy()).center)
-        if location.x <= WIDTH + TILESIZE and location.y <= HEIGHT + TILESIZE:
+        if location.x <= WIDTH and location.y <= HEIGHT:
             self.is_onscreen = True
         else:
             self.is_onscreen = False
@@ -336,9 +336,9 @@ class Mob(pg.sprite.Sprite):
         :return: None
         """
         if uniform(0, 1) <= .5:
-            WeaponPickup(self.game, int(self.pos.x), int(self.pos.y))
+            Item(self.game, int(self.pos.x), int(self.pos.y), choice(['rifle', 'shotgun', 'handgun']))
         else:
-            MiscPickup(self.game, int(self.pos.x), int(self.pos.y))
+            Item(self.game, int(self.pos.x), int(self.pos.y), choice(['health', 'ammo']))
 
     def follow_path(self):
         """
@@ -369,8 +369,11 @@ class Mob(pg.sprite.Sprite):
         if self.is_onscreen:
             self.track_prey(self.game.player)
             if self.pos.distance_to(self.game.player.pos) < DETECT_RADIUS:
-                if random() < 0.005:
-                    choice(self.game.zombie_moan_sounds).play()
+                if random() < 0.007:
+                    snd = choice(self.game.zombie_moan_sounds)
+                    if snd.get_num_channels() > 2:
+                        snd.stop()
+                    snd.play()
                 self.apply_pursuing_behaviour()
             elif self.path:
                 self.acc += self.follow_path()
