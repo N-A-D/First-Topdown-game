@@ -1,7 +1,7 @@
 import pygame as pg
 from random import uniform, choice, randint
 from settings import WALL_LAYER, TILESIZE, BULLET_LAYER, WEAPONS, EFFECTS_LAYER, \
-    FLASH_DURATION, ITEMS_LAYER, BOB_RANGE, BOB_SPEED, PLAYER_MELEE_RECTS, vec, YELLOW, ITEMS, ITEM_IMAGES
+    FLASH_DURATION, ITEMS_LAYER, BOB_RANGE, BOB_SPEED, PLAYER_MELEE_RECTS, vec, YELLOW
 from core_functions import collide_hit_rect
 import pytweening as tween
 from math import sqrt
