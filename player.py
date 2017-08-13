@@ -31,7 +31,7 @@ class Player(pg.sprite.Sprite):
         self.health = PLAYER_HEALTH
         self.stamina = PLAYER_STAMINA
         self.armour = 0
-        self.has_armour = True
+        self.has_armour = False
 
         # Used to identify when to decrease the player's stamina
         self.stamina_decrease_time = 0
@@ -410,7 +410,8 @@ class Player(pg.sprite.Sprite):
                     self.arsenal[self.weapon]['reloads'] += boost
                     self.arsenal[self.weapon]['total ammunition'] += boost * WEAPONS[self.weapon]['clip size']
             elif item._type == 'armour':
-                pass
+                self.armour += boost
+                self.has_armour = True
             else:
                 if self.health + boost > PLAYER_HEALTH:
                     self.health = PLAYER_HEALTH
