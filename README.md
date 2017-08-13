@@ -1,4 +1,4 @@
-# Title: Topdown zombie survival
+# Title: The Evil Dead
 
 # Current controls (subject to change)
 
