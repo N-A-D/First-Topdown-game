@@ -1,6 +1,6 @@
 import pygame as pg
 import pygame.gfxdraw
-import sys
+import sys, os
 from os import path
 from settings import WIDTH, HEIGHT, TITLE, TILESIZE, \
     ITEM_IMAGES, WEAPONS, RIFLE_BULLET_IMG, HANDGUN_BULLET_IMG, SHOTGUN_BULLET_IMG, \
@@ -15,9 +15,15 @@ from random import choice, randrange, random
 from player import Player
 from mobs import Mob
 from tilemap import Camera, TiledMap
-from sprites import Obstacle, Item
+from sprites import Obstacle, Item, Wall, BulletPassableWall, _Wall
 from core_functions import collide_hit_rect
 from pathfinding import Pathfinder, WeightedGraph
+import PAdLib.occluder as occluder
+import PAdLib.shadow as shadow
+
+
+if sys.platform in ['win32', 'win64']:
+    os.environ['SDL_VIDEO_CENTERED'] = '1'
 
 
 class GameEngine:
@@ -32,8 +38,6 @@ class GameEngine:
         pg.mouse.set_visible(False)
         self.screen = pg.display.set_mode((WIDTH, HEIGHT), pg.HWSURFACE | pg.DOUBLEBUF)
         self.screen.set_alpha(None)
-        self.screen_width = WIDTH
-        self.screen_height = HEIGHT
         pg.display.set_caption(TITLE)
         self.clock = pg.time.Clock()
 
@@ -69,14 +73,6 @@ class GameEngine:
         Loads the game assets.
         :return: None
         """
-        # Game map
-        self.maps = [TiledMap(path.join(self.maps_folder, _map)) for _map in GAME_LEVELS]
-        self.map_idx = 0
-        self.map = self.maps[self.map_idx]  # TiledMap(path.join(self.maps_folder, 'Apartments1.tmx'))
-        self.map_img = self.map.make_map().copy()
-        self.map_rect = self.map_img.get_rect()
-        # self.map = Map(path.join(self.game_folder, 'map3.txt'))
-
         # Dims the pause screen!
         self.pause_screen_effect = pg.Surface(self.screen.get_size()).convert()
         self.pause_screen_effect.fill((0, 0, 0, 225))
@@ -86,7 +82,7 @@ class GameEngine:
         self.fog.fill(NIGHT_COLOR)
 
         # Light on the player
-        self.light_mask = pg.image.load(path.join(self.img_folder, LIGHT_MASK)).convert_alpha()
+        self.light_mask = pg.image.load(path.join(self.img_folder, LIGHT_MASK)).convert()
         self.light_mask = pg.transform.smoothscale(self.light_mask, (LIGHT_RADIUS, LIGHT_RADIUS))
         self.light_rect = self.light_mask.get_rect()
 
@@ -129,7 +125,7 @@ class GameEngine:
         self.swing_noises = {}
         for weapon in PLAYER_SWING_NOISES:
             noise = pg.mixer.Sound(path.join(self.snd_folder, PLAYER_SWING_NOISES[weapon]))
-            noise.set_volume(.25)
+            noise.set_volume(.45)
             self.swing_noises[weapon] = noise
 
         self.player_hit_sounds = []
@@ -142,14 +138,14 @@ class GameEngine:
             sound_list = {}
             for snd in WEAPONS['sound'][weapon]:
                 noise = pg.mixer.Sound(path.join(self.snd_folder, WEAPONS['sound'][weapon][snd]))
-                noise.set_volume(.9)
+                noise.set_volume(1)
                 sound_list[snd] = noise
             self.weapon_sounds[weapon] = sound_list
 
         self.zombie_moan_sounds = []
         for snd in ZOMBIE_MOAN_SOUNDS:
             noise = pg.mixer.Sound(path.join(self.snd_folder, snd))
-            noise.set_volume(.45)
+            noise.set_volume(.5)
             self.zombie_moan_sounds.append(noise)
 
         self.zombie_hit_sounds = {}
@@ -183,7 +179,7 @@ class GameEngine:
 
         # Load enemy animations
         self.enemy_imgs = [pg.transform.smoothscale(pg.image.load(path.join(self.game_folder, name)),
-                                                    (TILESIZE + 20, TILESIZE + 20)).convert_alpha() for name in
+                                                    (TILESIZE + 16, TILESIZE + 16)).convert_alpha() for name in
                            ENEMY_IMGS]
         # Load player animations
         self.default_player_weapon = 'knife'
@@ -242,7 +238,10 @@ class GameEngine:
             if tile_object.name == 'player':
                 self.player = Player(self, tile_object.x, tile_object.y)
             if tile_object.name == 'wall':
-                Obstacle(self, tile_object.x, tile_object.y, tile_object.width, tile_object.height)
+                if tile_object.type == 'passable':
+                    BulletPassableWall(self, tile_object.x, tile_object.y, tile_object.width, tile_object.height)
+                else:
+                    Wall(self, tile_object.x, tile_object.y, tile_object.width, tile_object.height)
             if tile_object.name == 'zombie':
                 Mob(self, tile_object.x, tile_object.y)
             if tile_object.name == 'weapon':
@@ -257,8 +256,11 @@ class GameEngine:
         self.map = self.maps[self.map_idx]
         self.all_sprites = pg.sprite.LayeredUpdates()
         self.all_sprites.add(self.player)
-        self.walls = pg.sprite.Group()
-        self.collidable_walls = pg.sprite.Group()
+        self.walls = pg.sprite.Group()  # Obstacles that are impassable
+        self.all_walls = pg.sprite.Group()
+        self.bullet_passable_walls = pg.sprite.Group()  # Bullets can pass over these walls
+        self._walls = pg.sprite.Group()  # Obstacles used in the mob's obstacle avoidance algorithm
+        self.level_end = pg.sprite.GroupSingle()
         self.bullets = pg.sprite.Group()
         self.mobs = pg.sprite.Group()
         self.items = pg.sprite.Group()
@@ -280,9 +282,18 @@ class GameEngine:
         Creates a new game
         :return: None
         """
+        self.maps = [TiledMap(path.join(self.maps_folder, _map)) for _map in GAME_LEVELS]
+        self.map_idx = 0
+        self.map = self.maps[self.map_idx]
+        self.map_img = self.map.make_map().copy().convert()
+        self.map_rect = self.map_img.get_rect()
         self.all_sprites = pg.sprite.LayeredUpdates()
-        self.walls = pg.sprite.Group()  # walls used for obstacle avoidance
-        self.collidable_walls = pg.sprite.Group()  # walls the sprites actually collide with
+        self.walls = pg.sprite.Group()  # Obstacles that are impassable
+        self.bullet_passable_walls = pg.sprite.Group()  # Bullets can pass over these walls
+        self.all_walls = pg.sprite.Group()
+        self._walls = pg.sprite.Group()  # Obstacles used in the mob's obstacle avoidance algorithm
+        # End of level sprite the player collides after meeting the end of level req
+        self.level_end = pg.sprite.GroupSingle()
         self.bullets = pg.sprite.Group()
         self.mobs = pg.sprite.Group()
         self.items = pg.sprite.Group()
@@ -293,9 +304,7 @@ class GameEngine:
         self.pathfinder = Pathfinder()
         self.game_graph = WeightedGraph()
         self.game_graph.walls = []
-
         self._load_map_data()
-
         self.get_wall_positions()
         self.mob_idx = 0
         self.last_queue_update = 0
@@ -306,7 +315,7 @@ class GameEngine:
         Runs the game
         :return: None
         """
-        self.play_music('background music')
+        # self.play_music('background music')
         self.playing = True
         while self.playing:
             pg.display.set_caption("{:.0f}".format(self.clock.get_fps()))
@@ -346,7 +355,7 @@ class GameEngine:
         if hits:
             self.player.pos += vec(ENEMY_KNOCKBACK, 0).rotate(-hits[0].rot)
             for hit in hits:
-                if random() < .8:
+                if random() < .95:
                     choice(self.player_hit_sounds).play()
                 if hit.can_attack:
                     self.impact_positions.append(self.player.rect.center)
@@ -417,8 +426,6 @@ class GameEngine:
         if self.debug:
             self._render_grid()
         for sprite in self.all_sprites:
-            if isinstance(sprite, Mob):
-                sprite.render_health()
             self.screen.blit(sprite.image, self.camera.apply(sprite))
             if self.debug:
                 if isinstance(sprite, Player):
@@ -449,10 +456,35 @@ class GameEngine:
             pg.draw.line(self.screen, LIGHTGREY, (0, y), (WIDTH, y))
 
     def _render_fog(self):
+        """
+        Creates the in-game lighting effect. This algorithm relies on Ian Mallett's graphics library
+        :return:
+        """
+        # self.fog.fill(NIGHT_COLOR)
+        # self.light_rect.center = self.camera.apply_rect(self.player.hit_rect.copy()).center
+        # self.fog.blit(self.light_mask, self.light_rect)
+        # self.screen.blit(self.fog, (0, 0), special_flags=pg.BLEND_RGB_MULT)
+        shad = shadow.Shadow()
+        occluders = []
+        for wall in self.walls:
+            rect = self.camera.apply_rect(wall.hit_rect, True)
+            occluders.append(occluder.Occluder([[rect.x, rect.y],
+                                                [rect.x, rect.y + rect.height],
+                                                [rect.x + rect.width, rect.y + rect.height],
+                                                [rect.x + rect.width, rect.y]]))
+
+        shad.set_occluders(occluders)
+        shad.set_radius(275.0)
+        shad.set_light_position(self.camera.apply_rect(self.player.hit_rect.copy()).center)
+        mask, draw_pos = shad.get_mask_and_position(False)
+
+        mask.blit(self.light_mask, (0, 0), special_flags=pg.BLEND_MULT)
+
         self.fog.fill(NIGHT_COLOR)
-        self.light_rect.center = self.camera.apply_rect(self.player.hit_rect.copy()).center
-        self.fog.blit(self.light_mask, self.light_rect)
-        self.screen.blit(self.fog, (0, 0), special_flags=pg.BLEND_RGB_MULT)
+
+        self.fog.blit(mask, draw_pos, special_flags=pg.BLEND_MAX)
+
+        self.screen.blit(self.fog, (0, 0), special_flags=pg.BLEND_MULT)
 
     def _render_hud(self):
         """
@@ -559,9 +591,9 @@ class GameEngine:
                         exploding_bit_x = pos[0] + randrange(-1 * magnitude, magnitude) + self.camera.camera.x
                         exploding_bit_y = pos[1] + randrange(-1 * magnitude, magnitude) + self.camera.camera.y
                         pg.draw.circle(self.screen, choice(BLOOD_SHADES), (exploding_bit_x, exploding_bit_y),
-                                       randrange(3, 8))
+                                       randrange(2, 4))
                     impact = False
-            self.impact_positions.clear()
+            self.impact_positions = []
 
     def find_path(self, predator, prey):
         """
@@ -600,8 +632,8 @@ class GameEngine:
         Finds all grid positions where a wall resides
         :return:
         """
-
-        for wall in self.walls:
+        all_obstacles = [wall for wall in self.walls] + [wall for wall in self.bullet_passable_walls]
+        for wall in all_obstacles:
             if wall.rect.width > TILESIZE and wall.rect.height > TILESIZE:
                 for x in range(wall.rect.x, wall.rect.x + wall.rect.width, TILESIZE):
                     for y in range(wall.rect.y, wall.rect.y + wall.rect.height, TILESIZE):
@@ -614,17 +646,19 @@ class GameEngine:
                     self.game_graph.walls.append((wall.rect.x // TILESIZE, y // TILESIZE))
             else:
                 self.game_graph.walls.append((wall.rect.x // TILESIZE, wall.rect.y // TILESIZE))
-
-        self.walls.empty()
+        self.all_walls.empty()
+        for obs in all_obstacles:
+            self.all_walls.add(obs)
         for position in self.game_graph.walls:
-            Obstacle(self, position[0] * TILESIZE, position[1] * TILESIZE)
+            _Wall(self, position[0] * TILESIZE, position[1] * TILESIZE)
+        #print(len(self.all_walls), len(self.walls), len(self.bullet_passable_walls), len(self._walls))
 
     def start_screen(self):
         """
         Displays the start screen for the game
         :return: None
         """
-        self.play_music('main menu')
+        # self.play_music('main menu')
         self.screen.fill(BLACK)
         self._render_text(TITLE, self.title_font, 150, WHITE, WIDTH / 2, HEIGHT * 1 / 4, align='center')
         self._render_text('Press [v] key to start', self.title_font, 65, WHITE, WIDTH / 2, HEIGHT * 3 / 4,
@@ -677,7 +711,7 @@ class GameEngine:
         Displays the gameover screen for the game
         :return: None
         """
-        self.play_music('Game over')
+        # self.play_music('Game over')
         self.screen.fill(BLACK)
         self._render_text("You died!", self.title_font, 125, RED, WIDTH / 2, HEIGHT * 1 / 4, align='center')
         self._render_text('Press [v] key to restart', self.title_font, 65, WHITE, WIDTH / 2, HEIGHT * 2 / 4,
@@ -714,6 +748,7 @@ class GameEngine:
 def _quit():
     pg.quit()
     sys.exit()
+
 
 def play_game():
     g = GameEngine()
