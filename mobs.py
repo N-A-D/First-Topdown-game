@@ -261,7 +261,7 @@ class Mob(pg.sprite.Sprite):
                 threatening obstacle in the mob's path.
         """
         most_threatening = None
-        for wall in self.game.walls:
+        for wall in self.game._walls:
             collide = self.find_collision(wall, ahead, further_ahead, pos)
             if collide and (not most_threatening or self.pos.distance_to(wall.rect.center) < self.pos.distance_to(
                     most_threatening)):
@@ -323,8 +323,8 @@ class Mob(pg.sprite.Sprite):
         Used to check if this mob is on the screen or not
         :return: True if on the screen, False otherwise
         """
-        location = vec(self.game.camera.apply_rect(self.hit_rect.copy()).center)
-        if location.x <= WIDTH and location.y <= HEIGHT:
+        location = vec(self.game.camera.apply_rect(self.hit_rect.copy()).topleft)
+        if location.x <= WIDTH + TILESIZE and location.y <= HEIGHT + TILESIZE:
             self.is_onscreen = True
         else:
             self.is_onscreen = False
@@ -386,9 +386,9 @@ class Mob(pg.sprite.Sprite):
             if self.can_attack:
                 self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
                 self.hit_rect.centerx = self.pos.x
-                collide_with_obstacles(self, self.game.walls, 'x')
+                collide_with_obstacles(self, self.game.all_walls, 'x')
                 self.hit_rect.centery = self.pos.y
-                collide_with_obstacles(self, self.game.walls, 'y')
+                collide_with_obstacles(self, self.game.all_walls, 'y')
             self.rot = self.vel.angle_to(vec(1, 0))
             self.image = pg.transform.rotozoom(self.original_image, self.rot - 90, 1).copy()
             self.rect.center = self.hit_rect.center

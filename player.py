@@ -251,7 +251,7 @@ class Player(pg.sprite.Sprite):
             self.weapon = 'knife'
             self.game.weapon_sounds[self.weapon]['draw'].play()
 
-    def play_foot_step_sounds(self, sprinting, terrain='dirt'):
+    def play_foot_step_sounds(self, sprinting, terrain='wood'):
         """
         Plays the sound a foot step would make on a given terrain
         :param sprinting: If the player is sprinting, the step sounds are more frequent.
@@ -479,7 +479,7 @@ class Player(pg.sprite.Sprite):
         self.rect.center = self.pos
         self.pos += self.vel * self.game.dt
         self.hit_rect.centerx = self.pos.x
-        collide_with_obstacles(self, self.game.walls, 'x')
+        collide_with_obstacles(self, self.game.all_walls, 'x')
         self.hit_rect.centery = self.pos.y
-        collide_with_obstacles(self, self.game.walls, 'y')
+        collide_with_obstacles(self, self.game.all_walls, 'y')
         self.rect.center = self.hit_rect.center

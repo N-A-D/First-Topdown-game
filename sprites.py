@@ -1,6 +1,6 @@
 import pygame as pg
 from random import uniform, choice, randint
-from settings import WALL_LAYER, TILESIZE, BULLET_LAYER, WEAPONS, EFFECTS_LAYER, \
+from settings import TILESIZE, BULLET_LAYER, WEAPONS, EFFECTS_LAYER, \
     FLASH_DURATION, ITEMS_LAYER, BOB_RANGE, BOB_SPEED, PLAYER_MELEE_RECTS, vec, YELLOW
 from core_functions import collide_hit_rect
 import pytweening as tween
@@ -12,17 +12,15 @@ class Obstacle(pg.sprite.Sprite):
     This class represents obstacles in the game
     """
 
-    def __init__(self, game, x, y, width=TILESIZE, height=TILESIZE):
+    def __init__(self, game, x, y, width, height):
         """
         Obstacle initialization
         :param game: The game object to which this obstacle belongs
         :param x: The x location of this obstacle
         :param y: The y location of this obstacle
         """
-        # When this obstacle will be drawn to the screen
-        self._layer = WALL_LAYER
-        self.groups = game.walls, game.collidable_walls
-        pg.sprite.Sprite.__init__(self, self.groups)
+        # self.groups = game.walls, game._walls
+        pg.sprite.Sprite.__init__(self)
         self.game = game
         self.rect = pg.Rect(x, y, width, height)
         self.hit_rect = self.rect.copy()
@@ -30,19 +28,34 @@ class Obstacle(pg.sprite.Sprite):
         self.pos = vec(self.rect.center)
         self.radius = sqrt(self.hit_rect.width ** 2 + self.hit_rect.height ** 2)
 
+    def update(self):
+        self.rect = self.game.camera.apply(self)
+        self.hit_rect = self.rect.copy()
+        self.pos = vec(self.rect.center)
+
+class BulletPassableWall(Obstacle):
+    def __init__(self, game, x, y, width=TILESIZE, height=TILESIZE):
+        super().__init__(game, x, y, width, height)
+        self.game.bullet_passable_walls.add(self)
+
+
+class Wall(Obstacle):
+    def __init__(self, game, x, y, width=TILESIZE, height=TILESIZE):
+        super().__init__(game, x, y, width, height)
+        self.game.walls.add(self)
+
+
+class _Wall(Obstacle):
+    def __init__(self, game, x, y, width=TILESIZE, height=TILESIZE):
+        super().__init__(game, x, y, width, height)
+        self.game._walls.add(self)
+
 
 class EndOfLevel(Obstacle):
     """
-    This obstacle is passable when the player has completed the end of level requirements
+    Allows the player to pass through if and only if the level is clear of enemies.
     """
-
-    def __init__(self, game, x, y, width=TILESIZE, height=TILESIZE):
-        super().__init__(game, x, y, width, height)
-        self.is_passable = False
-
-    def update(self):
-        if len(self.game.mobs) == 0:
-            self.is_passable = True
+    pass
 
 
 class Bullet(pg.sprite.Sprite):
@@ -79,7 +92,7 @@ class Bullet(pg.sprite.Sprite):
         # As the damage decreases, the chance for this bullet to stop upon
         # hitting another enemy increases by the same rate
         self.damage = damage
-        self.penetration_depreciation = .25
+        self.penetration_depreciation = WEAPONS['penetration depreciation'][self.weapon]
 
     def update(self):
         """
