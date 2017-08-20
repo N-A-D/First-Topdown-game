@@ -11,7 +11,7 @@ def collide_hit_rect(first, second):
     :param second: the second rectangle
     :return: True if first collided with second. False otherwise
     """
-    return first.hit_rect.colliderect(second.hit_rect) or first.hit_rect.colliderect(second.rect)
+    return first.hit_rect.colliderect(second.hit_rect) or first.hit_rect.colliderect(second.hit_rect)
 
 
 def collide_with_obstacles(sprite, group, direction):
