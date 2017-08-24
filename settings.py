@@ -22,12 +22,12 @@ DEEPSKYBLUE = (0, 191, 255)
 DODGERBLUE = (30, 144, 255)
 LIMEGREEN = (50, 205, 50)
 GOLD = (255, 215, 0)
-NIGHT_COLOR = (25, 25, 25)
+NIGHT_COLOR = (20, 20, 20)
 LIGHTSLATEGREY = (119, 136, 153, 127)
 ORANGE = (255, 165, 0)
 
 # Game settings
-WIDTH = 896 # 16 * 64 or 32 * 32 or 64 * 16
+WIDTH = 896  # 16 * 64 or 32 * 32 or 64 * 16
 HEIGHT = 512  # 16 * 48 or 32 * 24 or 64 * 12
 
 FPS = 60
@@ -42,11 +42,12 @@ GRIDHEIGHT = 24
 HUD_FONT = 'kenpixel_high_square.ttf'
 TITLE_FONT = 'kenpixel_high.ttf'
 
-# HUD Images
+# HUD
 RIFLE_HUD_IMG = 'rifle.png'
 SHOTGUN_HUD_IMG = 'shotgun.png'
 PISTOL_HUD_IMG = 'pistol.png'
 KNIFE_HUD_IMG = 'knife.png'
+GAME_ICON = 'Game_icon.png'
 
 # Bullet images
 RIFLE_BULLET_IMG = 'Bullets/rifle_bullet.png'
@@ -74,7 +75,7 @@ MUZZLE_FLASHES = ['smokeparticleassets/PNG/Flash/flash00.png',
                   ]
 FLASH_DURATION = 60
 LASER_SIGHT_COLORS = [(124, 252, 0), (50, 205, 50), (173, 255, 47), (152, 251, 152), (34, 139, 34)]
-LIGHT_MASK = 'light_falloff100.png'#
+LIGHT_MASK = 'light_falloff100.png'  #
 LIGHT_RADIUS = 550
 BLOOD_SHADES = [(value, 0, 0) for value in range(255, 16, -8)]
 BLOOD_SPLAT = 'Blood/splat red.png'
@@ -286,7 +287,8 @@ WEAPONS['melee'] = {
 }
 
 ITEMS = {}
-ITEMS['weapon'] = {'rifle': [i for i in range(4, 7)], 'handgun': [i for i in range(4, 9)], 'shotgun': [i for i in range(4, 7)]}
+ITEMS['weapon'] = {'rifle': [i for i in range(4, 7)], 'handgun': [i for i in range(4, 9)],
+                   'shotgun': [i for i in range(4, 7)]}
 ITEMS['consumable'] = {'health': [i for i in range(10, 21)], 'ammo': [i for i in range(1, 5)]}
 
 # Item images

@@ -10,7 +10,7 @@ from settings import WIDTH, HEIGHT, TITLE, TILESIZE, \
     NIGHT_COLOR, LIGHT_MASK, LIGHT_RADIUS, PLAYER_SWING_NOISES, BG_MUSIC, \
     GAME_OVER_MUSIC, MAIN_MENU_MUSIC, HUD_FONT, TITLE_FONT, BLACK, YELLOW, ORANGE, \
     RIFLE_HUD_IMG, SHOTGUN_HUD_IMG, PISTOL_HUD_IMG, KNIFE_HUD_IMG, DEEPSKYBLUE, \
-    ENEMY_KNOCKBACK, LIMEGREEN, DARKRED, BLOOD_SPLAT, GAME_LEVELS
+    ENEMY_KNOCKBACK, LIMEGREEN, DARKRED, BLOOD_SPLAT, GAME_LEVELS, GAME_ICON
 from random import choice, randrange, random
 from player import Player
 from mobs import Mob
@@ -20,7 +20,6 @@ from core_functions import collide_hit_rect
 from pathfinding import Pathfinder, WeightedGraph
 import PAdLib.occluder as occluder
 import PAdLib.shadow as shadow
-
 
 if sys.platform in ['win32', 'win64']:
     os.environ['SDL_VIDEO_CENTERED'] = '1'
@@ -38,12 +37,14 @@ class GameEngine:
         pg.mouse.set_visible(False)
         self.screen = pg.display.set_mode((WIDTH, HEIGHT), pg.HWSURFACE | pg.DOUBLEBUF)
         self.screen.set_alpha(None)
+
         pg.display.set_caption(TITLE)
         self.clock = pg.time.Clock()
 
         # Resource folders
         self.game_folder = path.dirname(__file__)
         self.img_folder = path.join(self.game_folder, 'img')
+        pg.display.set_icon(pg.image.load(path.join(self.img_folder, GAME_ICON)).convert_alpha())
         self.maps_folder = path.join(self.img_folder, 'maps')
         self.snd_folder = path.join(self.game_folder, 'snd')
         self.music_folder = path.join(self.snd_folder, 'Music')
@@ -125,7 +126,7 @@ class GameEngine:
         self.swing_noises = {}
         for weapon in PLAYER_SWING_NOISES:
             noise = pg.mixer.Sound(path.join(self.snd_folder, PLAYER_SWING_NOISES[weapon]))
-            noise.set_volume(.45)
+            noise.set_volume(.75)
             self.swing_noises[weapon] = noise
 
         self.player_hit_sounds = []
@@ -145,7 +146,7 @@ class GameEngine:
         self.zombie_moan_sounds = []
         for snd in ZOMBIE_MOAN_SOUNDS:
             noise = pg.mixer.Sound(path.join(self.snd_folder, snd))
-            noise.set_volume(.5)
+            noise.set_volume(.65)
             self.zombie_moan_sounds.append(noise)
 
         self.zombie_hit_sounds = {}
@@ -318,7 +319,7 @@ class GameEngine:
         # self.play_music('background music')
         self.playing = True
         while self.playing:
-            pg.display.set_caption("{:.0f}".format(self.clock.get_fps()))
+            # pg.display.set_caption("{:.0f}".format(self.clock.get_fps()))
             # Time taken in between frames
             self.dt = self.clock.tick(FPS) / 1000
             self.events()
@@ -460,10 +461,6 @@ class GameEngine:
         Creates the in-game lighting effect. This algorithm relies on Ian Mallett's graphics library
         :return:
         """
-        # self.fog.fill(NIGHT_COLOR)
-        # self.light_rect.center = self.camera.apply_rect(self.player.hit_rect.copy()).center
-        # self.fog.blit(self.light_mask, self.light_rect)
-        # self.screen.blit(self.fog, (0, 0), special_flags=pg.BLEND_RGB_MULT)
         shad = shadow.Shadow()
         occluders = []
         for wall in self.walls:
@@ -651,7 +648,7 @@ class GameEngine:
             self.all_walls.add(obs)
         for position in self.game_graph.walls:
             _Wall(self, position[0] * TILESIZE, position[1] * TILESIZE)
-        #print(len(self.all_walls), len(self.walls), len(self.bullet_passable_walls), len(self._walls))
+            # print(len(self.all_walls), len(self.walls), len(self.bullet_passable_walls), len(self._walls))
 
     def start_screen(self):
         """
