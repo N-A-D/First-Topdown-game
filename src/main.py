@@ -15,7 +15,7 @@ from random import choice, randrange, random
 from player import Player
 from mobs import Mob
 from tilemap import Camera, TiledMap
-from sprites import Obstacle, Item, Wall, BulletPassableWall, _Wall
+from sprites import Item, Wall, BulletPassableWall, _Wall
 from core_functions import collide_hit_rect
 from pathfinding import Pathfinder, WeightedGraph
 import PAdLib.occluder as occluder
@@ -59,9 +59,6 @@ class GameEngine:
         # Game running flags
         self.running = True
         self.playing = True
-
-        # Debugging flags
-        self.debug = False
 
         # Gameplay flags
         self.paused = False
@@ -316,7 +313,7 @@ class GameEngine:
         Runs the game
         :return: None
         """
-        # self.play_music('background music')
+        self.play_music('background music')
         self.playing = True
         while self.playing:
             # pg.display.set_caption("{:.0f}".format(self.clock.get_fps()))
@@ -411,8 +408,6 @@ class GameEngine:
                 self.running = False
                 _quit()
             if event.type == pg.KEYDOWN:
-                if event.key == pg.K_b:
-                    self.debug = not self.debug
                 if event.key == pg.K_p:
                     self.paused = not self.paused
                 if event.key == pg.K_c:
@@ -424,18 +419,8 @@ class GameEngine:
         :return: None
         """
         self.screen.blit(self.map_img, self.camera.apply_rect(self.map_rect))
-        if self.debug:
-            self._render_grid()
         for sprite in self.all_sprites:
             self.screen.blit(sprite.image, self.camera.apply(sprite))
-            if self.debug:
-                if isinstance(sprite, Player):
-                    pg.draw.rect(self.screen, (255, 0, 0), self.camera.apply_rect(sprite.rect), 1)
-                    pg.draw.rect(self.screen, (255, 0, 0), self.camera.apply_rect(sprite.hit_rect), 1)
-                elif isinstance(sprite, Obstacle):
-                    pg.draw.rect(self.screen, (255, 0, 0), self.camera.apply_rect(sprite.rect), 1)
-                else:
-                    pg.draw.rect(self.screen, (0, 255, 255), self.camera.apply_rect(sprite.hit_rect), 1)
         self.render_blood_splatters()
         self._render_fog()
         self._render_hud()
@@ -445,16 +430,6 @@ class GameEngine:
         if self.on_control_screen:
             self.control_screen()
         pg.display.flip()
-
-    def _render_grid(self):
-        """
-        Used for debugging
-        :return: None
-        """
-        for x in range(0, WIDTH, TILESIZE):
-            pg.draw.line(self.screen, LIGHTGREY, (x, 0), (x, HEIGHT))
-        for y in range(0, HEIGHT, TILESIZE):
-            pg.draw.line(self.screen, LIGHTGREY, (0, y), (WIDTH, y))
 
     def _render_fog(self):
         """
@@ -579,6 +554,10 @@ class GameEngine:
         self.screen.blit(text_surface, text_rect)
 
     def render_blood_splatters(self):
+        """
+        Draws blood particles on the screen
+        :return: None
+        """
         if self.impact_positions:
             for pos in self.impact_positions:
                 impact = True
@@ -626,7 +605,7 @@ class GameEngine:
 
     def get_wall_positions(self):
         """
-        Finds all grid positions where a wall resides
+        Finds all tile positions where wall sits
         :return:
         """
         all_obstacles = [wall for wall in self.walls] + [wall for wall in self.bullet_passable_walls]
@@ -655,7 +634,7 @@ class GameEngine:
         Displays the start screen for the game
         :return: None
         """
-        # self.play_music('main menu')
+        self.play_music('main menu')
         self.screen.fill(BLACK)
         self._render_text(TITLE, self.title_font, 150, WHITE, WIDTH / 2, HEIGHT * 1 / 4, align='center')
         self._render_text('Press [v] key to start', self.title_font, 65, WHITE, WIDTH / 2, HEIGHT * 3 / 4,
@@ -708,7 +687,7 @@ class GameEngine:
         Displays the gameover screen for the game
         :return: None
         """
-        # self.play_music('Game over')
+        self.play_music('Game over')
         self.screen.fill(BLACK)
         self._render_text("You died!", self.title_font, 125, RED, WIDTH / 2, HEIGHT * 1 / 4, align='center')
         self._render_text('Press [v] key to restart', self.title_font, 65, WHITE, WIDTH / 2, HEIGHT * 2 / 4,
