@@ -27,9 +27,9 @@ class Mob(pg.sprite.Sprite):
         self.game = game
         pg.sprite.Sprite.__init__(self, self.groups)
 
-        # Image copies are necessary because if were not
-        # for the copy, any damages pasted onto the enemy
-        # image would be replicated onto the other enemies
+        # Image copies are necessary. The reason being is that
+        # if were not for the copy, any damage pasted onto the enemy
+        # image would have been replicated onto the other enemies
         # even if they haven't been damaged
         self.original_image = choice(game.enemy_imgs).copy()
         self.image = self.original_image.copy()
@@ -139,8 +139,8 @@ class Mob(pg.sprite.Sprite):
         if self.vel.length() == 0:
             self.move_from_rest()
         circle_pos = self.pos + self.vel.normalize() * WANDER_RING_DISTANCE
-        target = circle_pos + vec(self.wander_radius, 0).rotate(uniform(0, 360))
-        return self.seek(target)
+        self.target = circle_pos + vec(self.wander_radius, 0).rotate(uniform(0, 360))
+        return self.seek(self.target)
 
     def pursue(self, prey):
         """
@@ -149,10 +149,10 @@ class Mob(pg.sprite.Sprite):
         :return:
         """
         if prey.vel.length() == 0:
-            target = prey.pos
+            self.target = prey.pos
         else:
-            target = prey.pos + prey.vel.normalize()
-        return self.seek(target)
+            self.target = prey.pos + prey.vel.normalize()
+        return self.seek(self.target)
 
     def cohesion(self):
         """
@@ -376,7 +376,8 @@ class Mob(pg.sprite.Sprite):
                     snd.play()
                 self.apply_pursuing_behaviour()
             elif self.path:
-                self.acc += self.follow_path()
+                self.target = self.follow_path()
+                self.acc += self.target
                 self.apply_flocking_behaviour()
             else:
                 if self.is_onscreen:
@@ -389,7 +390,7 @@ class Mob(pg.sprite.Sprite):
                 collide_with_obstacles(self, self.game.all_walls, 'x')
                 self.hit_rect.centery = self.pos.y
                 collide_with_obstacles(self, self.game.all_walls, 'y')
-            self.rot = self.vel.angle_to(vec(1, 0))
+            self.rot = (self.target - self.pos).angle_to(vec(1, 0))
             self.image = pg.transform.rotozoom(self.original_image, self.rot - 90, 1).copy()
             self.rect.center = self.hit_rect.center
             now = pg.time.get_ticks()
