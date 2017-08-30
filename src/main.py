@@ -5,7 +5,7 @@ from os import path
 from settings import WIDTH, HEIGHT, TITLE, TILESIZE, \
     ITEM_IMAGES, WEAPONS, RIFLE_BULLET_IMG, HANDGUN_BULLET_IMG, SHOTGUN_BULLET_IMG, \
     MUZZLE_FLASHES, ENEMY_IMGS, HANDGUN_ANIMATIONS, KNIFE_ANIMATIONS, RIFLE_ANIMATIONS, \
-    SHOTGUN_ANIMATIONS, FPS, LIGHTGREY, WHITE, RED, GREEN, BLOOD_SHADES, \
+    SHOTGUN_ANIMATIONS, FPS, WHITE, RED, GREEN, BLOOD_SHADES, \
     vec, PLAYER_HIT_SOUNDS, ZOMBIE_MOAN_SOUNDS, ENEMY_HIT_SOUNDS, PLAYER_FOOTSTEPS, \
     NIGHT_COLOR, LIGHT_MASK, LIGHT_RADIUS, PLAYER_SWING_NOISES, BG_MUSIC, \
     GAME_OVER_MUSIC, MAIN_MENU_MUSIC, HUD_FONT, TITLE_FONT, BLACK, YELLOW, ORANGE, \
@@ -33,7 +33,7 @@ class GameEngine:
     def __init__(self):
         # initialize game window, etc
         pg.init()
-        pg.mixer.pre_init(44100, -16, 1, 1024)
+        pg.mixer.pre_init(44100, -16, 1, 4096)
         pg.mouse.set_visible(False)
         self.screen = pg.display.set_mode((WIDTH, HEIGHT), pg.HWSURFACE | pg.DOUBLEBUF)
         self.screen.set_alpha(None)
@@ -44,7 +44,7 @@ class GameEngine:
         # Resource folders
         self.game_folder = path.dirname(__file__)
         self.img_folder = path.join(self.game_folder, '../data/img')
-        pg.display.set_icon(pg.image.load(path.join(self.img_folder, GAME_ICON)).convert_alpha())
+        self.effects_folder = path.join(self.img_folder, 'Effects')
         self.maps_folder = path.join(self.img_folder, 'maps')
         self.snd_folder = path.join(self.game_folder, '../data/snd')
         self.music_folder = path.join(self.snd_folder, 'Music')
@@ -80,7 +80,7 @@ class GameEngine:
         self.fog.fill(NIGHT_COLOR)
 
         # Light on the player
-        self.light_mask = pg.image.load(path.join(self.img_folder, LIGHT_MASK)).convert()
+        self.light_mask = pg.image.load(path.join(self.effects_folder, LIGHT_MASK)).convert()
         self.light_mask = pg.transform.smoothscale(self.light_mask, (LIGHT_RADIUS, LIGHT_RADIUS))
         self.light_rect = self.light_mask.get_rect()
 
@@ -90,7 +90,12 @@ class GameEngine:
         # Item pickups
         self.pickup_items = {}
         for item in ITEM_IMAGES:
-            self.pickup_items[item] = pg.image.load(path.join(self.item_folder, ITEM_IMAGES[item])).convert_alpha()
+            if item == 'armour':
+                img = pg.image.load(path.join(self.item_folder, ITEM_IMAGES[item])).convert()
+                img.set_colorkey(BLACK)
+                self.pickup_items[item] = img
+            else:
+                self.pickup_items[item] = pg.image.load(path.join(self.item_folder, ITEM_IMAGES[item])).convert_alpha()
 
         # Fonts
         self.hud_font = path.join(self.font_folder, HUD_FONT)
@@ -106,6 +111,10 @@ class GameEngine:
         self._hud_hp = font.render('HEALTH', True, WHITE)
         self._hud_hp.convert()
         self._hud_hp_rect = self._hud_hp.get_rect()
+
+        self._hud_armour = font.render('ARMOUR', True, WHITE)
+        self._hud_armour.convert()
+        self._hud_armour_rect = self._hud_armour.get_rect()
 
         font = pg.font.Font(self.hud_font, 20)
         self._hud_stamina = font.render('STAMINA', True, WHITE)
@@ -172,7 +181,7 @@ class GameEngine:
             path.join(self.img_folder, SHOTGUN_BULLET_IMG)).convert_alpha(), (4, 4))
 
         # Effects
-        self.gun_flashes = [pg.image.load(path.join(self.img_folder, flash)).convert_alpha() for flash in
+        self.gun_flashes = [pg.image.load(path.join(self.effects_folder, flash)).convert_alpha() for flash in
                             MUZZLE_FLASHES]
 
         # Load enemy animations
@@ -235,15 +244,24 @@ class GameEngine:
         for tile_object in self.map.tmxdata.objects:
             if tile_object.name == 'player':
                 self.player = Player(self, tile_object.x, tile_object.y)
-            if tile_object.name == 'wall':
+            elif tile_object.name == 'wall':
                 if tile_object.type == 'passable':
                     BulletPassableWall(self, tile_object.x, tile_object.y, tile_object.width, tile_object.height)
                 else:
                     Wall(self, tile_object.x, tile_object.y, tile_object.width, tile_object.height)
-            if tile_object.name == 'zombie':
+            elif tile_object.name == 'zombie':
                 Mob(self, tile_object.x, tile_object.y)
-            if tile_object.name == 'weapon':
-                Item(self, tile_object.x, tile_object.y, choice(['rifle', 'shotgun', 'handgun']))
+            elif tile_object.name == 'weapon':
+                if tile_object.type in ['rifle', 'shotgun', 'handgun']:
+                    Item(self, tile_object.x, tile_object.y, tile_object.type)
+                else:
+                    Item(self, tile_object.x, tile_object.y, choice(['rifle', 'shotgun', 'handgun']))
+            elif tile_object.name == 'armour':
+                Item(self, tile_object.x, tile_object.y, 'armour')
+            elif tile_object.name == 'ammo':
+                Item(self, tile_object.x, tile_object.y, 'ammo')
+            elif tile_object.name == 'health':
+                Item(self, tile_object.x, tile_object.y, 'health')
 
     def _level_transition(self):
         """
@@ -316,9 +334,9 @@ class GameEngine:
         self.play_music('background music')
         self.playing = True
         while self.playing:
-            # pg.display.set_caption("{:.0f}".format(self.clock.get_fps()))
+            pg.display.set_caption("{:.0f}".format(self.clock.get_fps()))
             # Time taken in between frames
-            self.dt = self.clock.tick(FPS) / 1000
+            self.dt = self.clock.tick_busy_loop(FPS) / 1000
             self.events()
             if not self.paused:
                 self.update()
@@ -359,6 +377,8 @@ class GameEngine:
                     self.impact_positions.append(self.player.rect.center)
                     if self.player.has_armour:
                         self.player.armour -= hit.damage
+                        if self.player.armour < 0:
+                            self.player.health += self.player.armour
                     else:
                         self.player.health -= hit.damage
                     hit.vel.normalize()
@@ -388,14 +408,39 @@ class GameEngine:
                 snd.play()
 
         # Item collisions
-        item_collisions = pg.sprite.spritecollide(self.player, self.items, True, collide_hit_rect)
+        item_collisions = pg.sprite.spritecollide(self.player, self.items, False, collide_hit_rect)
         if item_collisions:
             for item in item_collisions:
-                self.player.pickup_item(item)
-                try:
-                    self.weapon_sounds[item._type]['pickup'].play()
-                except KeyError:
-                    pass
+                if item._type == 'ammo':
+                    possessed_weapons = []
+                    for weapon in self.player.arsenal:
+                        if weapon != 'knife':
+                            if self.player.arsenal[weapon]['hasWeapon']:
+                                possessed_weapons.append(weapon)
+                    if possessed_weapons:
+                        self.player.pickup_item(item)
+                        try:
+                            self.weapon_sounds[item._type]['pickup'].play()
+                        except KeyError:
+                            pass
+                        item.kill()
+                elif item._type == 'health':
+                    if self.player.health != 100:
+                        self.player.pickup_item(item)
+                        try:
+                            self.weapon_sounds[item._type]['pickup'].play()
+                        except KeyError:
+                            pass
+                        item.kill()
+                    else:
+                        pass
+                else:
+                    self.player.pickup_item(item)
+                    try:
+                        self.weapon_sounds[item._type]['pickup'].play()
+                    except KeyError:
+                        pass
+                    item.kill()
 
     def events(self):
         """
@@ -420,7 +465,11 @@ class GameEngine:
         """
         self.screen.blit(self.map_img, self.camera.apply_rect(self.map_rect))
         for sprite in self.all_sprites:
-            self.screen.blit(sprite.image, self.camera.apply(sprite))
+            if isinstance(sprite, Mob):
+                if sprite.is_onscreen:
+                    self.screen.blit(sprite.image, self.camera.apply(sprite))
+            else:
+                self.screen.blit(sprite.image, self.camera.apply(sprite))
         self.render_blood_splatters()
         self._render_fog()
         self._render_hud()
@@ -482,12 +531,14 @@ class GameEngine:
                 color = DARKRED
             else:
                 color = RED
+            self._render_text(str(self.player.health) + "%", self.hud_font, 30, color, 110, HEIGHT - 150, align='nw')
+            self._hud_hp_rect.topleft = (50, HEIGHT - 145)
+            self.screen.blit(self._hud_hp, self._hud_hp_rect)
         else:
             color = DEEPSKYBLUE
-
-        self._render_text(str(self.player.health) + "%", self.hud_font, 30, color, 110, HEIGHT - 150, align='nw')
-        self._hud_hp_rect.topleft = (50, HEIGHT - 145)
-        self.screen.blit(self._hud_hp, self._hud_hp_rect)
+            self._render_text(str(self.player.armour) + "%", self.hud_font, 30, color, 110, HEIGHT - 150, align='nw')
+            self._hud_armour_rect.topleft = (50, HEIGHT - 145)
+            self.screen.blit(self._hud_armour, self._hud_armour_rect)
 
         if self.player.stamina > 85:
             color = GREEN
@@ -627,7 +678,6 @@ class GameEngine:
             self.all_walls.add(obs)
         for position in self.game_graph.walls:
             _Wall(self, position[0] * TILESIZE, position[1] * TILESIZE)
-            # print(len(self.all_walls), len(self.walls), len(self.bullet_passable_walls), len(self._walls))
 
     def start_screen(self):
         """
@@ -717,7 +767,7 @@ class GameEngine:
         Plays the given track
         """
         pg.mixer.music.load(path.join(self.music_folder, self.music_tracks[track]))
-        pg.mixer.music.set_volume(.5)
+        pg.mixer.music.set_volume(.75)
         pg.mixer.music.play(loops=-1)
 
 
