@@ -16,3 +16,9 @@
     - 2 for shotgun
     - 3 for handgun
     - 4 for knife
+
+# Current dependencies:
+    - pytmx
+    - pygame
+    - pytweening
+    - python 3.X
