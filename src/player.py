@@ -6,7 +6,7 @@ from random import uniform
 from sprites import Bullet, MuzzleFlash
 from sprites import SwingArea
 from math import ceil
-from random import choice
+from random import choice, randint
 
 class Player(pg.sprite.Sprite):
     """
@@ -55,6 +55,7 @@ class Player(pg.sprite.Sprite):
         self.last_update = 0
         # Set the current frame to the first in the queue
         self.image = self.animations[self.current_frame]
+        self.image_copy = self.image.copy()
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
 
@@ -130,8 +131,6 @@ class Player(pg.sprite.Sprite):
             self.last_shot = now
             direction = vec(1, 0).rotate(-self.rot)
             pos = self.pos + WEAPONS[self.weapon]['barrel offset'].rotate(-self.rot)
-            self.vel = vec(-WEAPONS[self.weapon]['kickback'], 0).rotate(-self.rot)
-
             for _ in range(WEAPONS[self.weapon]['bullet_count']):
                 spread = uniform(-WEAPONS[self.weapon]['spread'] - self.aim_wobble,
                                  WEAPONS[self.weapon]['spread'] + self.aim_wobble)
@@ -185,10 +184,10 @@ class Player(pg.sprite.Sprite):
         self.action = 'idle'
         self.aim_wobble = 0
         self.update_rotation()
-        self.handle_player_movement(keys=_input)
+        self._player_movement(keys=_input)
         if not self.play_static_animation:
-            self.handle_weapon_selection(keys=_input)
-            self.handle_combat_controls(keys=_input)
+            self._weapon_selection(keys=_input)
+            self._combat_controls(keys=_input)
 
         # Accommodates for diagonal movement being slightly faster than pure horizontal or vertical movement
         if self.vel.x != 0 and self.vel.y != 0:
@@ -197,7 +196,7 @@ class Player(pg.sprite.Sprite):
             self.aim_wobble = WEAPONS[self.weapon]['wobble']['idle']
             self.increase_stamina(1 / WEAPONS[self.weapon]['weight'])
 
-    def handle_combat_controls(self, keys):
+    def _combat_controls(self, keys):
         """
         Processes any combat related key pressed
 
@@ -229,7 +228,7 @@ class Player(pg.sprite.Sprite):
             self.play_static_animation = True
             self._melee()
 
-    def handle_weapon_selection(self, keys):
+    def _weapon_selection(self, keys):
         """
         Update's the player's current weapon to whichever
         he/she chooses if they have that weapon
@@ -239,19 +238,22 @@ class Player(pg.sprite.Sprite):
         if keys[pg.K_1] and self.arsenal['rifle']['hasWeapon'] and not self.weapon == 'rifle':
             self.current_frame = 0
             self.weapon = 'rifle'
+            self.game.weapon_sounds[self.weapon]['draw'].play()
         elif keys[pg.K_2] and self.arsenal['shotgun']['hasWeapon'] and not self.weapon == 'shotgun':
             self.current_frame = 0
             self.weapon = 'shotgun'
+            self.game.weapon_sounds[self.weapon]['draw'].play()
         elif keys[pg.K_3] and self.arsenal['handgun']['hasWeapon'] and not self.weapon == 'handgun':
             self.current_frame = 0
             self.weapon = 'handgun'
+            self.game.weapon_sounds[self.weapon]['draw'].play()
         # Player always has a knife
         elif keys[pg.K_4] and not self.weapon == 'knife':
             self.current_frame = 0
             self.weapon = 'knife'
             self.game.weapon_sounds[self.weapon]['draw'].play()
 
-    def play_foot_step_sounds(self, sprinting, terrain='wood'):
+    def play_foot_step_sounds(self, sprinting, terrain='dirt'):
         """
         Plays the sound a foot step would make on a given terrain
         :param sprinting: If the player is sprinting, the step sounds are more frequent.
@@ -271,7 +273,7 @@ class Player(pg.sprite.Sprite):
                 self.current_step_sound = (self.current_step_sound + 1) % len(self.step_sounds)
                 self.step_sounds[self.current_step_sound].play()
 
-    def handle_player_movement(self, keys):
+    def _player_movement(self, keys):
         """
         Updates the player's velocity such that the player
         can move in the game map
@@ -279,49 +281,51 @@ class Player(pg.sprite.Sprite):
         :return: None
         """
         is_sprinting = False
+        self.stamina_dropoff = WEAPONS['stamina']['dropoff'][self.weapon]
+        self.stamina_regen = WEAPONS['stamina']['regen'][self.weapon]
         if keys[pg.K_SPACE] and self.stamina > 0:
             is_sprinting = True
             if keys[pg.K_a]:
                 self.vel.x = -PLAYER_SPEED * SPRINT_BOOST
                 self.action = 'move'
                 self.aim_wobble = WEAPONS[self.weapon]['wobble']['sprint']
-                self.decrease_stamina(WEAPONS[self.weapon]['weight'] / 2)
+                self.decrease_stamina(WEAPONS[self.weapon]['weight'] / self.stamina_dropoff)
             if keys[pg.K_d]:
                 self.vel.x = PLAYER_SPEED * SPRINT_BOOST
                 self.action = 'move'
                 self.aim_wobble = WEAPONS[self.weapon]['wobble']['sprint']
-                self.decrease_stamina(WEAPONS[self.weapon]['weight'] / 2)
+                self.decrease_stamina(WEAPONS[self.weapon]['weight'] / self.stamina_dropoff)
             if keys[pg.K_w]:
                 self.vel.y = -PLAYER_SPEED * SPRINT_BOOST
                 self.action = 'move'
                 self.aim_wobble = WEAPONS[self.weapon]['wobble']['sprint']
-                self.decrease_stamina(WEAPONS[self.weapon]['weight'] / 2)
+                self.decrease_stamina(WEAPONS[self.weapon]['weight'] / self.stamina_dropoff)
             if keys[pg.K_s]:
                 self.vel.y = PLAYER_SPEED * SPRINT_BOOST
                 self.action = 'move'
                 self.aim_wobble = WEAPONS[self.weapon]['wobble']['sprint']
-                self.decrease_stamina(WEAPONS[self.weapon]['weight'] / 2)
+                self.decrease_stamina(WEAPONS[self.weapon]['weight'] / self.stamina_dropoff)
         else:
             if keys[pg.K_a]:
                 self.vel.x = -PLAYER_SPEED
                 self.action = 'move'
                 self.aim_wobble = WEAPONS[self.weapon]['wobble']['walk']
-                self.increase_stamina(1 / WEAPONS[self.weapon]['weight'])
+                self.increase_stamina(self.stamina_regen / WEAPONS[self.weapon]['weight'])
             if keys[pg.K_d]:
                 self.vel.x = PLAYER_SPEED
                 self.action = 'move'
                 self.aim_wobble = WEAPONS[self.weapon]['wobble']['walk']
-                self.increase_stamina(1 / WEAPONS[self.weapon]['weight'])
+                self.increase_stamina(self.stamina_regen / WEAPONS[self.weapon]['weight'])
             if keys[pg.K_w]:
                 self.vel.y = -PLAYER_SPEED
                 self.action = 'move'
                 self.aim_wobble = WEAPONS[self.weapon]['wobble']['walk']
-                self.increase_stamina(1 / WEAPONS[self.weapon]['weight'])
+                self.increase_stamina(self.stamina_regen / WEAPONS[self.weapon]['weight'])
             if keys[pg.K_s]:
                 self.vel.y = PLAYER_SPEED
                 self.action = 'move'
                 self.aim_wobble = WEAPONS[self.weapon]['wobble']['walk']
-                self.increase_stamina(1 / WEAPONS[self.weapon]['weight'])
+                self.increase_stamina(self.stamina_regen / WEAPONS[self.weapon]['weight'])
 
         if self.vel.length() != 0:
             self.play_foot_step_sounds(sprinting=is_sprinting)
@@ -399,13 +403,26 @@ class Player(pg.sprite.Sprite):
                 self.arsenal[item._type]['hasWeapon'] = True
                 self.arsenal[item._type]['reloads'] += boost
                 self.arsenal[item._type]['total ammunition'] += WEAPONS[item._type]['clip size'] * boost
+                self.arsenal[item._type]['clip'] = randint(0, WEAPONS[item._type]['clip size'])
         else:
-            boost = choice(ITEMS['consumable'][item._type])
+            boost = None
+            if item.item_index:
+                boost = ITEMS['consumable'][item._type][item.item_index]
+            else: boost = choice(ITEMS['consumable'][item._type])
             if item._type == 'ammo':
                 if self.weapon == 'knife':
-                    weapon = choice(['rifle', 'shotgun', 'handgun'])
-                    self.arsenal[weapon]['reloads'] += boost
-                    self.arsenal[weapon]['total ammunition'] += boost * WEAPONS[weapon]['clip size']
+                    possessed_weapons = []
+                    for weapon in self.arsenal:
+                        if weapon == 'knife':
+                            pass
+                        else:
+                            if self.arsenal[weapon]['hasWeapon']:
+                                possessed_weapons.append(weapon)
+                    if possessed_weapons:
+                        weap = choice(possessed_weapons)
+
+                        self.arsenal[weap]['reloads'] += boost
+                        self.arsenal[weap]['total ammunition'] += boost * WEAPONS[weap]['clip size']
                 else:
                     self.arsenal[self.weapon]['reloads'] += boost
                     self.arsenal[self.weapon]['total ammunition'] += boost * WEAPONS[self.weapon]['clip size']
@@ -474,6 +491,7 @@ class Player(pg.sprite.Sprite):
         :return: None
         """
         self.process_input(keyboard_input)
+        self.update_rotation()
         self.animate()
         self.check_armour_status()
         self.rect.center = self.pos

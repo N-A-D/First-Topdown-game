@@ -10,8 +10,8 @@ from settings import WIDTH, HEIGHT, TITLE, TILESIZE, \
     NIGHT_COLOR, LIGHT_MASK, LIGHT_RADIUS, PLAYER_SWING_NOISES, BG_MUSIC, \
     GAME_OVER_MUSIC, MAIN_MENU_MUSIC, HUD_FONT, TITLE_FONT, BLACK, YELLOW, ORANGE, \
     RIFLE_HUD_IMG, SHOTGUN_HUD_IMG, PISTOL_HUD_IMG, KNIFE_HUD_IMG, DEEPSKYBLUE, \
-    ENEMY_KNOCKBACK, LIMEGREEN, DARKRED, BLOOD_SPLAT, GAME_LEVELS, GAME_ICON
-from random import choice, randrange, random
+    ENEMY_KNOCKBACK, LIMEGREEN, DARKRED, BLOOD_SPLAT, GAME_LEVELS, ITEMS
+from random import choice, randrange, uniform, random
 from player import Player
 from mobs import Mob
 from tilemap import Camera, TiledMap
@@ -90,12 +90,7 @@ class GameEngine:
         # Item pickups
         self.pickup_items = {}
         for item in ITEM_IMAGES:
-            if item == 'armour':
-                img = pg.image.load(path.join(self.item_folder, ITEM_IMAGES[item])).convert()
-                img.set_colorkey(BLACK)
-                self.pickup_items[item] = img
-            else:
-                self.pickup_items[item] = pg.image.load(path.join(self.item_folder, ITEM_IMAGES[item])).convert_alpha()
+            self.pickup_items[item] = pg.image.load(path.join(self.item_folder, ITEM_IMAGES[item])).convert_alpha()
 
         # Fonts
         self.hud_font = path.join(self.font_folder, HUD_FONT)
@@ -129,6 +124,9 @@ class GameEngine:
         # Sound loading
         self.music_tracks = {"main menu": MAIN_MENU_MUSIC, 'Game over': GAME_OVER_MUSIC, 'background music': BG_MUSIC}
 
+        self.item_sounds = {}
+        for item in ITEMS['sound']:
+            self.item_sounds[item] = pg.mixer.Sound(path.join(self.snd_folder, ITEMS['sound'][item]))
         self.swing_noises = {}
         for weapon in PLAYER_SWING_NOISES:
             noise = pg.mixer.Sound(path.join(self.snd_folder, PLAYER_SWING_NOISES[weapon]))
@@ -152,7 +150,7 @@ class GameEngine:
         self.zombie_moan_sounds = []
         for snd in ZOMBIE_MOAN_SOUNDS:
             noise = pg.mixer.Sound(path.join(self.snd_folder, snd))
-            noise.set_volume(.65)
+            noise.set_volume(.35)
             self.zombie_moan_sounds.append(noise)
 
         self.zombie_hit_sounds = {}
@@ -188,6 +186,7 @@ class GameEngine:
         self.enemy_imgs = [pg.transform.smoothscale(pg.image.load(path.join(self.game_folder, name)),
                                                     (TILESIZE + 16, TILESIZE + 16)).convert_alpha() for name in
                            ENEMY_IMGS]
+
         # Load player animations
         self.default_player_weapon = 'knife'
         self.default_player_action = 'idle'
@@ -257,7 +256,12 @@ class GameEngine:
                 else:
                     Item(self, tile_object.x, tile_object.y, choice(['rifle', 'shotgun', 'handgun']))
             elif tile_object.name == 'armour':
-                Item(self, tile_object.x, tile_object.y, 'armour')
+                if tile_object.type == 'light':
+                    Item(self, tile_object.x, tile_object.y, 'armour', 0)
+                elif tile_object.type == 'medium':
+                    Item(self, tile_object.x, tile_object.y, 'armour', 1)
+                else:
+                    Item(self, tile_object.x, tile_object.y, 'armour', 2)
             elif tile_object.name == 'ammo':
                 Item(self, tile_object.x, tile_object.y, 'ammo')
             elif tile_object.name == 'health':
@@ -334,7 +338,7 @@ class GameEngine:
         self.play_music('background music')
         self.playing = True
         while self.playing:
-            pg.display.set_caption("{:.0f}".format(self.clock.get_fps()))
+            # pg.display.set_caption("{:.0f}".format(self.clock.get_fps()))
             # Time taken in between frames
             self.dt = self.clock.tick_busy_loop(FPS) / 1000
             self.events()
@@ -361,8 +365,13 @@ class GameEngine:
         hit_melee_box = pg.sprite.groupcollide(self.mobs, self.swingAreas, False, True, collide_hit_rect)
         if hit_melee_box:
             for hit in hit_melee_box:
-                choice(self.zombie_hit_sounds['bash']).play()
-                hit.health -= WEAPONS['melee'][self.player.weapon]
+                dmg = uniform(WEAPONS[self.player.weapon]['melee kill chance'][0],
+                              WEAPONS[self.player.weapon]['melee kill chance'][1]) * hit._health
+                hit.health -= dmg
+                if hit.health > 0:
+                    choice(self.zombie_hit_sounds['hit']).play()
+                else:
+                    choice(self.zombie_hit_sounds['kill']).play()
                 hit.pos += WEAPONS[self.player.weapon]['knockback'].rotate(-self.player.rot)
                 self.impact_positions.append(hit.rect.center)
 
@@ -394,18 +403,6 @@ class GameEngine:
                     self.impact_positions.append(bullet.rect.center)
                     mob.health -= bullet.damage
                     mob.pos += vec(WEAPONS[self.player.weapon]['damage'] // 10, 0).rotate(-self.player.rot)
-                # Drowns out blood gushing noises the further the collision is from the player
-                dist = self.player.pos.distance_to(mob.pos)
-                ratio = 1
-                if dist > 0:
-                    ratio = round(200 / dist, 2)
-                    if ratio > 1:
-                        ratio = 1
-                snd = choice(self.zombie_hit_sounds['bullet'])
-                snd.set_volume(ratio)
-                if snd.get_num_channels() > 2:
-                    snd.stop()
-                snd.play()
 
         # Item collisions
         item_collisions = pg.sprite.spritecollide(self.player, self.items, False, collide_hit_rect)
@@ -419,27 +416,20 @@ class GameEngine:
                                 possessed_weapons.append(weapon)
                     if possessed_weapons:
                         self.player.pickup_item(item)
-                        try:
-                            self.weapon_sounds[item._type]['pickup'].play()
-                        except KeyError:
-                            pass
+                        self.item_sounds[item._type].play()
                         item.kill()
+                elif item._type == 'armour':
+                    self.item_sounds[item._type].play()
+                    self.player.pickup_item(item)
+                    item.kill()
                 elif item._type == 'health':
                     if self.player.health != 100:
                         self.player.pickup_item(item)
-                        try:
-                            self.weapon_sounds[item._type]['pickup'].play()
-                        except KeyError:
-                            pass
+                        self.item_sounds[item._type].play()
                         item.kill()
-                    else:
-                        pass
                 else:
                     self.player.pickup_item(item)
-                    try:
-                        self.weapon_sounds[item._type]['pickup'].play()
-                    except KeyError:
-                        pass
+                    self.item_sounds[item._type].play()
                     item.kill()
 
     def events(self):
@@ -531,7 +521,7 @@ class GameEngine:
                 color = DARKRED
             else:
                 color = RED
-            self._render_text(str(self.player.health) + "%", self.hud_font, 30, color, 110, HEIGHT - 150, align='nw')
+            self._render_text(str(round(self.player.health, 0)) + "%", self.hud_font, 30, color, 110, HEIGHT - 150, align='nw')
             self._hud_hp_rect.topleft = (50, HEIGHT - 145)
             self.screen.blit(self._hud_hp, self._hud_hp_rect)
         else:
@@ -767,7 +757,7 @@ class GameEngine:
         Plays the given track
         """
         pg.mixer.music.load(path.join(self.music_folder, self.music_tracks[track]))
-        pg.mixer.music.set_volume(.75)
+        pg.mixer.music.set_volume(.35)
         pg.mixer.music.play(loops=-1)
 
 

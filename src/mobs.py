@@ -44,6 +44,7 @@ class Mob(pg.sprite.Sprite):
 
         self.speed = choice(ENEMY_SPEEDS)
         self.health = choice(ENEMY_HEALTH)
+        self._health = self.health
         self.MAX_HEALTH = self.health
         self.damage = choice(ENEMY_DAMAGE)
         self.wander_radius = choice(WANDER_RING_RADIUS)
@@ -139,8 +140,8 @@ class Mob(pg.sprite.Sprite):
         if self.vel.length() == 0:
             self.move_from_rest()
         circle_pos = self.pos + self.vel.normalize() * WANDER_RING_DISTANCE
-        self.target = circle_pos + vec(self.wander_radius, 0).rotate(uniform(0, 360))
-        return self.seek(self.target)
+        target = circle_pos + vec(self.wander_radius, 0).rotate(uniform(0, 360))
+        return self.seek(target)
 
     def pursue(self, prey):
         """
@@ -291,7 +292,7 @@ class Mob(pg.sprite.Sprite):
         Applies flcoking steering behaviours to the mob
         :return: None
         """
-        self.acc += self.obstacle_avoidance() * 1.5
+        self.acc += self.obstacle_avoidance() * 1.75
         self.acc += self.separation() * 2
         self.acc += self.align()
         self.acc += self.cohesion()
@@ -301,9 +302,9 @@ class Mob(pg.sprite.Sprite):
         Allows the mob to pursue the target
         :return:
         """
-        self.acc += self.pursue(self.game.player) * 2.5
-        self.acc += self.obstacle_avoidance() * 2.25
-        self.acc += self.separation() * 1.5
+        self.acc += self.pursue(self.game.player) * 2.75
+        self.acc += self.obstacle_avoidance() * 2.5
+        self.acc += self.separation() * 2.6
         self.acc += self.align()
         self.acc += self.cohesion()
 
@@ -313,7 +314,7 @@ class Mob(pg.sprite.Sprite):
         :return:
         """
         self.acc += self.wander()
-        self.acc += self.obstacle_avoidance() * 1.5
+        self.acc += self.obstacle_avoidance() * 1.75
         self.acc += self.separation() * 2
         self.acc += self.align()
         self.acc += self.cohesion()
@@ -335,10 +336,10 @@ class Mob(pg.sprite.Sprite):
         this mob dies
         :return: None
         """
-        if uniform(0, 1) <= .5:
+        if uniform(0, 1) < .5:
             Item(self.game, int(self.pos.x), int(self.pos.y), choice(['rifle', 'shotgun', 'handgun']))
         else:
-            Item(self.game, int(self.pos.x), int(self.pos.y), choice(['health', 'ammo']))
+            Item(self.game, int(self.pos.x), int(self.pos.y), choice(['health', 'ammo', 'armour']))
 
     def follow_path(self):
         """
@@ -375,13 +376,16 @@ class Mob(pg.sprite.Sprite):
                         snd.stop()
                     snd.play()
                 self.apply_pursuing_behaviour()
+                self.rot = (self.target - self.pos).angle_to(vec(1, 0))
             elif self.path:
                 self.target = self.follow_path()
                 self.acc += self.target
                 self.apply_flocking_behaviour()
+                self.rot = (self.target - self.pos).angle_to(vec(1, 0))
             else:
                 if self.is_onscreen:
                     self.apply_wandering_behaviour()
+                self.rot = self.vel.angle_to(vec(1, 0))
             self.vel += self.acc * self.game.dt
             self.vel.scale_to_length(self.speed)
             if self.can_attack:
@@ -390,7 +394,6 @@ class Mob(pg.sprite.Sprite):
                 collide_with_obstacles(self, self.game.all_walls, 'x')
                 self.hit_rect.centery = self.pos.y
                 collide_with_obstacles(self, self.game.all_walls, 'y')
-            self.rot = (self.target - self.pos).angle_to(vec(1, 0))
             self.image = pg.transform.rotozoom(self.original_image, self.rot - 90, 1).copy()
             self.rect.center = self.hit_rect.center
             now = pg.time.get_ticks()
