@@ -19,7 +19,6 @@ class Obstacle(pg.sprite.Sprite):
         :param x: The x location of this obstacle
         :param y: The y location of this obstacle
         """
-        # self.groups = game.walls, game._walls
         pg.sprite.Sprite.__init__(self)
         self.game = game
         self.rect = pg.Rect(x, y, width, height)
@@ -33,29 +32,47 @@ class Obstacle(pg.sprite.Sprite):
         self.hit_rect = self.rect.copy()
         self.pos = vec(self.rect.center)
 
+
 class BulletPassableWall(Obstacle):
+    """
+    Obstacles that are short enough for the player to shoot over
+    """
     def __init__(self, game, x, y, width=TILESIZE, height=TILESIZE):
         super().__init__(game, x, y, width, height)
         self.game.bullet_passable_walls.add(self)
 
 
 class Wall(Obstacle):
+    """
+    Obstacles the obstruct view and movement
+    """
     def __init__(self, game, x, y, width=TILESIZE, height=TILESIZE):
         super().__init__(game, x, y, width, height)
         self.game.walls.add(self)
 
 
 class _Wall(Obstacle):
+    """
+    Obstacles used by the mobs for collision avoidance
+    """
     def __init__(self, game, x, y, width=TILESIZE, height=TILESIZE):
         super().__init__(game, x, y, width, height)
         self.game._walls.add(self)
 
 
-class EndOfLevel(Obstacle):
+class LevelEnd(Obstacle):
     """
-    Allows the player to pass through if and only if the level is clear of enemies.
+    An obstacle which signals the end of the level when the player collides with it.
+    The level ends iff the player has met the requirements for the end of the level.
     """
-    pass
+    def __init__(self, game, x, y, width, height):
+        super().__init__(game, x, y, width, height)
+        self.game.walls.add(self)
+        self.passable = False
+
+    def update(self):
+        if len(self.game.mobs) == 0:
+            self.passable = True
 
 
 class Bullet(pg.sprite.Sprite):
@@ -85,7 +102,7 @@ class Bullet(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.pos = vec(pos)
         self.rect.center = pos
-        self.hit_rect = pg.Rect(self.rect.x, self.rect.y, 15, 15)
+        self.hit_rect = pg.Rect(self.rect.x, self.rect.y, 25, 25)
         self.vel = dir * WEAPONS[game.player.weapon]['bullet_speed'] * uniform(0.75, 1)
         self.spawn_time = pg.time.get_ticks()
         # Damage and penetration depreciation are inversely proportional
@@ -149,7 +166,7 @@ class MuzzleFlash(pg.sprite.Sprite):
 
 
 class Item(pg.sprite.Sprite):
-    def __init__(self, game, x, y, _type):
+    def __init__(self, game, x, y, _type, index=None):
         """
         Initiliazes this Item object
         :param game: the game 
@@ -157,6 +174,7 @@ class Item(pg.sprite.Sprite):
         :param img: the item image
         """
         self._type = _type  # Used to index into item info dictionary
+        self.item_index = index
         self.layer = ITEMS_LAYER
         self.groups = game.all_sprites, game.items
         pg.sprite.Sprite.__init__(self, self.groups)
