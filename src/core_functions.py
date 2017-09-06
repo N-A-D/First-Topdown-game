@@ -41,7 +41,7 @@ def collide_with_obstacles(sprite, group, direction):
             if hits[0].rect.centerx < sprite.hit_rect.centerx:
                 sprite.pos.x = hits[0].rect.right + sprite.hit_rect.width / 2
             # Completely stop the sprite
-            sprite.vel.x = 0#-sprite.vel.x
+            sprite.vel.x = 0
             # Update the sprite's center to the new position
             sprite.hit_rect.centerx = sprite.pos.x
     if direction == 'y':
@@ -57,7 +57,7 @@ def collide_with_obstacles(sprite, group, direction):
             if hits[0].rect.centery > sprite.hit_rect.centery:
                 sprite.pos.y = hits[0].rect.top - sprite.hit_rect.height / 2
             # Completely stop the sprite
-            sprite.vel.y = 0#-sprite.vel.y
+            sprite.vel.y = 0
             sprite.hit_rect.centery = sprite.pos.y
     return collided
 
