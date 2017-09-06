@@ -22,7 +22,7 @@ DEEPSKYBLUE = (0, 191, 255)
 DODGERBLUE = (30, 144, 255)
 LIMEGREEN = (50, 205, 50)
 GOLD = (255, 215, 0)
-NIGHT_COLOR = (20, 20, 20)
+NIGHT_COLOR = (5, 5, 5)
 LIGHTSLATEGREY = (119, 136, 153, 127)
 ORANGE = (255, 165, 0)
 
@@ -30,7 +30,7 @@ ORANGE = (255, 165, 0)
 WIDTH = 896  # 16 * 64 or 32 * 32 or 64 * 16
 HEIGHT = 512  # 16 * 48 or 32 * 24 or 64 * 12
 
-FPS = 60
+FPS = 30
 TITLE = "The Evil Dead"
 BGCOLOR = DARKGREY
 
@@ -63,21 +63,21 @@ EFFECTS_LAYER = 4
 ITEMS_LAYER = 1
 
 # Effects
-MUZZLE_FLASHES = ['smokeparticleassets/PNG/Flash/flash00.png',
-                  'smokeparticleassets/PNG/Flash/flash01.png',
-                  'smokeparticleassets/PNG/Flash/flash02.png',
-                  'smokeparticleassets/PNG/Flash/flash03.png',
-                  'smokeparticleassets/PNG/Flash/flash04.png',
-                  'smokeparticleassets/PNG/Flash/flash05.png',
-                  'smokeparticleassets/PNG/Flash/flash06.png',
-                  'smokeparticleassets/PNG/Flash/flash07.png',
-                  'smokeparticleassets/PNG/Flash/flash08.png',
+MUZZLE_FLASHES = ['Flash/flash00.png',
+                  'Flash/flash01.png',
+                  'Flash/flash02.png',
+                  'Flash/flash03.png',
+                  'Flash/flash04.png',
+                  'Flash/flash05.png',
+                  'Flash/flash06.png',
+                  'Flash/flash07.png',
+                  'Flash/flash08.png',
                   ]
 FLASH_DURATION = 60
 LASER_SIGHT_COLORS = [(124, 252, 0), (50, 205, 50), (173, 255, 47), (152, 251, 152), (34, 139, 34)]
-LIGHT_MASK = 'light_falloff100.png'  #
+LIGHT_MASK = 'light_falloff100.png'
 LIGHT_RADIUS = 550
-BLOOD_SHADES = [(value, 0, 0) for value in range(255, 16, -8)]
+BLOOD_SHADES = [(value, 0, 0) for value in range(255, 8, -8)]
 BLOOD_SPLAT = 'Blood/splat red.png'
 BG_MUSIC = 'Infested City.ogg'
 GAME_OVER_MUSIC = 'Death is Just Another Path.ogg'
@@ -90,7 +90,7 @@ BOB_SPEED = .5
 # Player settings
 SPRINT_BOOST = 2.25
 DEFAULT_WEAPON = 'knife'
-PLAYER_SPEED = 150
+PLAYER_SPEED = 130
 PLAYER_HIT_RECT = pg.Rect(0, 0, 50, 50)
 PLAYER_MELEE_RECTS = {
     'knife': pg.Rect(0, 0, 50, 50),
@@ -153,7 +153,7 @@ ENEMY_DAMAGE = [x for x in range(50, 75)]
 ENEMY_KNOCKBACK = 10
 ENEMY_LINE_OF_SIGHT = TILESIZE / 2.75
 ENEMY_HIT_RECT = pg.Rect(0, 0, TILESIZE + 16, TILESIZE + 16)
-ENEMY_SPEEDS = [speed for speed in range(70, 150, 10)]
+ENEMY_SPEEDS = [speed for speed in range(100, 200, 10)]
 ENEMY_HEALTH = [dmg for dmg in range(500, 1000, 100)]
 DETECT_RADIUS = 400
 APPROACH_RADIUS = 150
@@ -161,18 +161,16 @@ AVOID_RADIUS = 10
 SEEK_FORCE = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 WANDER_RING_DISTANCE = 100
 WANDER_RING_RADIUS = [x for x in range(40, 100, 10)]
-ENEMY_HIT_SOUNDS = {'bash': ['zombies/Hit sounds/Bash/Bash hit 1.ogg',
-                             'zombies/Hit sounds/Bash/Bash hit 2.ogg',
-                             'zombies/Hit sounds/Bash/Bash hit 3.ogg',
-                             'zombies/Hit sounds/Bash/Bash hit 4.ogg',
-                             'zombies/Hit sounds/Bash/Bash hit 5.ogg'
-                             ],
-                    'bullet': ['zombies/Hit sounds/Bullet/Bullet hit 1.ogg',
-                               'zombies/Hit sounds/Bullet/Bullet hit 2.ogg',
-                               'zombies/Hit sounds/Bullet/Bullet hit 3.ogg',
-                               'zombies/Hit sounds/Bullet/Bullet hit 4.ogg'
-                               ]
-                    }
+ENEMY_HIT_SOUNDS = {'hit': ['zombies/Hit sounds/Bash/Bash hit 1.ogg',
+                            'zombies/Hit sounds/Bash/Bash hit 5.ogg'
+                            ],
+                    'kill': [
+                        'zombies/Hit sounds/Bash/Bash hit 4.ogg',
+                        'zombies/Hit sounds/Bash/Bash hit 2.ogg',
+                        'zombies/Hit sounds/Bash/Bash hit 3.ogg',
+
+                    ]
+}
 ZOMBIE_MOAN_SOUNDS = [
     'zombies/Moans/zombie-1.ogg',
     'zombies/Moans/zombie-2.ogg',
@@ -203,31 +201,32 @@ ZOMBIE_MOAN_SOUNDS = [
 # Weapon settings
 WEAPONS = {}
 
-BULLET_SPEED = 3000
+BULLET_SPEED = 2500
 BULLET_LIFETIME = 2000
 
 WEAPONS['penetration depreciation'] = {'rifle': .15, 'handgun': .5, 'shotgun': .2}
+WEAPONS['stamina'] = {'regen': {'knife': 3, 'rifle': 4, 'shotgun': 3.75, 'handgun': 4.25},
+                      'dropoff': {'knife': 2, 'rifle': 4, 'shotgun': 4.5, 'handgun': 3}}
 
 WEAPONS['animation times'] = {'handgun': {'idle': 100, 'melee': 45, 'move': 100, 'reload': 75, 'shoot': 125},
                               'knife': {'idle': 100, 'melee': 30, 'move': 75, 'reload': 0, 'shoot': 0},
                               'rifle': {'idle': 100, 'melee': 45, 'move': 125, 'reload': 100, 'shoot': 55},
                               'shotgun': {'idle': 100, 'melee': 45, 'move': 125, 'reload': 110, 'shoot': 175}}
 
-WEAPONS['sound'] = {'handgun': {'attack': 'Weapons/Attack/pistol.wav', 'pickup': 'Weapons/Pickup/gun_pickup.wav',
-                                'reload': 'Weapons/Reload/Handgun1.ogg'},
-                    'shotgun': {'attack': 'Weapons/Attack/shotgun.wav', 'pickup': 'Weapons/Pickup/gun_pickup.wav',
-                                'reload': 'Weapons/Reload/Shotgun1.ogg'},
-                    'rifle': {'attack': 'Weapons/Attack/rifle.wav', 'pickup': 'Weapons/Pickup/gun_pickup.wav',
-                              'reload': 'Weapons/Reload/Rifle1.ogg'},
+WEAPONS['sound'] = {'handgun': {'attack': 'Weapons/Attack/pistol.wav',
+                                'reload': 'Weapons/Reload/Handgun1.ogg', 'draw': 'Weapons/Draw/weapon_draw.ogg'},
+                    'shotgun': {'attack': 'Weapons/Attack/shotgun.wav',
+                                'reload': 'Weapons/Reload/Shotgun1.ogg', 'draw': 'Weapons/Draw/weapon_draw.ogg'},
+                    'rifle': {'attack': 'Weapons/Attack/rifle.wav',
+                              'reload': 'Weapons/Reload/Rifle1.ogg', 'draw': 'Weapons/Draw/weapon_draw.ogg'},
                     'knife': {'draw': 'Weapons/Draw/knifedraw.wav'}
                     }
 
 WEAPONS['handgun'] = {'bullet_speed': BULLET_SPEED,
                       'bullet_lifetime': BULLET_LIFETIME,
-                      'rate': 200,
-                      'kickback': 65,
+                      'rate': 300,
                       'spread': 1,
-                      'damage': 100,
+                      'damage': 65,
                       'bullet_size': 'med',
                       'clip size': 15,
                       'weight': 3,
@@ -236,14 +235,14 @@ WEAPONS['handgun'] = {'bullet_speed': BULLET_SPEED,
                       'barrel offset': vec(45, 22),
                       'crosshair radius': 10,
                       'knockback': vec(20, 0),
+                      'melee kill chance': (.5, .65),
                       'bullet_count': 1}
 
 WEAPONS['rifle'] = {'bullet_speed': BULLET_SPEED,
                     'bullet_lifetime': BULLET_LIFETIME,
                     'rate': 100,
-                    'kickback': 200,
                     'spread': 2,
-                    'damage': 80,
+                    'damage': 120,
                     'bullet_size': 'lg',
                     'clip size': 40,
                     'weight': 5,
@@ -252,14 +251,14 @@ WEAPONS['rifle'] = {'bullet_speed': BULLET_SPEED,
                     'barrel offset': vec(60, 22),
                     'crosshair radius': 15,
                     'knockback': vec(25, 0),
+                    'melee kill chance': (.65, .85),
                     'bullet_count': 1}
 
 WEAPONS['shotgun'] = {'bullet_speed': BULLET_SPEED,
                       'bullet_lifetime': BULLET_LIFETIME,
                       'rate': 600,
-                      'kickback': 300,
                       'spread': 8,
-                      'damage': 45,
+                      'damage': 50,
                       'bullet_size': 'sm',
                       'clip size': 8,
                       'weight': 5,
@@ -268,35 +267,39 @@ WEAPONS['shotgun'] = {'bullet_speed': BULLET_SPEED,
                       'barrel offset': vec(67, 22),
                       'crosshair radius': 20,
                       'knockback': vec(25, 0),
-                      'bullet_count': 16}
+                      'melee kill chance': (.65, .85),
+                      'bullet_count': 10}
 WEAPONS['knife'] = {
     'damage': 205,
     'weight': 2,
-    'knockback': 20,
     'crosshair radius': 5,
     'spread': 1,
     'knockback': vec(30, 0),
+    'melee kill chance': (.85, 1),
     'wobble': {'sprint': 0, 'walk': 0, 'idle': 0}
 }
 
-WEAPONS['melee'] = {
-    'handgun': 120,
-    'rifle': 170,
-    'shotgun': 190,
-    'knife': 140
-}
-
 ITEMS = {}
-ITEMS['weapon'] = {'rifle': [i for i in range(4, 7)], 'handgun': [i for i in range(4, 9)],
-                   'shotgun': [i for i in range(4, 7)]}
-ITEMS['consumable'] = {'health': [i for i in range(10, 21)], 'ammo': [i for i in range(1, 5)]}
+ITEMS['weapon'] = {'rifle': [i for i in range(2, 4)], 'handgun': [i for i in range(3, 6)],
+                   'shotgun': [i for i in range(2, 5)]}
+ITEMS['consumable'] = {'health': [i for i in range(10, 21)], 'ammo': [i for i in range(2, 4)],
+                       'armour': [i for i in range(50, 125, 25)]}
+ITEMS['sound'] = {
+    'health': 'Items/health_pack.ogg',
+    'armour': 'Items/zipper-1.ogg',
+    'handgun': 'Items/gun_pickup.wav',
+    'rifle': 'Items/gun_pickup.wav',
+    'shotgun': 'Items/gun_pickup.wav',
+    'ammo': 'Items/ammo.ogg'
+}
 
 # Item images
 ITEM_IMAGES = {'rifle': 'rifle.png',
                'handgun': 'glock.png',
                'shotgun': 'shotgun.png',
                'ammo': 'Ammo.png',
-               'health': 'health.png'
+               'health': 'health.png',
+               'armour': 'armour.png'
                }
 
 # Enemy Animations
