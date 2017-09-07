@@ -155,7 +155,7 @@ class Mob(pg.sprite.Sprite):
             self.target = prey.pos + prey.vel.normalize()
         return self.seek(self.target)
 
-    def cohesion(self):
+    def cohesion(self, mobs):
         """
         Cohesion steering behaviour. This steer's a mob towards the
         center of its neighbours.
@@ -163,7 +163,6 @@ class Mob(pg.sprite.Sprite):
         """
         sum = vec(0, 0)
         count = 0
-        mobs = [mob for mob in self.game.mobs if mob.is_onscreen]
         for mob in mobs:
             if mob != self:
                 dist = self.pos.distance_to(mob.pos)
@@ -178,7 +177,7 @@ class Mob(pg.sprite.Sprite):
         else:
             return vec(0, 0)
 
-    def align(self):
+    def align(self, mobs):
         """
         Alignment steering behaviour. This steer's a mob in the same direction as
         its neighbours.
@@ -186,7 +185,6 @@ class Mob(pg.sprite.Sprite):
         """
         sum = vec(0, 0)
         count = 0
-        mobs = [mob for mob in self.game.mobs if mob.is_onscreen]
         for mob in mobs:
             if mob != self:
                 dist = self.pos.distance_to(mob.pos)
@@ -205,7 +203,7 @@ class Mob(pg.sprite.Sprite):
         else:
             return vec(0, 0)
 
-    def separation(self):
+    def separation(self, mobs):
         """
         Gives this mob the ability to avoid
         collisions with other obstacles
@@ -213,7 +211,6 @@ class Mob(pg.sprite.Sprite):
         """
         sum = vec(0, 0)
         count = 0
-        mobs = [mob for mob in self.game.mobs if mob.is_onscreen]
         for mob in mobs:
             if mob != self:
                 dist = self.pos.distance_to(mob.pos)
@@ -292,32 +289,35 @@ class Mob(pg.sprite.Sprite):
         Applies flcoking steering behaviours to the mob
         :return: None
         """
+        mobs = [mob for mob in self.game.mobs if mob.is_onscreen]
         self.acc += self.obstacle_avoidance() * 1.75
-        self.acc += self.separation() * 2
-        self.acc += self.align()
-        self.acc += self.cohesion()
+        self.acc += self.separation(mobs) * 2
+        self.acc += self.align(mobs)
+        self.acc += self.cohesion(mobs)
 
     def apply_pursuing_behaviour(self):
         """
         Allows the mob to pursue the target
         :return:
         """
+        mobs = [mob for mob in self.game.mobs if mob.is_onscreen]
         self.acc += self.pursue(self.game.player) * 2.75
         self.acc += self.obstacle_avoidance() * 2.5
-        self.acc += self.separation() * 2.6
-        self.acc += self.align()
-        self.acc += self.cohesion()
+        self.acc += self.separation(mobs) * 2.6
+        self.acc += self.align(mobs)
+        self.acc += self.cohesion(mobs)
 
     def apply_wandering_behaviour(self):
         """
         Gives a mob the ability to wander the around.
         :return:
         """
+        mobs = [mob for mob in self.game.mobs if mob.is_onscreen]
         self.acc += self.wander()
         self.acc += self.obstacle_avoidance() * 1.75
-        self.acc += self.separation() * 2
-        self.acc += self.align()
-        self.acc += self.cohesion()
+        self.acc += self.separation(mobs) * 2
+        self.acc += self.align(mobs)
+        self.acc += self.cohesion(mobs)
 
     def check_if_is_on_screen(self):
         """
