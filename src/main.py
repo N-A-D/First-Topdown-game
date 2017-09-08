@@ -338,7 +338,7 @@ class GameEngine:
         self.play_music('background music')
         self.playing = True
         while self.playing:
-            # pg.display.set_caption("{:.0f}".format(self.clock.get_fps()))
+            pg.display.set_caption("{:.0f}".format(self.clock.get_fps()))
             # Time taken in between frames
             self.dt = self.clock.tick_busy_loop(FPS) / 1000
             self.events()
