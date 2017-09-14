@@ -1,1 +1,1 @@
-Thanks to Ian Mallet and is Pygame Graphics Library. 
+Credits go to Ian Mallet and his  graphics library. 
