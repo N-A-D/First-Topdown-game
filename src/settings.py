@@ -30,7 +30,7 @@ ORANGE = (255, 165, 0)
 WIDTH = 896  # 16 * 64 or 32 * 32 or 64 * 16
 HEIGHT = 512  # 16 * 48 or 32 * 24 or 64 * 12
 
-FPS = 100
+FPS = 60
 TITLE = "The Evil Dead"
 BGCOLOR = DARKGREY
 
@@ -149,11 +149,11 @@ PLAYER_FOOTSTEP_INTERVAL_TIMES = {
 
 # Enemy settings
 ENEMY_ATTACK_RATE = 500
-ENEMY_DAMAGE = [x for x in range(50, 75)]
+ENEMY_DAMAGE = [x for x in range(20, 40)]
 ENEMY_KNOCKBACK = 10
 ENEMY_LINE_OF_SIGHT = TILESIZE / 2.25
 ENEMY_HIT_RECT = pg.Rect(0, 0, TILESIZE + 16, TILESIZE + 16)
-ENEMY_SPEEDS = [speed for speed in range(100, 200, 10)]
+ENEMY_SPEEDS = [speed for speed in range(80, 140, 10)]
 ENEMY_HEALTH = [dmg for dmg in range(500, 1000, 100)]
 DETECT_RADIUS = 400
 APPROACH_RADIUS = 150
@@ -201,14 +201,14 @@ ZOMBIE_MOAN_SOUNDS = [
 # Weapon settings
 WEAPONS = {}
 
-BULLET_SPEED = 2500
-BULLET_LIFETIME = 2000
+BULLET_SPEED = 5000
+BULLET_LIFETIME = 5000
 
 WEAPONS['penetration depreciation'] = {'rifle': .15, 'handgun': .5, 'shotgun': .2}
-WEAPONS['stamina'] = {'regen': {'knife': 3, 'rifle': 4, 'shotgun': 3.75, 'handgun': 4.25},
-                      'dropoff': {'knife': 2, 'rifle': 4, 'shotgun': 4.5, 'handgun': 3}}
+WEAPONS['stamina'] = {'regen': {'knife': 2.5, 'rifle': 4, 'shotgun': 3.75, 'handgun': 4.25},
+                      'dropoff': {'knife': 3, 'rifle': 4, 'shotgun': 4.5, 'handgun': 3.75}}
 
-WEAPONS['animation times'] = {'handgun': {'idle': 100, 'melee': 45, 'move': 100, 'reload': 75, 'shoot': 125},
+WEAPONS['animation times'] = {'handgun': {'idle': 100, 'melee': 45, 'move': 100, 'reload': 65, 'shoot': 125},
                               'knife': {'idle': 100, 'melee': 30, 'move': 75, 'reload': 0, 'shoot': 0},
                               'rifle': {'idle': 100, 'melee': 45, 'move': 125, 'reload': 100, 'shoot': 55},
                               'shotgun': {'idle': 100, 'melee': 45, 'move': 125, 'reload': 110, 'shoot': 175}}
@@ -216,8 +216,9 @@ WEAPONS['animation times'] = {'handgun': {'idle': 100, 'melee': 45, 'move': 100,
 WEAPONS['sound'] = {'handgun': {'attack': 'Weapons/Attack/pistol.wav',
                                 'reload': 'Weapons/Reload/Handgun1.ogg', 'draw': 'Weapons/Draw/weapon_draw.ogg'},
                     'shotgun': {'attack': 'Weapons/Attack/shotgun.wav',
-                                'reload': 'Weapons/Reload/Shotgun1.ogg', 'draw': 'Weapons/Draw/weapon_draw.ogg'},
-                    'rifle': {'attack': 'Weapons/Attack/rifle.wav',
+                                'reload': 'Weapons/Reload/Shotgun load.ogg',
+                                'Pump': 'Weapons/Reload/Shotgun pump.ogg', 'draw': 'Weapons/Draw/weapon_draw.ogg'},
+                    'rifle': {'attack': 'Weapons/Attack/rifle2.wav',
                               'reload': 'Weapons/Reload/Rifle1.ogg', 'draw': 'Weapons/Draw/weapon_draw.ogg'},
                     'knife': {'draw': 'Weapons/Draw/knifedraw.wav'}
                     }
@@ -226,7 +227,7 @@ WEAPONS['handgun'] = {'bullet_speed': BULLET_SPEED,
                       'bullet_lifetime': BULLET_LIFETIME,
                       'rate': 300,
                       'spread': 1,
-                      'damage': 65,
+                      'damage': 60,
                       'bullet_size': 'med',
                       'clip size': 15,
                       'weight': 3,
@@ -235,30 +236,30 @@ WEAPONS['handgun'] = {'bullet_speed': BULLET_SPEED,
                       'barrel offset': vec(45, 22),
                       'crosshair radius': 10,
                       'knockback': vec(20, 0),
-                      'melee kill chance': (.5, .65),
+                      'melee kill chance': (.65, 1),
                       'bullet_count': 1}
 
 WEAPONS['rifle'] = {'bullet_speed': BULLET_SPEED,
                     'bullet_lifetime': BULLET_LIFETIME,
                     'rate': 100,
                     'spread': 2,
-                    'damage': 120,
+                    'damage': 85,
                     'bullet_size': 'lg',
-                    'clip size': 40,
+                    'clip size': 30,
                     'weight': 5,
                     'wobble': {'sprint': 5, 'walk': 4, 'idle': 3},
                     'muzzle flash range': [35, 60],
                     'barrel offset': vec(60, 22),
                     'crosshair radius': 15,
                     'knockback': vec(25, 0),
-                    'melee kill chance': (.65, .85),
+                    'melee kill chance': (.8, 1),
                     'bullet_count': 1}
 
 WEAPONS['shotgun'] = {'bullet_speed': BULLET_SPEED,
                       'bullet_lifetime': BULLET_LIFETIME,
-                      'rate': 600,
+                      'rate': 520,
                       'spread': 8,
-                      'damage': 50,
+                      'damage': 450,
                       'bullet_size': 'sm',
                       'clip size': 8,
                       'weight': 5,
@@ -267,8 +268,8 @@ WEAPONS['shotgun'] = {'bullet_speed': BULLET_SPEED,
                       'barrel offset': vec(67, 22),
                       'crosshair radius': 20,
                       'knockback': vec(25, 0),
-                      'melee kill chance': (.65, .85),
-                      'bullet_count': 10}
+                      'melee kill chance': (.8, 1),
+                      'bullet_count': 16}
 WEAPONS['knife'] = {
     'damage': 205,
     'weight': 2,
@@ -280,9 +281,9 @@ WEAPONS['knife'] = {
 }
 
 ITEMS = {}
-ITEMS['weapon'] = {'rifle': [i for i in range(2, 4)], 'handgun': [i for i in range(3, 6)],
-                   'shotgun': [i for i in range(2, 5)]}
-ITEMS['consumable'] = {'health': [i for i in range(10, 21)], 'ammo': [i for i in range(2, 4)],
+ITEMS['weapon'] = {'rifle': [i for i in range(6, 8)], 'handgun': [i for i in range(6, 8)],
+                   'shotgun': [i for i in range(4, 6)]}
+ITEMS['consumable'] = {'health': [i for i in range(10, 21)], 'ammo': [i for i in range(4, 6)],
                        'armour': [i for i in range(50, 125, 25)]}
 ITEMS['sound'] = {
     'health': 'Items/health_pack.ogg',

@@ -210,7 +210,7 @@
   <object id="417" name="zombie" x="1457.33" y="353.333" width="29.3333" height="29.3333"/>
   <object id="418" name="zombie" x="1616" y="312" width="29.3333" height="30.6667"/>
   <object id="420" name="zombie" x="510.667" y="752" width="38.6667" height="30.6667"/>
-  <object id="421" name="weapon" type="shotgun" x="470.667" y="149.333" width="24" height="25.3333"/>
+  <object id="421" name="weapon" type="rifle" x="470.667" y="149.333" width="24" height="25.3333"/>
   <object id="423" name="weapon" type="handgun" x="1629.33" y="1380" width="18.6667" height="18.6667"/>
   <object id="424" name="zombie" x="596" y="849.333" width="32" height="33.3333"/>
   <object id="425" name="zombie" x="722.667" y="649.333" width="42.6667" height="34.6667"/>

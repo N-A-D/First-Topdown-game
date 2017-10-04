@@ -7,6 +7,7 @@ from sprites import Bullet, MuzzleFlash
 from sprites import SwingArea
 from math import ceil
 from random import choice, randint
+from core_functions import world_shift_pos
 
 class Player(pg.sprite.Sprite):
     """
@@ -48,6 +49,7 @@ class Player(pg.sprite.Sprite):
                         'shotgun': {'clip': 0, 'reloads': 0, 'hasWeapon': False, 'total ammunition': 0},
                         'knife': {'hasWeapon': True}
                         }
+        self.shotgun_reload_loop = False
 
         # Current player animation & frame
         self.animations = self.game.player_animations[self.weapon][self.action]
@@ -115,7 +117,7 @@ class Player(pg.sprite.Sprite):
         """
         if self.stamina < 100:
             now = pg.time.get_ticks()
-            if now - self.stamina_increase_time > 250:
+            if now - self.stamina_increase_time > 1000:
                 self.stamina += increase_rate
                 self.stamina_increase_time = now
         else:
@@ -148,22 +150,29 @@ class Player(pg.sprite.Sprite):
         Reloads the player's weapon
         :return: 
         """
-        if self.arsenal[self.weapon]['clip'] == 0:
-            if self.arsenal[self.weapon]['total ammunition'] < WEAPONS[self.weapon]['clip size']:
-                self.arsenal[self.weapon]['clip'] = self.arsenal[self.weapon]['total ammunition']
-                self.arsenal[self.weapon]['total ammunition'] = 0
+        if self.weapon != 'shotgun':
+            if self.arsenal[self.weapon]['clip'] == 0:
+                if self.arsenal[self.weapon]['total ammunition'] < WEAPONS[self.weapon]['clip size']:
+                    self.arsenal[self.weapon]['clip'] = self.arsenal[self.weapon]['total ammunition']
+                    self.arsenal[self.weapon]['total ammunition'] = 0
+                else:
+                    self.arsenal[self.weapon]['clip'] = WEAPONS[self.weapon]['clip size']
+                    self.arsenal[self.weapon]['total ammunition'] -= WEAPONS[self.weapon]['clip size']
             else:
-                self.arsenal[self.weapon]['clip'] = WEAPONS[self.weapon]['clip size']
-                self.arsenal[self.weapon]['total ammunition'] -= WEAPONS[self.weapon]['clip size']
+                remaining = self.arsenal[self.weapon]['clip']
+                self.arsenal[self.weapon]['total ammunition'] += remaining
+                if self.arsenal[self.weapon]['total ammunition'] < WEAPONS[self.weapon]['clip size']:
+                    self.arsenal[self.weapon]['clip'] = self.arsenal[self.weapon]['total ammunition']
+                    self.arsenal[self.weapon]['total ammunition'] = 0
+                else:
+                    self.arsenal[self.weapon]['clip'] = WEAPONS[self.weapon]['clip size']
+                    self.arsenal[self.weapon]['total ammunition'] -= WEAPONS[self.weapon]['clip size']
+
         else:
-            remaining = self.arsenal[self.weapon]['clip']
-            self.arsenal[self.weapon]['total ammunition'] += remaining
-            if self.arsenal[self.weapon]['total ammunition'] < WEAPONS[self.weapon]['clip size']:
-                self.arsenal[self.weapon]['clip'] = self.arsenal[self.weapon]['total ammunition']
-                self.arsenal[self.weapon]['total ammunition'] = 0
-            else:
-                self.arsenal[self.weapon]['clip'] = WEAPONS[self.weapon]['clip size']
-                self.arsenal[self.weapon]['total ammunition'] -= WEAPONS[self.weapon]['clip size']
+            if self.arsenal[self.weapon]['clip'] == 0 and not self.arsenal[self.weapon]['total ammunition'] == 0:
+                self.shotgun_reload_loop = True
+            self.arsenal[self.weapon]['clip'] += 1
+            self.arsenal[self.weapon]['total ammunition'] -= 1
 
         self.arsenal[self.weapon]['reloads'] = ceil(
             self.arsenal[self.weapon]['total ammunition'] / WEAPONS[self.weapon]['clip size'])
@@ -171,7 +180,6 @@ class Player(pg.sprite.Sprite):
         self.canned_action = self.action
         self.current_frame = 0
         self.play_static_animation = True
-        self.game.weapon_sounds[self.weapon]['reload'].play()
 
     def process_input(self, _input):
         """
@@ -207,26 +215,64 @@ class Player(pg.sprite.Sprite):
         :return: None
         """
         lc, _, rc = pg.mouse.get_pressed()
-        if lc and not self.weapon == 'knife':
-            if self.arsenal[self.weapon]['clip'] != 0:
-                self.action = 'shoot'
-                self.shoot()
-            else:
-                if self.arsenal[self.weapon]['reloads'] > 0:
-                    if not self.play_static_animation:
-                        self.reload()
-        if keys[pg.K_r] and self.weapon != 'knife' and self.action != 'reload' and self.arsenal[self.weapon]['clip'] < \
-                WEAPONS[self.weapon]['clip size']:
-            if self.arsenal[self.weapon]['reloads'] > 0:
-                self.reload()
 
-        if rc and self.action != 'reload' and self.stamina > 0:
-            self.game.swing_noises[self.weapon].play()
-            self.action = 'melee'
-            self.current_frame = 0
-            self.canned_action = self.action
-            self.play_static_animation = True
-            self._melee()
+        if lc or rc:
+            self.shotgun_reload_loop = False
+
+        if self.weapon == 'shotgun' and keys[pg.K_r]:
+            self.shotgun_reload_loop = True
+
+        if not self.shotgun_reload_loop:
+            if lc and not self.weapon == 'knife':
+                if self.arsenal[self.weapon]['clip'] != 0:
+                    self.action = 'shoot'
+                    self.shoot()
+                else:
+                    if self.arsenal[self.weapon]['reloads'] > 0:
+                        if not self.play_static_animation:
+                            self.game.weapon_sounds[self.weapon]['reload'].play()
+                            self.reload()
+            if keys[pg.K_r] and self.weapon != 'knife' and self.action != 'reload' and self.arsenal[self.weapon][
+                'clip'] < \
+                    WEAPONS[self.weapon]['clip size']:
+                if self.arsenal[self.weapon]['reloads'] > 0:
+                    self.game.weapon_sounds[self.weapon]['reload'].play()
+                    if self.weapon == 'shotgun':
+                        self.shotgun_reload_loop = True
+                    self.reload()
+
+            if rc and self.action != 'reload' and self.stamina > 0:
+                self.game.swing_noises[self.weapon].play()
+                self.action = 'melee'
+                self.current_frame = 0
+                self.canned_action = self.action
+                self.play_static_animation = True
+                self._melee()
+        else:
+            if not self.weapon == 'knife':
+                if self.arsenal[self.weapon]['clip'] < WEAPONS[self.weapon]['clip size'] - 1:
+                    if lc:
+                        self.shotgun_reload_loop = False
+                        if self.arsenal[self.weapon]['clip'] != 0:
+                            self.action = 'shoot'
+                            self.shoot()
+                    elif rc and self.stamina > 0:
+                        self.shotgun_reload_loop = False
+                        self.game.swing_noises[self.weapon].play()
+                        self.action = 'melee'
+                        self.current_frame = 0
+                        self.canned_action = self.action
+                        self.play_static_animation = True
+                        self._melee()
+                    elif not lc and not rc and self.arsenal[self.weapon]['reloads'] > 0:
+                        if not self.arsenal[self.weapon]['total ammunition'] <= 1:
+                            self.reload()
+                            self.game.weapon_sounds[self.weapon]['reload'].play()
+                else:
+                    if self.arsenal[self.weapon]['total ammunition'] >= 1:
+                        self.game.weapon_sounds[self.weapon]['Pump'].play()
+                        self.reload()
+                    self.shotgun_reload_loop = False
 
     def _weapon_selection(self, keys):
         """
@@ -253,7 +299,7 @@ class Player(pg.sprite.Sprite):
             self.weapon = 'knife'
             self.game.weapon_sounds[self.weapon]['draw'].play()
 
-    def play_foot_step_sounds(self, sprinting, terrain='dirt'):
+    def play_foot_step_sounds(self, sprinting, terrain='wood'):
         """
         Plays the sound a foot step would make on a given terrain
         :param sprinting: If the player is sprinting, the step sounds are more frequent.
@@ -310,27 +356,25 @@ class Player(pg.sprite.Sprite):
                 self.vel.x = -PLAYER_SPEED
                 self.action = 'move'
                 self.aim_wobble = WEAPONS[self.weapon]['wobble']['walk']
-                self.increase_stamina(self.stamina_regen / WEAPONS[self.weapon]['weight'])
             if keys[pg.K_d]:
                 self.vel.x = PLAYER_SPEED
                 self.action = 'move'
                 self.aim_wobble = WEAPONS[self.weapon]['wobble']['walk']
-                self.increase_stamina(self.stamina_regen / WEAPONS[self.weapon]['weight'])
             if keys[pg.K_w]:
                 self.vel.y = -PLAYER_SPEED
                 self.action = 'move'
                 self.aim_wobble = WEAPONS[self.weapon]['wobble']['walk']
-                self.increase_stamina(self.stamina_regen / WEAPONS[self.weapon]['weight'])
             if keys[pg.K_s]:
                 self.vel.y = PLAYER_SPEED
                 self.action = 'move'
                 self.aim_wobble = WEAPONS[self.weapon]['wobble']['walk']
-                self.increase_stamina(self.stamina_regen / WEAPONS[self.weapon]['weight'])
 
         if self.vel.length() != 0:
             self.play_foot_step_sounds(sprinting=is_sprinting)
         else:
             self.current_step_sound = 0
+
+        self.increase_stamina(self.stamina_regen / WEAPONS[self.weapon]['weight'])
 
     def _melee(self):
         """
@@ -408,7 +452,8 @@ class Player(pg.sprite.Sprite):
             boost = None
             if item.item_index:
                 boost = ITEMS['consumable'][item._type][item.item_index]
-            else: boost = choice(ITEMS['consumable'][item._type])
+            else:
+                boost = choice(ITEMS['consumable'][item._type])
             if item._type == 'ammo':
                 if self.weapon == 'knife':
                     possessed_weapons = []
@@ -441,13 +486,12 @@ class Player(pg.sprite.Sprite):
         according to the mouse's location
         :return: None
         """
-        mouse_vec = vec(pg.mouse.get_pos())
+        mouse_pos = pg.mouse.get_pos()
         # Mouse location is relative to the top left 
         # corner of the window. This method modifies
         # the mouse's location so that its relative
         # to the top-left of the camera
-        mouse_vec.x -= self.game.camera.camera.x
-        mouse_vec.y -= self.game.camera.camera.y
+        mouse_vec = world_shift_pos(mouse_pos, self.game.camera.camera)
         target_dist = mouse_vec - self.pos
         self.rot = target_dist.angle_to(vec(1, 0)) + 2
         self.update_direction()

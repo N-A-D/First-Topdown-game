@@ -16,13 +16,14 @@ from player import Player
 from mobs import Mob
 from tilemap import Camera, TiledMap
 from sprites import Item, Wall, BulletPassableWall, _Wall
-from core_functions import collide_hit_rect
+from core_functions import collide_hit_rect, world_shift_pos
 from pathfinding import Pathfinder, WeightedGraph
+from math import floor
 import PAdLib.occluder as occluder
 import PAdLib.shadow as shadow
 
-if sys.platform in ['win32', 'win64']:
-    os.environ['SDL_VIDEO_CENTERED'] = '1'
+
+if sys.platform in ['win32', 'win64']: os.environ['SDL_VIDEO_CENTERED'] = '1'
 
 
 class GameEngine:
@@ -497,15 +498,26 @@ class GameEngine:
 
         self.screen.blit(self.fog, (0, 0), special_flags=pg.BLEND_MULT)
 
+    def _point_contained(self, rectangle, x, y):
+        return rectangle.collidepoint((x, y))
+
     def _render_hud(self):
         """
         Updates the HUD information for the player to see
         :return: None
         """
         x, y = pg.mouse.get_pos()
+        mouse_vec = world_shift_pos((x, y), self.camera.camera)
+        mouse_collisions = [True for mob in self.mobs if self._point_contained(mob.hit_rect, mouse_vec.x, mouse_vec.y)]
+
+        if mouse_collisions:
+            color = RED
+        else:
+            color = WHITE
+
         pygame.gfxdraw.aacircle(self.screen, x, y,
-                                WEAPONS[self.player.weapon]['crosshair radius'], WHITE)
-        pygame.gfxdraw.circle(self.screen, x, y, 2, WHITE)
+                                WEAPONS[self.player.weapon]['crosshair radius'], color)
+        pygame.gfxdraw.circle(self.screen, x, y, 2, color)
         pg.draw.rect(self.screen, WHITE, pg.Rect(45, HEIGHT - 155, 110, 100), 3)
 
         if not self.player.has_armour:

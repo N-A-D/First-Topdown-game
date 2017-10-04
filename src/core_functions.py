@@ -3,6 +3,7 @@ import re
 from os import listdir
 from os.path import isfile, join
 
+vec = pg.math.Vector2
 
 def collide_hit_rect(first, second):
     """
@@ -13,6 +14,11 @@ def collide_hit_rect(first, second):
     """
     return first.hit_rect.colliderect(second.hit_rect) or first.hit_rect.colliderect(second.hit_rect)
 
+def world_shift_pos(position, camera):
+    vector = vec(position[0], position[1])
+    vector.x -= camera.x
+    vector.y -= camera.y
+    return vector
 
 def collide_with_obstacles(sprite, group, direction):
     """
