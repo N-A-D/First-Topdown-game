@@ -9,6 +9,7 @@ from math import ceil
 from random import choice, randint
 from core_functions import world_shift_pos
 
+
 class Player(pg.sprite.Sprite):
     """
     This class represents a player object in the game
@@ -215,32 +216,38 @@ class Player(pg.sprite.Sprite):
         :return: None
         """
         lc, _, rc = pg.mouse.get_pressed()
-
+        # If shooting or swinging the weapon, falsify the shotgun reload animation flag
         if lc or rc:
             self.shotgun_reload_loop = False
-
-        if self.weapon == 'shotgun' and keys[pg.K_r]:
+        # if using the shotgun, set the reload loop flag
+        if self.weapon == 'shotgun' and keys[pg.K_r] and self.arsenal[self.weapon][
+            'clip'] < WEAPONS[self.weapon]['clip size']:
             self.shotgun_reload_loop = True
 
         if not self.shotgun_reload_loop:
+            # If using a gun, shoot if there is ammo in the clip
             if lc and not self.weapon == 'knife':
                 if self.arsenal[self.weapon]['clip'] != 0:
                     self.action = 'shoot'
                     self.shoot()
                 else:
+                    # Reload if there is reserve ammo
                     if self.arsenal[self.weapon]['reloads'] > 0:
                         if not self.play_static_animation:
                             self.game.weapon_sounds[self.weapon]['reload'].play()
                             self.reload()
+            # Reload the gun if not already reloading and the current weapon is not a knife
             if keys[pg.K_r] and self.weapon != 'knife' and self.action != 'reload' and self.arsenal[self.weapon][
-                'clip'] < \
-                    WEAPONS[self.weapon]['clip size']:
+                'clip'] < WEAPONS[self.weapon]['clip size']:
+
+                # Allow the weapon to reload only if there is ammo in reserve
                 if self.arsenal[self.weapon]['reloads'] > 0:
+                    # Play the weapon sound
                     self.game.weapon_sounds[self.weapon]['reload'].play()
                     if self.weapon == 'shotgun':
                         self.shotgun_reload_loop = True
                     self.reload()
-
+            # Melee using the current weapon
             if rc and self.action != 'reload' and self.stamina > 0:
                 self.game.swing_noises[self.weapon].play()
                 self.action = 'melee'
@@ -249,30 +256,39 @@ class Player(pg.sprite.Sprite):
                 self.play_static_animation = True
                 self._melee()
         else:
-            if not self.weapon == 'knife':
-                if self.arsenal[self.weapon]['clip'] < WEAPONS[self.weapon]['clip size'] - 1:
-                    if lc:
-                        self.shotgun_reload_loop = False
-                        if self.arsenal[self.weapon]['clip'] != 0:
-                            self.action = 'shoot'
-                            self.shoot()
-                    elif rc and self.stamina > 0:
-                        self.shotgun_reload_loop = False
-                        self.game.swing_noises[self.weapon].play()
-                        self.action = 'melee'
-                        self.current_frame = 0
-                        self.canned_action = self.action
-                        self.play_static_animation = True
-                        self._melee()
-                    elif not lc and not rc and self.arsenal[self.weapon]['reloads'] > 0:
-                        if not self.arsenal[self.weapon]['total ammunition'] <= 1:
-                            self.reload()
-                            self.game.weapon_sounds[self.weapon]['reload'].play()
-                else:
-                    if self.arsenal[self.weapon]['total ammunition'] >= 1:
-                        self.game.weapon_sounds[self.weapon]['Pump'].play()
-                        self.reload()
+            # Reloads the shotgun to the define clip size - 1.
+            # This is give the load shell the "pump" animation at the end of the reload
+            # animation for the shotgun
+            # If the shotgun is empty...
+            if self.arsenal[self.weapon]['clip'] < WEAPONS[self.weapon]['clip size'] - 1:
+                # Break out of the shotgun reload animation if
+                # 1) a shoot action is called
+                # 2) a melee action is called
+                if lc:
                     self.shotgun_reload_loop = False
+                    if self.arsenal[self.weapon]['clip'] != 0:
+                        self.action = 'shoot'
+                        self.shoot()
+                elif rc and self.stamina > 0:
+                    self.shotgun_reload_loop = False
+                    self.game.swing_noises[self.weapon].play()
+                    self.action = 'melee'
+                    self.current_frame = 0
+                    self.canned_action = self.action
+                    self.play_static_animation = True
+                    self._melee()
+                # If not shooting or meleeing, continue with the reload animation
+                elif not lc and not rc and self.arsenal[self.weapon]['reloads'] > 0 and \
+                                self.arsenal[self.weapon]['clip'] < WEAPONS[self.weapon]['clip size']:
+                    if not self.arsenal[self.weapon]['total ammunition'] <= 1:
+                        self.reload()
+                        self.game.weapon_sounds[self.weapon]['reload'].play()
+            else:
+                # Reload the final shell and play the pump animatin and sound
+                if self.arsenal[self.weapon]['total ammunition'] >= 1:
+                    self.game.weapon_sounds[self.weapon]['Pump'].play()
+                    self.reload()
+                self.shotgun_reload_loop = False
 
     def _weapon_selection(self, keys):
         """
