@@ -367,39 +367,39 @@ class Mob(pg.sprite.Sprite):
                 self.drop_item()
             self.kill()
             self.game.map_img.blit(self.game._death_splat, self.hit_rect.topleft)
-        if self.is_onscreen:
-            self.track_prey(self.game.player)
-            if self.pos.distance_to(self.game.player.pos) < DETECT_RADIUS:
-                if random() < 0.007:
-                    snd = choice(self.game.zombie_moan_sounds)
-                    if snd.get_num_channels() > 2:
-                        snd.stop()
-                    snd.play()
-                self.apply_pursuing_behaviour()
-                self.rot = (self.target - self.pos).angle_to(vec(1, 0))
-            elif self.path:
-                self.target = self.follow_path()
-                self.acc += self.target
-                self.apply_flocking_behaviour()
-                self.rot = (self.target - self.pos).angle_to(vec(1, 0))
-            else:
-                if self.is_onscreen:
-                    self.apply_wandering_behaviour()
-                self.rot = self.vel.angle_to(vec(1, 0))
-            self.vel += self.acc * self.game.dt
-            self.vel.scale_to_length(self.speed)
-            if self.can_attack:
-                self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
-                self.hit_rect.centerx = self.pos.x
-                collide_with_obstacles(self, self.game.all_walls, 'x')
-                self.hit_rect.centery = self.pos.y
-                collide_with_obstacles(self, self.game.all_walls, 'y')
-            self.image = pg.transform.rotozoom(self.original_image, self.rot - 90, 1).copy()
-            self.rect.center = self.hit_rect.center
-            now = pg.time.get_ticks()
-            if now - self.last_attack_time > ENEMY_ATTACK_RATE:
-                self.can_attack = True
-                self.last_attack_time = now
+        #if self.is_onscreen:
+        self.track_prey(self.game.player)
+        if self.pos.distance_to(self.game.player.pos) < DETECT_RADIUS:
+            if random() < 0.007:
+                snd = choice(self.game.zombie_moan_sounds)
+                if snd.get_num_channels() > 2:
+                    snd.stop()
+                snd.play()
+            self.apply_pursuing_behaviour()
+            self.rot = (self.target - self.pos).angle_to(vec(1, 0))
+        elif self.path:
+            self.target = self.follow_path()
+            self.acc += self.target
+            self.apply_flocking_behaviour()
+            self.rot = (self.target - self.pos).angle_to(vec(1, 0))
+        else:
+            if self.is_onscreen:
+                self.apply_wandering_behaviour()
+            self.rot = self.vel.angle_to(vec(1, 0))
+        self.vel += self.acc * self.game.dt
+        self.vel.scale_to_length(self.speed)
+        if self.can_attack:
+            self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
+            self.hit_rect.centerx = self.pos.x
+            collide_with_obstacles(self, self.game.all_walls, 'x')
+            self.hit_rect.centery = self.pos.y
+            collide_with_obstacles(self, self.game.all_walls, 'y')
+        self.image = pg.transform.rotozoom(self.original_image, self.rot - 90, 1).copy()
+        self.rect.center = self.hit_rect.center
+        now = pg.time.get_ticks()
+        if now - self.last_attack_time > ENEMY_ATTACK_RATE:
+            self.can_attack = True
+            self.last_attack_time = now
 
     def render_health(self):
         """
@@ -418,3 +418,22 @@ class Mob(pg.sprite.Sprite):
         self.health_bar = pg.Rect(self.hit_rect.width // 3, 0, width, 7)
         if self.health < self.MAX_HEALTH:
             pg.draw.rect(self.image, color, self.health_bar)
+
+# Location for a mob to spawn
+class SpawnPoint(pg.sprite.Sprite):
+
+    def __init__(self, game, x, y, width, height):
+        self.groups = game.spawn_points
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.mob = None
+        self.last_spawn_time = 0
+
+    # Spawns the mob at the center of this spawn point
+    def spawn_mob(self):
+        self.last_spawn_time = pg.time.get_ticks()
+        self.mob = Mob(self.game, self.x + self.width // 2, self.y + self.height // 2)

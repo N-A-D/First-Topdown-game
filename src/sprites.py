@@ -102,7 +102,7 @@ class Bullet(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.pos = vec(pos)
         self.rect.center = pos
-        self.hit_rect = pg.Rect(self.rect.x, self.rect.y, 25, 25)
+        self.hit_rect = pg.Rect(self.rect.x, self.rect.y, 45, 45)
         self.vel = dir * WEAPONS[game.player.weapon]['bullet_speed'] * uniform(0.75, 1)
         self.spawn_time = pg.time.get_ticks()
         # Damage and penetration depreciation are inversely proportional
@@ -264,20 +264,3 @@ class SwingArea(pg.sprite.Sprite):
             self.rect.midtop = self.game.player.hit_rect.midbottom
         elif self.direction == 'SE':
             self.rect.topleft = self.game.player.hit_rect.bottomright
-
-
-class ShellCasing(pg.sprite.Sprite):
-    def __init__(self, game, pos, weapon):
-        self.groups = game.all_sprites
-        pg.sprite.Sprite.__init__(self.groups)
-        self.pos = pos
-        self.image = pg.Surface((5, 5)).convert()
-        self.image.fill(YELLOW)
-        self.rect = self.image.get_rect()
-        self.rect.pos = pos
-        self.hit_rect = pg.Rect(self.rect.x, self.rect.y, self.rect.width, self.rect.height)
-        self.hit_rect.center = self.rect.center
-        self.pos = vec(self.rect.center)
-
-    def update(self):
-        pass

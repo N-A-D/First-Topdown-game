@@ -5,7 +5,7 @@ vec = pg.math.Vector2
 
 # GAME LEVELS
 GAME_LEVELS = [
-    'Apartments1.tmx',
+    'GroundLevel.tmx',#'Apartments1.tmx',
 ]
 
 # Define some colors (R, G, B)
@@ -22,7 +22,7 @@ DEEPSKYBLUE = (0, 191, 255)
 DODGERBLUE = (30, 144, 255)
 LIMEGREEN = (50, 205, 50)
 GOLD = (255, 215, 0)
-NIGHT_COLOR = (5, 5, 5)
+NIGHT_COLOR = (255, 255, 255)
 LIGHTSLATEGREY = (119, 136, 153, 127)
 ORANGE = (255, 165, 0)
 

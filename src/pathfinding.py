@@ -10,12 +10,14 @@ class Graph(object):
     and there are edges between nodes iff two nodes are both passable and contained in the graph.
     """
 
-    def __init__(self):
+    def __init__(self, width, height):
         """
         Creates a new graph.
         """
-        self.height = GRIDHEIGHT
-        self.width = GRIDWIDTH
+        #self.height = GRIDHEIGHT
+        #self.width = GRIDWIDTH
+        self.width = width
+        self.height = height
         self.walls = []
         self.connections = [vec(1, 0), vec(-1, 0), vec(0, 1), vec(0, -1)]
         self.connections += [vec(1, 1), vec(-1, 1), vec(1, -1), vec(-1, -1)]
@@ -59,11 +61,11 @@ class WeightedGraph(Graph):
     Gives weights to the edges among neighbouring nodes.
     """
 
-    def __init__(self):
+    def __init__(self, width, height):
         """
         Creates a weighted graph.
         """
-        super(WeightedGraph, self).__init__()
+        super(WeightedGraph, self).__init__(width, height)
         self.weights = {}
 
     def cost(self, start, end):

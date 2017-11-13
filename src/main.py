@@ -5,23 +5,20 @@ from os import path
 from settings import WIDTH, HEIGHT, TITLE, TILESIZE, \
     ITEM_IMAGES, WEAPONS, RIFLE_BULLET_IMG, HANDGUN_BULLET_IMG, SHOTGUN_BULLET_IMG, \
     MUZZLE_FLASHES, ENEMY_IMGS, HANDGUN_ANIMATIONS, KNIFE_ANIMATIONS, RIFLE_ANIMATIONS, \
-    SHOTGUN_ANIMATIONS, FPS, WHITE, RED, GREEN, BLOOD_SHADES, \
-    vec, PLAYER_HIT_SOUNDS, ZOMBIE_MOAN_SOUNDS, ENEMY_HIT_SOUNDS, PLAYER_FOOTSTEPS, \
-    NIGHT_COLOR, LIGHT_MASK, LIGHT_RADIUS, PLAYER_SWING_NOISES, BG_MUSIC, \
-    GAME_OVER_MUSIC, MAIN_MENU_MUSIC, HUD_FONT, TITLE_FONT, BLACK, YELLOW, ORANGE, \
-    RIFLE_HUD_IMG, SHOTGUN_HUD_IMG, PISTOL_HUD_IMG, KNIFE_HUD_IMG, DEEPSKYBLUE, \
-    ENEMY_KNOCKBACK, LIMEGREEN, DARKRED, BLOOD_SPLAT, GAME_LEVELS, ITEMS
-from random import choice, randrange, uniform, random
+    SHOTGUN_ANIMATIONS, FPS, WHITE, RED, GREEN, vec, PLAYER_HIT_SOUNDS, ZOMBIE_MOAN_SOUNDS, \
+    ENEMY_HIT_SOUNDS, PLAYER_FOOTSTEPS, LIGHT_MASK, LIGHT_RADIUS, \
+    PLAYER_SWING_NOISES, BG_MUSIC, GAME_OVER_MUSIC, MAIN_MENU_MUSIC, HUD_FONT, TITLE_FONT, \
+    BLACK, YELLOW, ORANGE, RIFLE_HUD_IMG, SHOTGUN_HUD_IMG, PISTOL_HUD_IMG, KNIFE_HUD_IMG, \
+    DEEPSKYBLUE, ENEMY_KNOCKBACK, LIMEGREEN, DARKRED, BLOOD_SPLAT, GAME_LEVELS, ITEMS
+from random import choice, uniform, random
 from player import Player
-from mobs import Mob
+from mobs import Mob, SpawnPoint
 from tilemap import Camera, TiledMap
 from sprites import Item, Wall, BulletPassableWall, _Wall
 from core_functions import collide_hit_rect, world_shift_pos
 from pathfinding import Pathfinder, WeightedGraph
-from math import floor
 import PAdLib.occluder as occluder
 import PAdLib.shadow as shadow
-
 
 if sys.platform in ['win32', 'win64']: os.environ['SDL_VIDEO_CENTERED'] = '1'
 
@@ -54,6 +51,11 @@ class GameEngine:
         self.hud_folder = path.join(self.img_folder, 'HUD')
         self.levels = []
 
+        # Night time effect
+        self.last_light_decrease = pg.time.get_ticks()
+        self.NIGHT_COLOR = (5, 5, 5)
+        self.rgb_decrease_value = 8
+
         # Loads game assets
         self.load_data()
 
@@ -67,6 +69,8 @@ class GameEngine:
         # Menu Flags
         self.on_control_screen = False
 
+
+
     def load_data(self):
         """
         Loads the game assets.
@@ -78,7 +82,7 @@ class GameEngine:
 
         # Fog of war
         self.fog = pg.Surface(self.screen.get_size()).convert()
-        self.fog.fill(NIGHT_COLOR)
+        self.fog.fill(self.NIGHT_COLOR)
 
         # Light on the player
         self.light_mask = pg.image.load(path.join(self.effects_folder, LIGHT_MASK)).convert()
@@ -244,6 +248,8 @@ class GameEngine:
         for tile_object in self.map.tmxdata.objects:
             if tile_object.name == 'player':
                 self.player = Player(self, tile_object.x, tile_object.y)
+            elif tile_object.name == 'spawn':
+                SpawnPoint(self, tile_object.x, tile_object.y, tile_object.width, tile_object.height)
             elif tile_object.name == 'wall':
                 if tile_object.type == 'passable':
                     BulletPassableWall(self, tile_object.x, tile_object.y, tile_object.width, tile_object.height)
@@ -268,36 +274,6 @@ class GameEngine:
             elif tile_object.name == 'health':
                 Item(self, tile_object.x, tile_object.y, 'health')
 
-    def _level_transition(self):
-        """
-        Transitions between game levels
-        :return:
-        """
-        self.map_idx += 1
-        self.map = self.maps[self.map_idx]
-        self.all_sprites = pg.sprite.LayeredUpdates()
-        self.all_sprites.add(self.player)
-        self.walls = pg.sprite.Group()  # Obstacles that are impassable
-        self.all_walls = pg.sprite.Group()
-        self.bullet_passable_walls = pg.sprite.Group()  # Bullets can pass over these walls
-        self._walls = pg.sprite.Group()  # Obstacles used in the mob's obstacle avoidance algorithm
-        self.level_end = pg.sprite.GroupSingle()
-        self.bullets = pg.sprite.Group()
-        self.mobs = pg.sprite.Group()
-        self.items = pg.sprite.Group()
-        self.swingAreas = pg.sprite.Group()
-        self.camera = Camera(self.map.width, self.map.height)
-        self.paused = False
-        self.running = True
-        self.pathfinder = Pathfinder()
-        self.game_graph = WeightedGraph()
-        self.game_graph.walls = []
-        self._load_map_data()
-        self.get_wall_positions()
-        self.mob_idx = 0
-        self.last_queue_update = 0
-        self.run()
-
     def new(self):
         """
         Creates a new game
@@ -319,11 +295,12 @@ class GameEngine:
         self.mobs = pg.sprite.Group()
         self.items = pg.sprite.Group()
         self.swingAreas = pg.sprite.Group()
+        self.spawn_points = pg.sprite.Group()  # spawn points for mob spawning
         self.camera = Camera(self.map.width, self.map.height)
         self.paused = False
         self.running = True
         self.pathfinder = Pathfinder()
-        self.game_graph = WeightedGraph()
+        self.game_graph = WeightedGraph(self.map.tmxdata.width, self.map.tmxdata.height)
         self.game_graph.walls = []
         self._load_map_data()
         self.get_wall_positions()
@@ -352,7 +329,15 @@ class GameEngine:
         Updates game state
         :return: None
         """
-        self.impact_positions = []
+        print(len(self.mobs))
+
+        if len(self.mobs) <= 25:
+            for sp in self.spawn_points:
+                if len(self.mobs) == 25:
+                    break
+                elif sp.last_spawn_time == 0 or not sp.mob.alive() or pg.time.get_ticks() - sp.last_spawn_time < 3000:
+                    sp.spawn_mob()
+
         for sprite in self.all_sprites:
             if sprite == self.player:
                 sprite.update(pg.key.get_pressed())
@@ -374,7 +359,6 @@ class GameEngine:
                 else:
                     choice(self.zombie_hit_sounds['kill']).play()
                 hit.pos += WEAPONS[self.player.weapon]['knockback'].rotate(-self.player.rot)
-                self.impact_positions.append(hit.rect.center)
 
         # Enemy hits player
         hits = pg.sprite.spritecollide(self.player, self.mobs, False, collide_hit_rect)
@@ -384,14 +368,13 @@ class GameEngine:
                 if random() < .95:
                     choice(self.player_hit_sounds).play()
                 if hit.can_attack:
-                    self.impact_positions.append(self.player.rect.center)
                     if self.player.has_armour:
                         self.player.armour -= hit.damage
                         if self.player.armour < 0:
                             self.player.health += self.player.armour
                     else:
                         self.player.health -= hit.damage
-                    hit.vel.normalize()
+                    # hit.vel.normalize()
                     hit.pause()
                     if self.player.health <= 0:
                         self.playing = False
@@ -401,7 +384,6 @@ class GameEngine:
         if hits:
             for mob in hits:
                 for bullet in hits[mob]:
-                    self.impact_positions.append(bullet.rect.center)
                     mob.health -= bullet.damage
                     mob.pos += vec(WEAPONS[self.player.weapon]['damage'] // 10, 0).rotate(-self.player.rot)
 
@@ -461,7 +443,6 @@ class GameEngine:
                     self.screen.blit(sprite.image, self.camera.apply(sprite))
             else:
                 self.screen.blit(sprite.image, self.camera.apply(sprite))
-        self.render_blood_splatters()
         self._render_fog()
         self._render_hud()
         if self.paused:
@@ -492,13 +473,14 @@ class GameEngine:
 
         mask.blit(self.light_mask, (0, 0), special_flags=pg.BLEND_MULT)
 
-        self.fog.fill(NIGHT_COLOR)
+        self.fog.fill(self.NIGHT_COLOR)
 
         self.fog.blit(mask, draw_pos, special_flags=pg.BLEND_MAX)
 
         self.screen.blit(self.fog, (0, 0), special_flags=pg.BLEND_MULT)
 
-    def _point_contained(self, rectangle, x, y):
+    @staticmethod
+    def _point_contained(rectangle, x, y):
         return rectangle.collidepoint((x, y))
 
     def _render_hud(self):
@@ -533,7 +515,8 @@ class GameEngine:
                 color = DARKRED
             else:
                 color = RED
-            self._render_text(str(round(self.player.health, 0)) + "%", self.hud_font, 30, color, 110, HEIGHT - 150, align='nw')
+            self._render_text(str(round(self.player.health, 0)) + "%", self.hud_font, 30, color, 110, HEIGHT - 150,
+                              align='nw')
             self._hud_hp_rect.topleft = (50, HEIGHT - 145)
             self.screen.blit(self._hud_hp, self._hud_hp_rect)
         else:
@@ -605,24 +588,6 @@ class GameEngine:
             text_rect.center = (x, y)
 
         self.screen.blit(text_surface, text_rect)
-
-    def render_blood_splatters(self):
-        """
-        Draws blood particles on the screen
-        :return: None
-        """
-        if self.impact_positions:
-            for pos in self.impact_positions:
-                impact = True
-                while impact:
-                    self.events()
-                    for magnitude in range(1, randrange(40, 60)):
-                        exploding_bit_x = pos[0] + randrange(-1 * magnitude, magnitude) + self.camera.camera.x
-                        exploding_bit_y = pos[1] + randrange(-1 * magnitude, magnitude) + self.camera.camera.y
-                        pg.draw.circle(self.screen, choice(BLOOD_SHADES), (exploding_bit_x, exploding_bit_y),
-                                       randrange(2, 4))
-                    impact = False
-            self.impact_positions = []
 
     def find_path(self, predator, prey):
         """
