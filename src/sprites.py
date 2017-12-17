@@ -111,21 +111,36 @@ class Bullet(pg.sprite.Sprite):
         self.damage = damage
         self.penetration_depreciation = WEAPONS['penetration depreciation'][self.weapon]
 
+    def _update_pos(self):
+        self.pos += self.vel * self.game.dt
+        self.hit_rect.center = self.pos
+        self.rect.center = self.hit_rect.center
+
+    def _wall_collisions(self):
+        if pg.sprite.spritecollideany(self, self.game.walls):
+            self.kill()
+
+    def _mob_collisions(self):
+        mobs = pg.sprite.spritecollide(self, self.game.mobs, False, collided=collide_hit_rect)
+        if mobs:
+            if uniform(0, 1) <= self.penetration_depreciation:
+                self.kill()
+            self.damage *= .75
+            self.penetration_depreciation *= 1.25
+
+            for mob in mobs:
+                mob.health -= self.damage
+                mob.pos += vec(WEAPONS[self.game.player.weapon]['damage'] // 10, 0).rotate(-self.game.player.rot)
+
     def update(self):
         """
         Update this bullet's internal state
         :return: None
         """
-        self.pos += self.vel * self.game.dt
-        self.hit_rect.center = self.pos
-        self.rect.center = self.hit_rect.center
-        if pg.sprite.spritecollideany(self, self.game.walls):
-            self.kill()
-        if pg.sprite.spritecollide(self, self.game.mobs, False, collided=collide_hit_rect):
-            if uniform(0, 1) <= self.penetration_depreciation:
-                self.kill()
-            self.damage *= .75
-            self.penetration_depreciation *= 1.25
+        self._update_pos()
+        self._wall_collisions()
+        self._mob_collisions()
+
         # If the bullet has travelled a certain distance this removes it
         if pg.time.get_ticks() - self.spawn_time > WEAPONS[self.weapon]['bullet_lifetime'] or self.damage <= 0:
             self.kill()
