@@ -76,11 +76,9 @@ class Mob(pg.sprite.Sprite):
         :return:
         """
         if self.can_find_path and not self.path:
-            dist = self.pos.distance_to(self.game.player.pos)
-            if dist > DETECT_RADIUS * 2 and uniform(0, 1) <= .75:
-                self.path = self.game.find_path(self, target)
-                if self.path:
-                    self.current_path_target = len(self.path) - 2
+            self.path = self.game.find_path(self, target)
+            if self.path:
+                self.current_path_target = len(self.path) - 2
 
     def pause(self):
         """
@@ -289,35 +287,32 @@ class Mob(pg.sprite.Sprite):
         Applies flcoking steering behaviours to the mob
         :return: None
         """
-        mobs = [mob for mob in self.game.mobs if mob.is_onscreen]
         self.acc += self.obstacle_avoidance() * 1.75
-        self.acc += self.separation(mobs) * 2
-        self.acc += self.align(mobs)
-        self.acc += self.cohesion(mobs)
+        self.acc += self.separation(self.game.mobs) * 2
+        self.acc += self.align(self.game.mobs)
+        self.acc += self.cohesion(self.game.mobs)
 
     def apply_pursuing_behaviour(self):
         """
         Allows the mob to pursue the target
         :return:
         """
-        mobs = [mob for mob in self.game.mobs if mob.is_onscreen]
         self.acc += self.pursue(self.game.player) * 2.75
         self.acc += self.obstacle_avoidance() * 2.5
-        self.acc += self.separation(mobs) * 2.6
-        self.acc += self.align(mobs)
-        self.acc += self.cohesion(mobs)
+        self.acc += self.separation(self.game.mobs) * 2.6
+        self.acc += self.align(self.game.mobs)
+        self.acc += self.cohesion(self.game.mobs)
 
     def apply_wandering_behaviour(self):
         """
         Gives a mob the ability to wander the around.
         :return:
         """
-        mobs = [mob for mob in self.game.mobs if mob.is_onscreen]
         self.acc += self.wander()
         self.acc += self.obstacle_avoidance() * 1.75
-        self.acc += self.separation(mobs) * 2
-        self.acc += self.align(mobs)
-        self.acc += self.cohesion(mobs)
+        self.acc += self.separation(self.game.mobs) * 2
+        self.acc += self.align(self.game.mobs)
+        self.acc += self.cohesion(self.game.mobs)
 
     def check_if_is_on_screen(self):
         """
@@ -367,7 +362,7 @@ class Mob(pg.sprite.Sprite):
                 self.drop_item()
             self.kill()
             self.game.map_img.blit(self.game._death_splat, self.hit_rect.topleft)
-        #if self.is_onscreen:
+        # if self.is_onscreen:
         self.track_prey(self.game.player)
         if self.pos.distance_to(self.game.player.pos) < DETECT_RADIUS:
             if random() < 0.007:
@@ -377,6 +372,7 @@ class Mob(pg.sprite.Sprite):
                 snd.play()
             self.apply_pursuing_behaviour()
             self.rot = (self.target - self.pos).angle_to(vec(1, 0))
+            self.path = None
         elif self.path:
             self.target = self.follow_path()
             self.acc += self.target
@@ -419,21 +415,32 @@ class Mob(pg.sprite.Sprite):
         if self.health < self.MAX_HEALTH:
             pg.draw.rect(self.image, color, self.health_bar)
 
+
 # Location for a mob to spawn
 class SpawnPoint(pg.sprite.Sprite):
-
     def __init__(self, game, x, y, width, height):
-        self.groups = game.spawn_points
-        pg.sprite.Sprite.__init__(self, self.groups)
+        pg.sprite.Sprite.__init__(self)
         self.game = game
+        self.game.spawn_points.append(self)
         self.x = x
         self.y = y
         self.width = width
         self.height = height
-        self.mob = None
-        self.last_spawn_time = 0
+        self.cool_down_time = pg.time.get_ticks()
+        self.can_spawn = False
+        self.spawn_mob()
 
     # Spawns the mob at the center of this spawn point
     def spawn_mob(self):
-        self.last_spawn_time = pg.time.get_ticks()
-        self.mob = Mob(self.game, self.x + self.width // 2, self.y + self.height // 2)
+        self.cool_down_time = pg.time.get_ticks()
+        self.can_spawn = False
+        Mob(self.game, self.x + self.width // 2, self.y + self.height // 2)
+
+    def update(self):
+        now = pg.time.get_ticks()
+        if now - self.cool_down_time < 1000:
+            self.cool_down_time = now
+            self.can_spawn = True
+        else:
+            self.cool_down_time = now
+            self.can_spawn = False
