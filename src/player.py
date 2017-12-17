@@ -50,7 +50,6 @@ class Player(pg.sprite.Sprite):
                         'shotgun': {'clip': 0, 'reloads': 0, 'hasWeapon': False, 'total ammunition': 0},
                         'knife': {'hasWeapon': True}
                         }
-        self.shotgun_reload_loop = False
 
         # Current player animation & frame
         self.animations = self.game.player_animations[self.weapon][self.action]
@@ -129,58 +128,60 @@ class Player(pg.sprite.Sprite):
         Fires a bullet from the muzzle of the player's weapon
         :return: None
         """
-        now = pg.time.get_ticks()
-        if now - self.last_shot > WEAPONS[self.weapon]['rate']:
-            self.last_shot = now
-            direction = vec(1, 0).rotate(-self.rot)
-            pos = self.pos + WEAPONS[self.weapon]['barrel offset'].rotate(-self.rot)
-            for _ in range(WEAPONS[self.weapon]['bullet_count']):
-                spread = uniform(-WEAPONS[self.weapon]['spread'] - self.aim_wobble,
-                                 WEAPONS[self.weapon]['spread'] + self.aim_wobble)
-                Bullet(self.game, pos, direction.rotate(spread), WEAPONS[self.weapon]['damage'])
-                snd = self.game.weapon_sounds[self.weapon]['attack']
-                if snd.get_num_channels() > 2:
-                    snd.stop()
-                snd.play()
-
-            MuzzleFlash(self.game, pos)
-            self.arsenal[self.weapon]['clip'] -= 1
+        if self.arsenal[self.weapon]['clip'] != 0:
+            now = pg.time.get_ticks()
+            if now - self.last_shot > WEAPONS[self.weapon]['rate']:
+                self.last_shot = now
+                direction = vec(1, 0).rotate(-self.rot)
+                pos = self.pos + WEAPONS[self.weapon]['barrel offset'].rotate(-self.rot)
+                for _ in range(WEAPONS[self.weapon]['bullet_count']):
+                    spread = uniform(-WEAPONS[self.weapon]['spread'] - self.aim_wobble,
+                                     WEAPONS[self.weapon]['spread'] + self.aim_wobble)
+                    Bullet(self.game, pos, direction.rotate(spread), WEAPONS[self.weapon]['damage'])
+                    snd = self.game.weapon_sounds[self.weapon]['attack']
+                    if snd.get_num_channels() > 2:
+                        snd.stop()
+                    snd.play()
+                MuzzleFlash(self.game, pos)
+                self.arsenal[self.weapon]['clip'] -= 1
+        else:
+            self.game.weapon_sounds[self.weapon]['empty'].play()
 
     def reload(self):
         """
         Reloads the player's weapon
         :return: 
         """
-        if self.weapon != 'shotgun':
-            if self.arsenal[self.weapon]['clip'] == 0:
-                if self.arsenal[self.weapon]['total ammunition'] < WEAPONS[self.weapon]['clip size']:
-                    self.arsenal[self.weapon]['clip'] = self.arsenal[self.weapon]['total ammunition']
-                    self.arsenal[self.weapon]['total ammunition'] = 0
+        if self.arsenal[self.weapon]['clip'] != WEAPONS[self.weapon]['clip size']:
+            if self.weapon != 'shotgun':
+                if self.arsenal[self.weapon]['clip'] == 0:
+                    if self.arsenal[self.weapon]['total ammunition'] < WEAPONS[self.weapon]['clip size']:
+                        self.arsenal[self.weapon]['clip'] = self.arsenal[self.weapon]['total ammunition']
+                        self.arsenal[self.weapon]['total ammunition'] = 0
+                    else:
+                        self.arsenal[self.weapon]['clip'] = WEAPONS[self.weapon]['clip size']
+                        self.arsenal[self.weapon]['total ammunition'] -= WEAPONS[self.weapon]['clip size']
                 else:
-                    self.arsenal[self.weapon]['clip'] = WEAPONS[self.weapon]['clip size']
-                    self.arsenal[self.weapon]['total ammunition'] -= WEAPONS[self.weapon]['clip size']
+                    remaining = self.arsenal[self.weapon]['clip']
+                    self.arsenal[self.weapon]['total ammunition'] += remaining
+                    if self.arsenal[self.weapon]['total ammunition'] < WEAPONS[self.weapon]['clip size']:
+                        self.arsenal[self.weapon]['clip'] = self.arsenal[self.weapon]['total ammunition']
+                        self.arsenal[self.weapon]['total ammunition'] = 0
+                    else:
+                        self.arsenal[self.weapon]['clip'] = WEAPONS[self.weapon]['clip size']
+                        self.arsenal[self.weapon]['total ammunition'] -= WEAPONS[self.weapon]['clip size']
+
             else:
-                remaining = self.arsenal[self.weapon]['clip']
-                self.arsenal[self.weapon]['total ammunition'] += remaining
-                if self.arsenal[self.weapon]['total ammunition'] < WEAPONS[self.weapon]['clip size']:
-                    self.arsenal[self.weapon]['clip'] = self.arsenal[self.weapon]['total ammunition']
-                    self.arsenal[self.weapon]['total ammunition'] = 0
-                else:
-                    self.arsenal[self.weapon]['clip'] = WEAPONS[self.weapon]['clip size']
-                    self.arsenal[self.weapon]['total ammunition'] -= WEAPONS[self.weapon]['clip size']
+                self.arsenal[self.weapon]['clip'] += 1
+                self.arsenal[self.weapon]['total ammunition'] -= 1
 
-        else:
-            if self.arsenal[self.weapon]['clip'] == 0 and not self.arsenal[self.weapon]['total ammunition'] == 0:
-                self.shotgun_reload_loop = True
-            self.arsenal[self.weapon]['clip'] += 1
-            self.arsenal[self.weapon]['total ammunition'] -= 1
-
-        self.arsenal[self.weapon]['reloads'] = ceil(
-            self.arsenal[self.weapon]['total ammunition'] / WEAPONS[self.weapon]['clip size'])
-        self.action = 'reload'
-        self.canned_action = self.action
-        self.current_frame = 0
-        self.play_static_animation = True
+            self.arsenal[self.weapon]['reloads'] = ceil(
+                self.arsenal[self.weapon]['total ammunition'] / WEAPONS[self.weapon]['clip size'])
+            self.action = 'reload'
+            self.canned_action = self.action
+            self.current_frame = 0
+            self.play_static_animation = True
+            self.game.weapon_sounds[self.weapon]['reload'].play()
 
     def process_input(self, _input):
         """
@@ -215,80 +216,37 @@ class Player(pg.sprite.Sprite):
         :param keys: The list of keys pressed
         :return: None
         """
-        lc, _, rc = pg.mouse.get_pressed()
-        # If shooting or swinging the weapon, falsify the shotgun reload animation flag
-        if lc or rc:
-            self.shotgun_reload_loop = False
-        # if using the shotgun, set the reload loop flag
-        if self.weapon == 'shotgun' and keys[pg.K_r] and self.arsenal[self.weapon][
-            'clip'] < WEAPONS[self.weapon]['clip size']:
-            self.shotgun_reload_loop = True
-
-        if not self.shotgun_reload_loop:
-            # If using a gun, shoot if there is ammo in the clip
-            if lc and not self.weapon == 'knife':
-                if self.arsenal[self.weapon]['clip'] != 0:
-                    self.action = 'shoot'
-                    self.shoot()
-                else:
-                    # Reload if there is reserve ammo
-                    if self.arsenal[self.weapon]['reloads'] > 0:
-                        if not self.play_static_animation:
-                            self.game.weapon_sounds[self.weapon]['reload'].play()
-                            self.reload()
-            # Reload the gun if not already reloading and the current weapon is not a knife
-            if keys[pg.K_r] and self.weapon != 'knife' and self.action != 'reload' and self.arsenal[self.weapon][
-                'clip'] < WEAPONS[self.weapon]['clip size']:
-
-                # Allow the weapon to reload only if there is ammo in reserve
-                if self.arsenal[self.weapon]['reloads'] > 0:
-                    # Play the weapon sound
-                    self.game.weapon_sounds[self.weapon]['reload'].play()
-                    if self.weapon == 'shotgun':
-                        self.shotgun_reload_loop = True
-                    self.reload()
-            # Melee using the current weapon
-            if rc and self.action != 'reload' and self.stamina > 0:
-                self.game.swing_noises[self.weapon].play()
-                self.action = 'melee'
-                self.current_frame = 0
-                self.canned_action = self.action
-                self.play_static_animation = True
-                self._melee()
+        left_click, _, right_click = pg.mouse.get_pressed()
+        if self.weapon != 'knife':
+            self._gun_control(keys, left_click, right_click)
         else:
-            # Reloads the shotgun to the define clip size - 1.
-            # This is give the load shell the "pump" animation at the end of the reload
-            # animation for the shotgun
-            # If the shotgun is empty...
-            if self.arsenal[self.weapon]['clip'] < WEAPONS[self.weapon]['clip size'] - 1:
-                # Break out of the shotgun reload animation if
-                # 1) a shoot action is called
-                # 2) a melee action is called
-                if lc:
-                    self.shotgun_reload_loop = False
-                    if self.arsenal[self.weapon]['clip'] != 0:
-                        self.action = 'shoot'
-                        self.shoot()
-                elif rc and self.stamina > 0:
-                    self.shotgun_reload_loop = False
-                    self.game.swing_noises[self.weapon].play()
-                    self.action = 'melee'
-                    self.current_frame = 0
-                    self.canned_action = self.action
-                    self.play_static_animation = True
-                    self._melee()
-                # If not shooting or meleeing, continue with the reload animation
-                elif not lc and not rc and self.arsenal[self.weapon]['reloads'] > 0 and \
-                                self.arsenal[self.weapon]['clip'] < WEAPONS[self.weapon]['clip size']:
-                    if not self.arsenal[self.weapon]['total ammunition'] <= 1:
-                        self.reload()
-                        self.game.weapon_sounds[self.weapon]['reload'].play()
-            else:
-                # Reload the final shell and play the pump animatin and sound
-                if self.arsenal[self.weapon]['total ammunition'] >= 1:
-                    self.game.weapon_sounds[self.weapon]['Pump'].play()
-                    self.reload()
-                self.shotgun_reload_loop = False
+            self._knife_control(left_click, right_click)
+
+    def _gun_control(self, keys, left_click, right_click):
+        """
+        Handles weapon mechanics
+        :param keys:
+        :param left_click:
+        :param right_click:
+        :return:
+        """
+        if right_click:
+            self.melee()
+        if left_click:
+            self.action = 'shoot'
+            self.shoot()
+        if keys[pg.K_r]:
+            self.reload()
+
+    def _knife_control(self, left_click, right_click):
+        """
+        Handles knife mechanics
+        :param left_click:
+        :param right_click:
+        :return:
+        """
+        if left_click or right_click:
+            self.melee()
 
     def _weapon_selection(self, keys):
         """
@@ -315,7 +273,7 @@ class Player(pg.sprite.Sprite):
             self.weapon = 'knife'
             self.game.weapon_sounds[self.weapon]['draw'].play()
 
-    def play_foot_step_sounds(self, sprinting, terrain='wood'):
+    def play_foot_step_sounds(self, sprinting, terrain='dirt'):
         """
         Plays the sound a foot step would make on a given terrain
         :param sprinting: If the player is sprinting, the step sounds are more frequent.
@@ -392,14 +350,12 @@ class Player(pg.sprite.Sprite):
 
         self.increase_stamina(self.stamina_regen / WEAPONS[self.weapon]['weight'])
 
-    def _melee(self):
-        """
-        Finds the area where the player is
-        swinging their weapon and creates
-        a hit box to collide with any
-        enemy in the vicinity
-        :return: None
-        """
+    def melee(self):
+        self.game.swing_noises[self.weapon].play()
+        self.action = 'melee'
+        self.current_frame = 0
+        self.canned_action = self.action
+        self.play_static_animation = True
         if self.direction == 'E':
             self.game.swingAreas.add(SwingArea(self.game, self.hit_rect.midright, self.direction, self.weapon))
         elif self.direction == 'NE':
@@ -509,7 +465,7 @@ class Player(pg.sprite.Sprite):
         # to the top-left of the camera
         mouse_vec = world_shift_pos(mouse_pos, self.game.camera.camera)
         target_dist = mouse_vec - self.pos
-        self.rot = target_dist.angle_to(vec(1, 0)) + 2
+        self.rot = target_dist.angle_to(vec(1, 0)) + 3
         self.update_direction()
 
     def update_direction(self):
