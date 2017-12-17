@@ -5,7 +5,7 @@ vec = pg.math.Vector2
 
 # GAME LEVELS
 GAME_LEVELS = [
-    'GroundLevel.tmx',#'Apartments1.tmx',
+    'GroundLevel.tmx',  # 'Apartments1.tmx',
 ]
 
 # Define some colors (R, G, B)
@@ -73,7 +73,7 @@ MUZZLE_FLASHES = ['Flash/flash00.png',
                   'Flash/flash07.png',
                   'Flash/flash08.png',
                   ]
-FLASH_DURATION = 60
+FLASH_DURATION = 70
 LASER_SIGHT_COLORS = [(124, 252, 0), (50, 205, 50), (173, 255, 47), (152, 251, 152), (34, 139, 34)]
 LIGHT_MASK = 'light_falloff100.png'
 LIGHT_RADIUS = 550
@@ -148,14 +148,15 @@ PLAYER_FOOTSTEP_INTERVAL_TIMES = {
 }
 
 # Enemy settings
+ENEMY_PF_QUEUE_UPDATE_RATE = 1000
 ENEMY_ATTACK_RATE = 500
 ENEMY_DAMAGE = [x for x in range(20, 40)]
 ENEMY_KNOCKBACK = 10
 ENEMY_LINE_OF_SIGHT = TILESIZE / 2.25
 ENEMY_HIT_RECT = pg.Rect(0, 0, TILESIZE + 16, TILESIZE + 16)
-ENEMY_SPEEDS = [speed for speed in range(80, 140, 10)]
+ENEMY_SPEEDS = [speed for speed in range(110, 200, 10)]
 ENEMY_HEALTH = [dmg for dmg in range(500, 1000, 100)]
-DETECT_RADIUS = 400
+DETECT_RADIUS = 550
 APPROACH_RADIUS = 150
 AVOID_RADIUS = 10
 SEEK_FORCE = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -170,7 +171,7 @@ ENEMY_HIT_SOUNDS = {'hit': ['zombies/Hit sounds/Bash/Bash hit 1.ogg',
                         'zombies/Hit sounds/Bash/Bash hit 3.ogg',
 
                     ]
-}
+                    }
 ZOMBIE_MOAN_SOUNDS = [
     'zombies/Moans/zombie-1.ogg',
     'zombies/Moans/zombie-2.ogg',
@@ -208,28 +209,31 @@ WEAPONS['penetration depreciation'] = {'rifle': .15, 'handgun': .5, 'shotgun': .
 WEAPONS['stamina'] = {'regen': {'knife': 2.5, 'rifle': 4, 'shotgun': 3.75, 'handgun': 4.25},
                       'dropoff': {'knife': 3, 'rifle': 4, 'shotgun': 4.5, 'handgun': 3.75}}
 
-WEAPONS['animation times'] = {'handgun': {'idle': 100, 'melee': 45, 'move': 100, 'reload': 65, 'shoot': 125},
-                              'knife': {'idle': 100, 'melee': 30, 'move': 75, 'reload': 0, 'shoot': 0},
-                              'rifle': {'idle': 100, 'melee': 45, 'move': 125, 'reload': 100, 'shoot': 55},
-                              'shotgun': {'idle': 100, 'melee': 45, 'move': 125, 'reload': 110, 'shoot': 175}}
+WEAPONS['animation times'] = {'handgun': {'idle': 100, 'melee': 25, 'move': 100, 'reload': 65, 'shoot': 45},
+                              'knife': {'idle': 100, 'melee': 20, 'move': 75, 'reload': 0, 'shoot': 0},
+                              'rifle': {'idle': 100, 'melee': 35, 'move': 125, 'reload': 100, 'shoot': 55},
+                              'shotgun': {'idle': 100, 'melee': 35, 'move': 125, 'reload': 85, 'shoot': 175}}
 
 WEAPONS['sound'] = {'handgun': {'attack': 'Weapons/Attack/pistol.wav',
-                                'reload': 'Weapons/Reload/Handgun1.ogg', 'draw': 'Weapons/Draw/weapon_draw.ogg'},
+                                'reload': 'Weapons/Reload/Handgun1.ogg', 'draw': 'Weapons/Draw/weapon_draw.ogg',
+                                'empty': 'Weapons/empty.ogg'},
                     'shotgun': {'attack': 'Weapons/Attack/shotgun.wav',
                                 'reload': 'Weapons/Reload/Shotgun load.ogg',
-                                'Pump': 'Weapons/Reload/Shotgun pump.ogg', 'draw': 'Weapons/Draw/weapon_draw.ogg'},
+                                'Pump': 'Weapons/Reload/Shotgun pump.ogg', 'draw': 'Weapons/Draw/weapon_draw.ogg',
+                                'empty': 'Weapons/empty.ogg'},
                     'rifle': {'attack': 'Weapons/Attack/rifle2.wav',
-                              'reload': 'Weapons/Reload/Rifle1.ogg', 'draw': 'Weapons/Draw/weapon_draw.ogg'},
+                              'reload': 'Weapons/Reload/Rifle1.ogg', 'draw': 'Weapons/Draw/weapon_draw.ogg',
+                              'empty': 'Weapons/empty.ogg'},
                     'knife': {'draw': 'Weapons/Draw/knifedraw.wav'}
                     }
 
 WEAPONS['handgun'] = {'bullet_speed': BULLET_SPEED,
                       'bullet_lifetime': BULLET_LIFETIME,
-                      'rate': 300,
+                      'rate': 80,
                       'spread': 1,
-                      'damage': 60,
+                      'damage': 55,
                       'bullet_size': 'med',
-                      'clip size': 15,
+                      'clip size': 25,
                       'weight': 3,
                       'wobble': {'sprint': 3, 'walk': 2, 'idle': 1},
                       'muzzle flash range': [25, 35],
@@ -241,9 +245,9 @@ WEAPONS['handgun'] = {'bullet_speed': BULLET_SPEED,
 
 WEAPONS['rifle'] = {'bullet_speed': BULLET_SPEED,
                     'bullet_lifetime': BULLET_LIFETIME,
-                    'rate': 100,
+                    'rate': 150,
                     'spread': 2,
-                    'damage': 85,
+                    'damage': 90,
                     'bullet_size': 'lg',
                     'clip size': 30,
                     'weight': 5,
@@ -259,7 +263,7 @@ WEAPONS['shotgun'] = {'bullet_speed': BULLET_SPEED,
                       'bullet_lifetime': BULLET_LIFETIME,
                       'rate': 520,
                       'spread': 8,
-                      'damage': 450,
+                      'damage': 40,
                       'bullet_size': 'sm',
                       'clip size': 8,
                       'weight': 5,
