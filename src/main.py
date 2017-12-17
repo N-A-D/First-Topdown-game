@@ -10,7 +10,7 @@ from settings import WIDTH, HEIGHT, TITLE, TILESIZE, \
     PLAYER_SWING_NOISES, BG_MUSIC, GAME_OVER_MUSIC, MAIN_MENU_MUSIC, HUD_FONT, TITLE_FONT, \
     BLACK, YELLOW, ORANGE, RIFLE_HUD_IMG, SHOTGUN_HUD_IMG, PISTOL_HUD_IMG, KNIFE_HUD_IMG, \
     DEEPSKYBLUE, ENEMY_KNOCKBACK, LIMEGREEN, DARKRED, BLOOD_SPLAT, GAME_LEVELS, ITEMS
-from random import choice, uniform, random
+from random import choice, uniform, random, randint
 from player import Player
 from mobs import Mob, SpawnPoint
 from tilemap import Camera, TiledMap
@@ -53,7 +53,7 @@ class GameEngine:
 
         # Night time effect
         self.last_light_decrease = pg.time.get_ticks()
-        self.NIGHT_COLOR = (5, 5, 5)
+        self.NIGHT_COLOR = [80, 80, 80]
         self.rgb_decrease_value = 8
 
         # Loads game assets
@@ -68,8 +68,6 @@ class GameEngine:
 
         # Menu Flags
         self.on_control_screen = False
-
-
 
     def load_data(self):
         """
@@ -295,7 +293,7 @@ class GameEngine:
         self.mobs = pg.sprite.Group()
         self.items = pg.sprite.Group()
         self.swingAreas = pg.sprite.Group()
-        self.spawn_points = pg.sprite.Group()  # spawn points for mob spawning
+        self.spawn_points = []  # spawn points for mob spawning
         self.camera = Camera(self.map.width, self.map.height)
         self.paused = False
         self.running = True
@@ -304,8 +302,6 @@ class GameEngine:
         self.game_graph.walls = []
         self._load_map_data()
         self.get_wall_positions()
-        self.mob_idx = 0
-        self.last_queue_update = 0
         self.run()
 
     def run(self):
@@ -330,13 +326,13 @@ class GameEngine:
         :return: None
         """
         print(len(self.mobs))
-
-        if len(self.mobs) <= 25:
-            for sp in self.spawn_points:
-                if len(self.mobs) == 25:
-                    break
-                elif sp.last_spawn_time == 0 or not sp.mob.alive() or pg.time.get_ticks() - sp.last_spawn_time < 3000:
-                    sp.spawn_mob()
+        for spawn_point in self.spawn_points:
+            spawn_point.update()
+        if len(self.mobs) < 36:
+            spawn_point = self.spawn_points[randint(0, len(self.spawn_points) - 1)]
+            while not spawn_point.can_spawn:
+                spawn_point = self.spawn_points[randint(0, len(self.spawn_points) - 1)]
+            spawn_point.spawn_mob()
 
         for sprite in self.all_sprites:
             if sprite == self.player:
@@ -378,14 +374,6 @@ class GameEngine:
                     hit.pause()
                     if self.player.health <= 0:
                         self.playing = False
-
-        # Bullet collisions
-        hits = pg.sprite.groupcollide(self.mobs, self.bullets, False, False, collide_hit_rect)
-        if hits:
-            for mob in hits:
-                for bullet in hits[mob]:
-                    mob.health -= bullet.damage
-                    mob.pos += vec(WEAPONS[self.player.weapon]['damage'] // 10, 0).rotate(-self.player.rot)
 
         # Item collisions
         item_collisions = pg.sprite.spritecollide(self.player, self.items, False, collide_hit_rect)
@@ -439,8 +427,7 @@ class GameEngine:
         self.screen.blit(self.map_img, self.camera.apply_rect(self.map_rect))
         for sprite in self.all_sprites:
             if isinstance(sprite, Mob):
-                if sprite.is_onscreen:
-                    self.screen.blit(sprite.image, self.camera.apply(sprite))
+                self.screen.blit(sprite.image, self.camera.apply(sprite))
             else:
                 self.screen.blit(sprite.image, self.camera.apply(sprite))
         self._render_fog()
@@ -479,10 +466,6 @@ class GameEngine:
 
         self.screen.blit(self.fog, (0, 0), special_flags=pg.BLEND_MULT)
 
-    @staticmethod
-    def _point_contained(rectangle, x, y):
-        return rectangle.collidepoint((x, y))
-
     def _render_hud(self):
         """
         Updates the HUD information for the player to see
@@ -490,7 +473,7 @@ class GameEngine:
         """
         x, y = pg.mouse.get_pos()
         mouse_vec = world_shift_pos((x, y), self.camera.camera)
-        mouse_collisions = [True for mob in self.mobs if self._point_contained(mob.hit_rect, mouse_vec.x, mouse_vec.y)]
+        mouse_collisions = [True for mob in self.mobs if mob.hit_rect.collidepoint(mouse_vec.x, mouse_vec.y)]
 
         if mouse_collisions:
             color = RED
@@ -608,18 +591,9 @@ class GameEngine:
         the mobs group.
         :return: None
         """
-        now = pg.time.get_ticks()
-        if now - self.last_queue_update > 5000:
-            self.last_queue_update = now
-            if self.mob_idx == len(self.mobs):
-                self.mob_idx = 0
-            count = 0
-            for mob in self.mobs:
-                mob.can_find_path = False
-                if count == self.mob_idx:
-                    mob.can_find_path = True
-                count += 1
-            self.mob_idx += 1
+        # for mob in self.mobs:
+        #     if not mob.path:
+        #         mob.track_prey(self.player)
 
     def get_wall_positions(self):
         """
