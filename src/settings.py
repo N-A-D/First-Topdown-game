@@ -148,14 +148,17 @@ PLAYER_FOOTSTEP_INTERVAL_TIMES = {
 }
 
 # Enemy settings
+ENEMY_MOAN_CHANCE = 0.007
+ENEMY_LOOT_DROP_CHANCE = .05
+ENEMY_WEAPON_DROP_CHANCE = .25
 ENEMY_PF_QUEUE_UPDATE_RATE = 1000
 ENEMY_ATTACK_RATE = 500
 ENEMY_DAMAGE = [x for x in range(20, 40)]
 ENEMY_KNOCKBACK = 10
 ENEMY_LINE_OF_SIGHT = TILESIZE / 2.25
-ENEMY_HIT_RECT = pg.Rect(0, 0, TILESIZE + 16, TILESIZE + 16)
+ENEMY_HIT_RECT = pg.Rect(0, 0, TILESIZE, TILESIZE)
 ENEMY_SPEEDS = [speed for speed in range(110, 200, 10)]
-ENEMY_HEALTH = [dmg for dmg in range(500, 1000, 100)]
+ENEMY_HEALTH = 500
 DETECT_RADIUS = 550
 APPROACH_RADIUS = 150
 AVOID_RADIUS = 10
@@ -202,10 +205,10 @@ ZOMBIE_MOAN_SOUNDS = [
 # Weapon settings
 WEAPONS = {}
 
-BULLET_SPEED = 5000
+BULLET_SPEED = 7000
 BULLET_LIFETIME = 5000
 
-WEAPONS['penetration depreciation'] = {'rifle': .15, 'handgun': .5, 'shotgun': .2}
+WEAPONS['penetration chance'] = {'rifle': .15, 'handgun': .5, 'shotgun': .2}
 WEAPONS['stamina'] = {'regen': {'knife': 2.5, 'rifle': 4, 'shotgun': 3.75, 'handgun': 4.25},
                       'dropoff': {'knife': 3, 'rifle': 4, 'shotgun': 4.5, 'handgun': 3.75}}
 
@@ -229,9 +232,9 @@ WEAPONS['sound'] = {'handgun': {'attack': 'Weapons/Attack/pistol.wav',
 
 WEAPONS['handgun'] = {'bullet_speed': BULLET_SPEED,
                       'bullet_lifetime': BULLET_LIFETIME,
-                      'rate': 80,
+                      'rate': 100,
                       'spread': 1,
-                      'damage': 55,
+                      'damage': 225,
                       'bullet_size': 'med',
                       'clip size': 25,
                       'weight': 3,
@@ -241,13 +244,14 @@ WEAPONS['handgun'] = {'bullet_speed': BULLET_SPEED,
                       'crosshair radius': 10,
                       'knockback': vec(20, 0),
                       'melee kill chance': (.65, 1),
+                      'penetration strength': 45,
                       'bullet_count': 1}
 
 WEAPONS['rifle'] = {'bullet_speed': BULLET_SPEED,
                     'bullet_lifetime': BULLET_LIFETIME,
                     'rate': 150,
                     'spread': 2,
-                    'damage': 90,
+                    'damage': 455,
                     'bullet_size': 'lg',
                     'clip size': 30,
                     'weight': 5,
@@ -257,13 +261,14 @@ WEAPONS['rifle'] = {'bullet_speed': BULLET_SPEED,
                     'crosshair radius': 15,
                     'knockback': vec(25, 0),
                     'melee kill chance': (.8, 1),
+                    'penetration strength': 30,
                     'bullet_count': 1}
 
 WEAPONS['shotgun'] = {'bullet_speed': BULLET_SPEED,
                       'bullet_lifetime': BULLET_LIFETIME,
                       'rate': 520,
                       'spread': 8,
-                      'damage': 40,
+                      'damage': 180,
                       'bullet_size': 'sm',
                       'clip size': 8,
                       'weight': 5,
@@ -273,6 +278,7 @@ WEAPONS['shotgun'] = {'bullet_speed': BULLET_SPEED,
                       'crosshair radius': 20,
                       'knockback': vec(25, 0),
                       'melee kill chance': (.8, 1),
+                      'penetration strength': 60,
                       'bullet_count': 16}
 WEAPONS['knife'] = {
     'damage': 205,
@@ -285,8 +291,8 @@ WEAPONS['knife'] = {
 }
 
 ITEMS = {}
-ITEMS['weapon'] = {'rifle': [i for i in range(6, 8)], 'handgun': [i for i in range(6, 8)],
-                   'shotgun': [i for i in range(4, 6)]}
+ITEMS['weapon'] = {'rifle': [i for i in range(2, 4)], 'handgun': [i for i in range(3, 5)],
+                   'shotgun': [i for i in range(1, 2)]}
 ITEMS['consumable'] = {'health': [i for i in range(10, 21)], 'ammo': [i for i in range(4, 6)],
                        'armour': [i for i in range(50, 125, 25)]}
 ITEMS['sound'] = {

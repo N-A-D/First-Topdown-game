@@ -5,6 +5,19 @@ from os.path import isfile, join
 
 vec = pg.math.Vector2
 
+def parse_tuple_to_list(string):
+    """
+    Parses a string into a tuple
+    :param string: The string to convert
+    :return: the newly formed tuple
+    """
+    try:
+        t = eval(string)
+        if type(t) == tuple:
+            return t
+    except:
+        return
+
 def collide_hit_rect(first, second):
     """
     Call back function which checks if two rectangles have collided with each other

@@ -3,7 +3,8 @@ from random import choice, uniform, random
 from core_functions import collide_with_obstacles
 from settings import MOB_LAYER, ENEMY_HIT_RECT, ENEMY_SPEEDS, ENEMY_HEALTH, ENEMY_DAMAGE, WANDER_RING_RADIUS, \
     SEEK_FORCE, WIDTH, HEIGHT, TILESIZE, DETECT_RADIUS, GREEN, RED, YELLOW, vec, WANDER_RING_DISTANCE, \
-    ENEMY_LINE_OF_SIGHT, AVOID_RADIUS, APPROACH_RADIUS, ENEMY_ATTACK_RATE, WIDTH
+    ENEMY_LINE_OF_SIGHT, AVOID_RADIUS, APPROACH_RADIUS, ENEMY_ATTACK_RATE, WIDTH, ENEMY_LOOT_DROP_CHANCE, \
+    ENEMY_WEAPON_DROP_CHANCE, ENEMY_MOAN_CHANCE
 from sprites import Item
 from math import sqrt
 
@@ -43,7 +44,7 @@ class Mob(pg.sprite.Sprite):
         self.hit_rect.center = self.rect.center
 
         self.speed = choice(ENEMY_SPEEDS)
-        self.health = choice(ENEMY_HEALTH)
+        self.health = ENEMY_HEALTH
         self._health = self.health
         self.MAX_HEALTH = self.health
         self.damage = choice(ENEMY_DAMAGE)
@@ -151,7 +152,7 @@ class Mob(pg.sprite.Sprite):
             self.target = prey.pos
         else:
             self.target = prey.pos + prey.vel.normalize()
-        return self.seek(self.target)
+        return self.seek_with_approach(self.target)
 
     def cohesion(self, mobs):
         """
@@ -247,7 +248,7 @@ class Mob(pg.sprite.Sprite):
         d3 = obs_center.distance_to(pos)
         return (d1 <= obs.radius) or (d2 <= obs.radius) or (d3 <= obs.radius)
 
-    def find_most_threatening_obstacle(self, ahead, further_ahead, pos):
+    def find_most_threatening_obstacle(self, ahead, further_ahead, pos, obstacles):
         """
         Finds the most threatening object and returns its position.
         :param ahead: Secondary line of sight
@@ -257,14 +258,14 @@ class Mob(pg.sprite.Sprite):
                 threatening obstacle in the mob's path.
         """
         most_threatening = None
-        for wall in self.game._walls:
+        for wall in obstacles:
             collide = self.find_collision(wall, ahead, further_ahead, pos)
-            if collide and (not most_threatening or self.pos.distance_to(wall.rect.center) < self.pos.distance_to(
-                    most_threatening)):
+            if collide and (not most_threatening or self.pos.distance_to(wall.rect.center) <
+                self.pos.distance_to(most_threatening)):
                 most_threatening = wall.pos
         return most_threatening
 
-    def obstacle_avoidance(self):
+    def obstacle_avoidance(self, obstacles):
         """
         Gives a mob the ability to avoid obstacles in its path.
         :return: Vector2 object representing the force needed to avoid
@@ -274,7 +275,7 @@ class Mob(pg.sprite.Sprite):
             self.move_from_rest()
         further_ahead = self.pos + self.vel.normalize() * ENEMY_LINE_OF_SIGHT
         ahead = self.pos + self.vel.normalize() * ENEMY_LINE_OF_SIGHT / 2
-        most_threatening = self.find_most_threatening_obstacle(ahead, further_ahead, self.pos)
+        most_threatening = self.find_most_threatening_obstacle(ahead, further_ahead, self.pos, obstacles)
         avoidance_force = vec(0, 0)
         if most_threatening:
             avoidance_force = further_ahead - most_threatening
@@ -282,37 +283,37 @@ class Mob(pg.sprite.Sprite):
             avoidance_force.scale_to_length(self.speed)
         return avoidance_force
 
-    def apply_flocking_behaviour(self):
+    def apply_flocking_behaviour(self, enemies, obstacles):
         """
         Applies flcoking steering behaviours to the mob
         :return: None
         """
-        self.acc += self.obstacle_avoidance() * 1.75
-        self.acc += self.separation(self.game.mobs) * 2
-        self.acc += self.align(self.game.mobs)
-        self.acc += self.cohesion(self.game.mobs)
+        self.acc += self.obstacle_avoidance(obstacles) * 2.5
+        self.acc += self.separation(enemies) * 2
+        self.acc += self.align(enemies)
+        self.acc += self.cohesion(enemies)
 
-    def apply_pursuing_behaviour(self):
+    def apply_pursuing_behaviour(self, enemies, obstacles):
         """
         Allows the mob to pursue the target
         :return:
         """
-        self.acc += self.pursue(self.game.player) * 2.75
-        self.acc += self.obstacle_avoidance() * 2.5
-        self.acc += self.separation(self.game.mobs) * 2.6
-        self.acc += self.align(self.game.mobs)
-        self.acc += self.cohesion(self.game.mobs)
+        self.acc += self.pursue(self.game.player) * 3
+        self.acc += self.obstacle_avoidance(obstacles) * 2.6
+        self.acc += self.separation(enemies) * 2.5
+        self.acc += self.align(enemies)
+        self.acc += self.cohesion(enemies)
 
-    def apply_wandering_behaviour(self):
+    def apply_wandering_behaviour(self, enemies, obstacles):
         """
         Gives a mob the ability to wander the around.
         :return:
         """
         self.acc += self.wander()
-        self.acc += self.obstacle_avoidance() * 1.75
-        self.acc += self.separation(self.game.mobs) * 2
-        self.acc += self.align(self.game.mobs)
-        self.acc += self.cohesion(self.game.mobs)
+        self.acc += self.obstacle_avoidance(obstacles) * 1.75
+        self.acc += self.separation(enemies) * 2
+        self.acc += self.align(enemies)
+        self.acc += self.cohesion(enemies)
 
     def check_if_is_on_screen(self):
         """
@@ -320,7 +321,7 @@ class Mob(pg.sprite.Sprite):
         :return: True if on the screen, False otherwise
         """
         location = vec(self.game.camera.apply_rect(self.hit_rect.copy()).topleft)
-        if location.x <= WIDTH + TILESIZE and location.y <= HEIGHT + TILESIZE:
+        if location.x <= WIDTH + 3 * TILESIZE and location.y <= HEIGHT + 3 * TILESIZE:
             self.is_onscreen = True
         else:
             self.is_onscreen = False
@@ -331,10 +332,23 @@ class Mob(pg.sprite.Sprite):
         this mob dies
         :return: None
         """
-        if uniform(0, 1) < .5:
-            Item(self.game, int(self.pos.x), int(self.pos.y), choice(['rifle', 'shotgun', 'handgun']))
-        else:
-            Item(self.game, int(self.pos.x), int(self.pos.y), choice(['health', 'ammo', 'armour']))
+        if uniform(0, 1) < ENEMY_LOOT_DROP_CHANCE:
+            if uniform(0, 1) < ENEMY_WEAPON_DROP_CHANCE:
+                weapon_drop_type = uniform(0, 1)
+                if weapon_drop_type > .6:
+                    Item(self.game, int(self.pos.x), int(self.pos.y), 'handgun')
+                elif .25 < weapon_drop_type <= .6:
+                    Item(self.game, int(self.pos.x), int(self.pos.y), 'rifle')
+                else:
+                    Item(self.game, int(self.pos.x), int(self.pos.y), 'shotgun')
+            else:
+                consumable_drop_type = uniform(0, 1)
+                if consumable_drop_type > .5:
+                    Item(self.game, int(self.pos.x), int(self.pos.y), 'health')
+                elif .20 < consumable_drop_type <= .5:
+                    Item(self.game, int(self.pos.x), int(self.pos.y), 'armour')
+                else:
+                    Item(self.game, int(self.pos.x), int(self.pos.y), 'ammo')
 
     def follow_path(self):
         """
@@ -357,30 +371,29 @@ class Mob(pg.sprite.Sprite):
         :return: None
         """
         self.check_if_is_on_screen()
+        nearby_enemies = [mob for mob in self.game.mobs if self.pos.distance_to(mob.pos) < DETECT_RADIUS / 2]
+        nearby_obstacles = [obs for obs in self.game._walls if self.pos.distance_to(obs.pos) < DETECT_RADIUS / 2]
         if self.health <= 0:
-            if uniform(0, 1) < .015:
-                self.drop_item()
+            self.drop_item()
             self.kill()
             self.game.map_img.blit(self.game._death_splat, self.hit_rect.topleft)
-        # if self.is_onscreen:
         self.track_prey(self.game.player)
         if self.pos.distance_to(self.game.player.pos) < DETECT_RADIUS:
-            if random() < 0.007:
+            if random() < ENEMY_MOAN_CHANCE:
                 snd = choice(self.game.zombie_moan_sounds)
                 if snd.get_num_channels() > 2:
                     snd.stop()
                 snd.play()
-            self.apply_pursuing_behaviour()
+            self.apply_pursuing_behaviour(nearby_enemies, nearby_obstacles)
             self.rot = (self.target - self.pos).angle_to(vec(1, 0))
             self.path = None
         elif self.path:
             self.target = self.follow_path()
             self.acc += self.target
-            self.apply_flocking_behaviour()
+            self.apply_flocking_behaviour(nearby_enemies, nearby_obstacles)
             self.rot = (self.target - self.pos).angle_to(vec(1, 0))
         else:
-            if self.is_onscreen:
-                self.apply_wandering_behaviour()
+            self.apply_wandering_behaviour(nearby_enemies, nearby_obstacles)
             self.rot = self.vel.angle_to(vec(1, 0))
         self.vel += self.acc * self.game.dt
         self.vel.scale_to_length(self.speed)
@@ -390,7 +403,8 @@ class Mob(pg.sprite.Sprite):
             collide_with_obstacles(self, self.game.all_walls, 'x')
             self.hit_rect.centery = self.pos.y
             collide_with_obstacles(self, self.game.all_walls, 'y')
-        self.image = pg.transform.rotozoom(self.original_image, self.rot - 90, 1).copy()
+        if self.is_onscreen:
+            self.image = pg.transform.rotozoom(self.original_image, self.rot - 90, 1).copy()
         self.rect.center = self.hit_rect.center
         now = pg.time.get_ticks()
         if now - self.last_attack_time > ENEMY_ATTACK_RATE:
@@ -441,6 +455,3 @@ class SpawnPoint(pg.sprite.Sprite):
         if now - self.cool_down_time < 1000:
             self.cool_down_time = now
             self.can_spawn = True
-        else:
-            self.cool_down_time = now
-            self.can_spawn = False

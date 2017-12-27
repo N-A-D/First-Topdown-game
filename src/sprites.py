@@ -2,7 +2,6 @@ import pygame as pg
 from random import uniform, choice, randint
 from settings import TILESIZE, BULLET_LAYER, WEAPONS, EFFECTS_LAYER, \
     FLASH_DURATION, ITEMS_LAYER, BOB_RANGE, BOB_SPEED, PLAYER_MELEE_RECTS, vec, YELLOW
-from core_functions import collide_hit_rect
 import pytweening as tween
 from math import sqrt
 
@@ -109,38 +108,29 @@ class Bullet(pg.sprite.Sprite):
         # As the damage decreases, the chance for this bullet to stop upon
         # hitting another enemy increases by the same rate
         self.damage = damage
-        self.penetration_depreciation = WEAPONS['penetration depreciation'][self.weapon]
+        self.penetration_chance = WEAPONS['penetration chance'][self.weapon]
+        self.penetration_strength = WEAPONS[self.weapon]['penetration strength']
 
-    def _update_pos(self):
-        self.pos += self.vel * self.game.dt
-        self.hit_rect.center = self.pos
-        self.rect.center = self.hit_rect.center
-
-    def _wall_collisions(self):
-        if pg.sprite.spritecollideany(self, self.game.walls):
+    def depreciate_damage(self):
+        """
+        Decreases the bullet's damage after every collision
+        :return:
+        """
+        if uniform(0, 1) <= self.penetration_chance:
             self.kill()
-
-    def _mob_collisions(self):
-        mobs = pg.sprite.spritecollide(self, self.game.mobs, False, collided=collide_hit_rect)
-        if mobs:
-            if uniform(0, 1) <= self.penetration_depreciation:
-                self.kill()
-            self.damage *= .75
-            self.penetration_depreciation *= 1.25
-
-            for mob in mobs:
-                mob.health -= self.damage
-                mob.pos += vec(WEAPONS[self.game.player.weapon]['damage'] // 10, 0).rotate(-self.game.player.rot)
+        else:
+            self.damage *= 1 - self.penetration_chance
+            rate = (1 + self.penetration_strength / 100)
+            self.penetration_strength *= rate
 
     def update(self):
         """
         Update this bullet's internal state
         :return: None
         """
-        self._update_pos()
-        self._wall_collisions()
-        self._mob_collisions()
-
+        self.pos += self.vel * self.game.dt
+        self.hit_rect.center = self.pos
+        self.rect.center = self.hit_rect.center
         # If the bullet has travelled a certain distance this removes it
         if pg.time.get_ticks() - self.spawn_time > WEAPONS[self.weapon]['bullet_lifetime'] or self.damage <= 0:
             self.kill()
@@ -279,3 +269,10 @@ class SwingArea(pg.sprite.Sprite):
             self.rect.midtop = self.game.player.hit_rect.midbottom
         elif self.direction == 'SE':
             self.rect.topleft = self.game.player.hit_rect.bottomright
+
+class SFX_floor(pg.sprite.Sprite):
+    def __init__(self, game, pos, floortype):
+        self.groups = None
+        self.floortype = floortype
+        self.game = game
+

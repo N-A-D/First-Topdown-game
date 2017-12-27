@@ -348,7 +348,7 @@ class Player(pg.sprite.Sprite):
         else:
             self.current_step_sound = 0
 
-        self.increase_stamina(self.stamina_regen / WEAPONS[self.weapon]['weight'])
+        self.increase_stamina(self.stamina_regen / WEAPONS[self.weapon]['weight'] * 2)
 
     def melee(self):
         self.game.swing_noises[self.weapon].play()

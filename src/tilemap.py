@@ -44,6 +44,10 @@ class Camera:
         # Applies the camera offset to the entity
         return entity.rect.move(self.camera.topleft)
 
+    def apply_to_point(self, point):
+        return [point[0] + self.camera.x, point[1] + self.camera.y]
+
+
     def apply_rect(self, rect, copy=False):
         """
         Applies the camera's focus on the target rectangle

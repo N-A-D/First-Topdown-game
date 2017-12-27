@@ -9,13 +9,15 @@ from settings import WIDTH, HEIGHT, TITLE, TILESIZE, \
     ENEMY_HIT_SOUNDS, PLAYER_FOOTSTEPS, LIGHT_MASK, LIGHT_RADIUS, \
     PLAYER_SWING_NOISES, BG_MUSIC, GAME_OVER_MUSIC, MAIN_MENU_MUSIC, HUD_FONT, TITLE_FONT, \
     BLACK, YELLOW, ORANGE, RIFLE_HUD_IMG, SHOTGUN_HUD_IMG, PISTOL_HUD_IMG, KNIFE_HUD_IMG, \
-    DEEPSKYBLUE, ENEMY_KNOCKBACK, LIMEGREEN, DARKRED, BLOOD_SPLAT, GAME_LEVELS, ITEMS
+    DEEPSKYBLUE, ENEMY_KNOCKBACK, LIMEGREEN, DARKRED, BLOOD_SPLAT, GAME_LEVELS, ITEMS, \
+    PLAYER_MELEE_RECTS
+from math import sqrt
 from random import choice, uniform, random, randint
 from player import Player
 from mobs import Mob, SpawnPoint
 from tilemap import Camera, TiledMap
 from sprites import Item, Wall, BulletPassableWall, _Wall
-from core_functions import collide_hit_rect, world_shift_pos
+from core_functions import collide_hit_rect, world_shift_pos, parse_tuple_to_list
 from pathfinding import Pathfinder, WeightedGraph
 import PAdLib.occluder as occluder
 import PAdLib.shadow as shadow
@@ -53,7 +55,7 @@ class GameEngine:
 
         # Night time effect
         self.last_light_decrease = pg.time.get_ticks()
-        self.NIGHT_COLOR = [80, 80, 80]
+        self.NIGHT_COLOR = [35, 35, 35]
         self.rgb_decrease_value = 8
 
         # Loads game assets
@@ -68,6 +70,9 @@ class GameEngine:
 
         # Menu Flags
         self.on_control_screen = False
+
+        # Time within the world
+        self.current_time = 0
 
     def load_data(self):
         """
@@ -146,14 +151,14 @@ class GameEngine:
             sound_list = {}
             for snd in WEAPONS['sound'][weapon]:
                 noise = pg.mixer.Sound(path.join(self.snd_folder, WEAPONS['sound'][weapon][snd]))
-                noise.set_volume(1)
+                noise.set_volume(.5)
                 sound_list[snd] = noise
             self.weapon_sounds[weapon] = sound_list
 
         self.zombie_moan_sounds = []
         for snd in ZOMBIE_MOAN_SOUNDS:
             noise = pg.mixer.Sound(path.join(self.snd_folder, snd))
-            noise.set_volume(.35)
+            noise.set_volume(.3)
             self.zombie_moan_sounds.append(noise)
 
         self.zombie_hit_sounds = {}
@@ -161,7 +166,7 @@ class GameEngine:
             self.zombie_hit_sounds[type] = []
             for snd in ENEMY_HIT_SOUNDS[type]:
                 snd = pg.mixer.Sound(path.join(self.snd_folder, snd))
-                snd.set_volume(1)
+                snd.set_volume(.3)
                 self.zombie_hit_sounds[type].append(snd)
 
         self.player_foot_steps = {}
@@ -169,7 +174,7 @@ class GameEngine:
             self.player_foot_steps[terrain] = []
             for snd in PLAYER_FOOTSTEPS[terrain]:
                 snd = pg.mixer.Sound(path.join(self.snd_folder, snd))
-                snd.set_volume(.75)
+                snd.set_volume(.3)
                 self.player_foot_steps[terrain].append(snd)
 
         # Bullets
@@ -283,16 +288,17 @@ class GameEngine:
         self.map_img = self.map.make_map().copy().convert()
         self.map_rect = self.map_img.get_rect()
         self.all_sprites = pg.sprite.LayeredUpdates()
+        self.lighting_obstacles = []
         self.walls = pg.sprite.Group()  # Obstacles that are impassable
         self.bullet_passable_walls = pg.sprite.Group()  # Bullets can pass over these walls
         self.all_walls = pg.sprite.Group()
         self._walls = pg.sprite.Group()  # Obstacles used in the mob's obstacle avoidance algorithm
-        # End of level sprite the player collides after meeting the end of level req
-        self.level_end = pg.sprite.GroupSingle()
+        self.level_end = pg.sprite.GroupSingle() # End of level sprite the player collides after meeting the end of level req
         self.bullets = pg.sprite.Group()
         self.mobs = pg.sprite.Group()
         self.items = pg.sprite.Group()
         self.swingAreas = pg.sprite.Group()
+        self.SFX_floors = pg.sprite.Group()
         self.spawn_points = []  # spawn points for mob spawning
         self.camera = Camera(self.map.width, self.map.height)
         self.paused = False
@@ -302,6 +308,12 @@ class GameEngine:
         self.game_graph.walls = []
         self._load_map_data()
         self.get_wall_positions()
+        # The player's score
+        self.player_score = 0
+        # How long the player has been alive for
+        self.player_alive_time = pg.time.get_ticks()
+        # The current time in the world
+        self.current_time = pg.time.get_ticks()
         self.run()
 
     def run(self):
@@ -319,19 +331,20 @@ class GameEngine:
             if not self.paused:
                 self.update()
             self.render()
+        print(self.player_score, self.player_alive_time)
 
     def update(self):
         """
         Updates game state
         :return: None
         """
-        print(len(self.mobs))
         for spawn_point in self.spawn_points:
             spawn_point.update()
-        if len(self.mobs) < 36:
+        if len(self.mobs) < 40:
             spawn_point = self.spawn_points[randint(0, len(self.spawn_points) - 1)]
             while not spawn_point.can_spawn:
                 spawn_point = self.spawn_points[randint(0, len(self.spawn_points) - 1)]
+                spawn_point.update()
             spawn_point.spawn_mob()
 
         for sprite in self.all_sprites:
@@ -339,69 +352,92 @@ class GameEngine:
                 sprite.update(pg.key.get_pressed())
             else:
                 sprite.update()
+
         self.camera.update(self.player)
         self.swingAreas.update()
         self.update_pathfinding_queue()
 
+        # Bullet hits obstacle
+        if self.bullets:
+            pg.sprite.groupcollide(self.bullets, self.walls, True, False, collide_hit_rect)
+
+        # bullet hits mob
+        if self.bullets: # there are bullets in the air...
+            for mob in self.mobs:
+                for bullet in self.bullets:
+                    if collide_hit_rect(mob, bullet):
+                        mob.health -= bullet.damage
+                        mob.pos += vec(WEAPONS[self.player.weapon]['damage'] // 10, 0).rotate(-self.player.rot)
+                        bullet.depreciate_damage()
+                        if mob.health <= 0:
+                            self.player_score += 1
+                            break
+
         # Player hits mobs
-        hit_melee_box = pg.sprite.groupcollide(self.mobs, self.swingAreas, False, True, collide_hit_rect)
-        if hit_melee_box:
-            for hit in hit_melee_box:
-                dmg = uniform(WEAPONS[self.player.weapon]['melee kill chance'][0],
-                              WEAPONS[self.player.weapon]['melee kill chance'][1]) * hit._health
-                hit.health -= dmg
-                if hit.health > 0:
-                    choice(self.zombie_hit_sounds['hit']).play()
-                else:
-                    choice(self.zombie_hit_sounds['kill']).play()
-                hit.pos += WEAPONS[self.player.weapon]['knockback'].rotate(-self.player.rot)
+        if self.swingAreas: # If the player has swung their weapon...
+            for mob in self.mobs:
+                for swingArea in self.swingAreas:
+                    if collide_hit_rect(mob, swingArea):
+                        dmg = uniform(WEAPONS[self.player.weapon]['melee kill chance'][0],
+                                      WEAPONS[self.player.weapon]['melee kill chance'][1]) * mob._health
+                        mob.health -= dmg
+                        if mob.health > 0:
+                            choice(self.zombie_hit_sounds['hit']).play()
+                        else:
+                            choice(self.zombie_hit_sounds['kill']).play()
+                            self.player_score += 1
+                        mob.pos += WEAPONS[self.player.weapon]['knockback'].rotate(-self.player.rot)
 
         # Enemy hits player
-        hits = pg.sprite.spritecollide(self.player, self.mobs, False, collide_hit_rect)
-        if hits:
-            self.player.pos += vec(ENEMY_KNOCKBACK, 0).rotate(-hits[0].rot)
-            for hit in hits:
-                if random() < .95:
-                    choice(self.player_hit_sounds).play()
-                if hit.can_attack:
+        for mob in self.mobs:
+            if collide_hit_rect(mob, self.player):
+                self.player.pos += vec(ENEMY_KNOCKBACK, 0).rotate(-mob.rot)
+                choice(self.player_hit_sounds).play()
+                if mob.can_attack:
+                    # Slow down the rate of mob attacks
+                    mob.pause()
                     if self.player.has_armour:
-                        self.player.armour -= hit.damage
+                        self.player.armour -= mob.damage
                         if self.player.armour < 0:
+                            self.player.has_armour = False
+                            # if the player's armour is broken then apply the excess damage onto their health
                             self.player.health += self.player.armour
+                            self.player.armour = 0
                     else:
-                        self.player.health -= hit.damage
-                    # hit.vel.normalize()
-                    hit.pause()
-                    if self.player.health <= 0:
-                        self.playing = False
+                        self.player.health -= mob.damage
+                        # if the player has died...
+                        if self.player.health <= 0:
+                            self.playing = False
+                            now = pg.time.get_ticks()
+                            self.player_alive_time = (now - self.player_alive_time) / 1000.0
 
         # Item collisions
-        item_collisions = pg.sprite.spritecollide(self.player, self.items, False, collide_hit_rect)
-        if item_collisions:
-            for item in item_collisions:
-                if item._type == 'ammo':
-                    possessed_weapons = []
-                    for weapon in self.player.arsenal:
-                        if weapon != 'knife':
-                            if self.player.arsenal[weapon]['hasWeapon']:
-                                possessed_weapons.append(weapon)
-                    if possessed_weapons:
+        if self.items: # If there are items to pick up
+            for item in self.items:
+                if collide_hit_rect(self.player, item):
+                    if item._type == 'ammo':
+                        possessed_weapons = []
+                        for weapon in self.player.arsenal:
+                            if weapon != 'knife':
+                                if self.player.arsenal[weapon]['hasWeapon']:
+                                    possessed_weapons.append(weapon)
+                        if possessed_weapons:
+                            self.player.pickup_item(item)
+                            self.item_sounds[item._type].play()
+                            item.kill()
+                    elif item._type == 'armour':
+                        self.item_sounds[item._type].play()
+                        self.player.pickup_item(item)
+                        item.kill()
+                    elif item._type == 'health':
+                        if self.player.health != 100:
+                            self.player.pickup_item(item)
+                            self.item_sounds[item._type].play()
+                            item.kill()
+                    else:
                         self.player.pickup_item(item)
                         self.item_sounds[item._type].play()
                         item.kill()
-                elif item._type == 'armour':
-                    self.item_sounds[item._type].play()
-                    self.player.pickup_item(item)
-                    item.kill()
-                elif item._type == 'health':
-                    if self.player.health != 100:
-                        self.player.pickup_item(item)
-                        self.item_sounds[item._type].play()
-                        item.kill()
-                else:
-                    self.player.pickup_item(item)
-                    self.item_sounds[item._type].play()
-                    item.kill()
 
     def events(self):
         """
@@ -426,7 +462,7 @@ class GameEngine:
         """
         self.screen.blit(self.map_img, self.camera.apply_rect(self.map_rect))
         for sprite in self.all_sprites:
-            if isinstance(sprite, Mob):
+            if isinstance(sprite, Mob) and sprite.is_onscreen:
                 self.screen.blit(sprite.image, self.camera.apply(sprite))
             else:
                 self.screen.blit(sprite.image, self.camera.apply(sprite))
@@ -441,7 +477,7 @@ class GameEngine:
 
     def _render_fog(self):
         """
-        Creates the in-game lighting effect. This algorithm relies on Ian Mallett's graphics library
+        Creates the in-game lighting effect.
         :return:
         """
         shad = shadow.Shadow()
@@ -483,58 +519,58 @@ class GameEngine:
         pygame.gfxdraw.aacircle(self.screen, x, y,
                                 WEAPONS[self.player.weapon]['crosshair radius'], color)
         pygame.gfxdraw.circle(self.screen, x, y, 2, color)
-        pg.draw.rect(self.screen, WHITE, pg.Rect(45, HEIGHT - 155, 110, 100), 3)
+        #pg.draw.rect(self.screen, WHITE, pg.Rect(45, HEIGHT - 155, 110, 100), 3)
 
-        if not self.player.has_armour:
-            if self.player.health > 85:
-                color = GREEN
-            elif 75 < self.player.health <= 85:
-                color = LIMEGREEN
-            elif 50 < self.player.health <= 75:
-                color = YELLOW
-            elif 25 < self.player.health <= 50:
-                color = ORANGE
-            elif 12 < self.player.health <= 25:
-                color = DARKRED
-            else:
-                color = RED
-            self._render_text(str(round(self.player.health, 0)) + "%", self.hud_font, 30, color, 110, HEIGHT - 150,
-                              align='nw')
-            self._hud_hp_rect.topleft = (50, HEIGHT - 145)
-            self.screen.blit(self._hud_hp, self._hud_hp_rect)
-        else:
-            color = DEEPSKYBLUE
-            self._render_text(str(self.player.armour) + "%", self.hud_font, 30, color, 110, HEIGHT - 150, align='nw')
-            self._hud_armour_rect.topleft = (50, HEIGHT - 145)
-            self.screen.blit(self._hud_armour, self._hud_armour_rect)
-
-        if self.player.stamina > 85:
-            color = GREEN
-        elif 75 < self.player.stamina <= 85:
-            color = LIMEGREEN
-        elif 50 < self.player.stamina <= 75:
-            color = YELLOW
-        elif 25 < self.player.stamina <= 50:
-            color = ORANGE
-        elif 12 < self.player.stamina <= 25:
-            color = DARKRED
-        else:
-            color = RED
-
-        self._render_text("{:.0f}".format(self.player.stamina) + "%", self.hud_font, 30, color, 110, HEIGHT - 125,
-                          align='nw')
-        self._hud_stamina_rect.topleft = (50, HEIGHT - 120)
-        self.screen.blit(self._hud_stamina, self._hud_stamina_rect)
-
-        if self.player.weapon != 'knife':
-            self._render_text(str(self.player.arsenal[self.player.weapon]['clip']) + " / " + \
-                              str(self.player.arsenal[self.player.weapon]['total ammunition']),
-                              self.hud_font, 30, WHITE, 50, HEIGHT - 100,
-                              'nw')
-        else:
-            self._hud_knife_ammo_rect.topleft = (55, HEIGHT - 100)
-            self.screen.blit(self._hud_knife_ammo, self._hud_knife_ammo_rect)
-        self.screen.blit(self.hud_images[self.player.weapon], (125, HEIGHT - 90))
+        # if not self.player.has_armour:
+        #     if self.player.health > 85:
+        #         color = GREEN
+        #     elif 75 < self.player.health <= 85:
+        #         color = LIMEGREEN
+        #     elif 50 < self.player.health <= 75:
+        #         color = YELLOW
+        #     elif 25 < self.player.health <= 50:
+        #         color = ORANGE
+        #     elif 12 < self.player.health <= 25:
+        #         color = DARKRED
+        #     else:
+        #         color = RED
+        #     self._render_text(str(round(self.player.health, 0)) + "%", self.hud_font, 30, color, 110, HEIGHT - 150,
+        #                       align='nw')
+        #     self._hud_hp_rect.topleft = (50, HEIGHT - 145)
+        #     self.screen.blit(self._hud_hp, self._hud_hp_rect)
+        # else:
+        #     color = DEEPSKYBLUE
+        #     self._render_text(str(self.player.armour) + "%", self.hud_font, 30, color, 110, HEIGHT - 150, align='nw')
+        #     self._hud_armour_rect.topleft = (50, HEIGHT - 145)
+        #     self.screen.blit(self._hud_armour, self._hud_armour_rect)
+        #
+        # if self.player.stamina > 85:
+        #     color = GREEN
+        # elif 75 < self.player.stamina <= 85:
+        #     color = LIMEGREEN
+        # elif 50 < self.player.stamina <= 75:
+        #     color = YELLOW
+        # elif 25 < self.player.stamina <= 50:
+        #     color = ORANGE
+        # elif 12 < self.player.stamina <= 25:
+        #     color = DARKRED
+        # else:
+        #     color = RED
+        #
+        # self._render_text("{:.0f}".format(self.player.stamina) + "%", self.hud_font, 30, color, 110, HEIGHT - 125,
+        #                   align='nw')
+        # self._hud_stamina_rect.topleft = (50, HEIGHT - 120)
+        # self.screen.blit(self._hud_stamina, self._hud_stamina_rect)
+        #
+        # if self.player.weapon != 'knife':
+        #     self._render_text(str(self.player.arsenal[self.player.weapon]['clip']) + " / " + \
+        #                       str(self.player.arsenal[self.player.weapon]['total ammunition']),
+        #                       self.hud_font, 30, WHITE, 50, HEIGHT - 100,
+        #                       'nw')
+        # else:
+        #     self._hud_knife_ammo_rect.topleft = (55, HEIGHT - 100)
+        #     self.screen.blit(self._hud_knife_ammo, self._hud_knife_ammo_rect)
+        # self.screen.blit(self.hud_images[self.player.weapon], (125, HEIGHT - 90))
 
     def _render_text(self, text, font_name, size, color, x, y, align='nw'):
         """
@@ -708,7 +744,7 @@ class GameEngine:
         Plays the given track
         """
         pg.mixer.music.load(path.join(self.music_folder, self.music_tracks[track]))
-        pg.mixer.music.set_volume(.35)
+        pg.mixer.music.set_volume(.45)
         pg.mixer.music.play(loops=-1)
 
 
