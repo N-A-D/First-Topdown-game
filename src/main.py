@@ -16,7 +16,7 @@ from random import choice, uniform, random, randint
 from player import Player
 from mobs import Mob, SpawnPoint
 from tilemap import Camera, TiledMap
-from sprites import Item, Wall, BulletPassableWall, _Wall
+from sprites import Item, Wall, BulletPassableWall, _Wall, SFX_floor
 from core_functions import collide_hit_rect, world_shift_pos, parse_tuple_to_list
 from pathfinding import Pathfinder, WeightedGraph
 import PAdLib.occluder as occluder
@@ -174,7 +174,7 @@ class GameEngine:
             self.player_foot_steps[terrain] = []
             for snd in PLAYER_FOOTSTEPS[terrain]:
                 snd = pg.mixer.Sound(path.join(self.snd_folder, snd))
-                snd.set_volume(.3)
+                snd.set_volume(1)
                 self.player_foot_steps[terrain].append(snd)
 
         # Bullets
@@ -276,6 +276,8 @@ class GameEngine:
                 Item(self, tile_object.x, tile_object.y, 'ammo')
             elif tile_object.name == 'health':
                 Item(self, tile_object.x, tile_object.y, 'health')
+            elif tile_object.name == 'SFX_floor':
+                SFX_floor(self, tile_object.x, tile_object.y, tile_object.width, tile_object.height, tile_object.type)
 
     def new(self):
         """
@@ -356,6 +358,10 @@ class GameEngine:
         self.camera.update(self.player)
         self.swingAreas.update()
         self.update_pathfinding_queue()
+
+        for sfx_floor in self.SFX_floors:
+            if sfx_floor.rect.colliderect(self.player.hit_rect):
+                self.player.current_terrain = sfx_floor.floortype
 
         # Bullet hits obstacle
         if self.bullets:

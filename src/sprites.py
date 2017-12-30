@@ -271,8 +271,13 @@ class SwingArea(pg.sprite.Sprite):
             self.rect.topleft = self.game.player.hit_rect.bottomright
 
 class SFX_floor(pg.sprite.Sprite):
-    def __init__(self, game, pos, floortype):
-        self.groups = None
+    """
+    Sprite class that changes the sound a player's foot steps make upon collision.
+    """
+    def __init__(self, game, x, y, width, height, floortype='dirt'):
+        self.groups = game.SFX_floors
         self.floortype = floortype
         self.game = game
-
+        self.rect = pg.Rect(x, y, width, height)
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.pos = vec(self.rect.center)

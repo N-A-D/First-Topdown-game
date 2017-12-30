@@ -91,6 +91,9 @@ class Player(pg.sprite.Sprite):
         self.current_step_sound = 0
         self.last_step_time = 0
 
+        # The sound the player makes when walking on specific types of terrain
+        self.current_terrain = 'dirt'
+
     def check_armour_status(self):
         if self.has_armour:
             if self.armour <= 0:
@@ -344,7 +347,7 @@ class Player(pg.sprite.Sprite):
                 self.aim_wobble = WEAPONS[self.weapon]['wobble']['walk']
 
         if self.vel.length() != 0:
-            self.play_foot_step_sounds(sprinting=is_sprinting)
+            self.play_foot_step_sounds(is_sprinting, self.current_terrain)
         else:
             self.current_step_sound = 0
 

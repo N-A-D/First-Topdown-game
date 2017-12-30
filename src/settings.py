@@ -90,7 +90,7 @@ BOB_SPEED = .5
 # Player settings
 SPRINT_BOOST = 2.25
 DEFAULT_WEAPON = 'knife'
-PLAYER_SPEED = 130
+PLAYER_SPEED = 140
 PLAYER_HIT_RECT = pg.Rect(0, 0, 50, 50)
 PLAYER_MELEE_RECTS = {
     'knife': pg.Rect(0, 0, 50, 50),
@@ -157,7 +157,7 @@ ENEMY_DAMAGE = [x for x in range(20, 40)]
 ENEMY_KNOCKBACK = 10
 ENEMY_LINE_OF_SIGHT = TILESIZE / 2.25
 ENEMY_HIT_RECT = pg.Rect(0, 0, TILESIZE, TILESIZE)
-ENEMY_SPEEDS = [speed for speed in range(110, 200, 10)]
+ENEMY_SPEEDS = [speed for speed in range(150, 220, 10)]
 ENEMY_HEALTH = 500
 DETECT_RADIUS = 550
 APPROACH_RADIUS = 150
