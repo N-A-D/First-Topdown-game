@@ -1,4 +1,5 @@
-# Title: The Evil Dead
+# Zombie-Shooter
+Zombie-Shooter is a top-down view game where the objecttive is to survive an onslaught of neverending zombies.
 
 # Current controls (subject to change)
 
@@ -22,3 +23,7 @@
     - pygame
     - pytweening
     - python 3.X
+
+# Learning outcomes:
+    - A* pathfinding
+    - Priority queues
